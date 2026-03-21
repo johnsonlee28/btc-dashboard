@@ -424,10 +424,14 @@
           <div class="metric-bar-wrap"><div class="metric-bar" id="m1fed_bar" style="width:0%"></div></div>
         </div>
         <div class="metric-row">
-
+          <div class="metric-name">DXY趋势（手动）</div>
+          <div class="metric-value" id="m1dxy">--</div>
+          <div class="metric-bar-wrap"><div class="metric-bar" id="m1dxy_bar" style="width:0%"></div></div>
         </div>
         <div class="metric-row">
-
+          <div class="metric-name">实际利率 TIPS（手动）</div>
+          <div class="metric-value" id="m1tips">--</div>
+          <div class="metric-bar-wrap"><div class="metric-bar" id="m1tips_bar" style="width:0%"></div></div>
         </div>
       </div>
     </div>
@@ -563,7 +567,13 @@
         </select>
       </div>
       <div class="manual-item">
+        <label>DXY 美元指数 <a href="https://www.tradingview.com/chart/?symbol=DXY" target="_blank">🔗 TradingView</a></label>
+        <input type="number" step="0.1" id="inp_dxy" placeholder="例：104.5">
+      </div>
       <div class="manual-item">
+        <label>10年实际利率 TIPS% <a href="https://fred.stlouisfed.org/series/DFII10" target="_blank">🔗 FRED</a></label>
+        <input type="number" step="0.01" id="inp_tips" placeholder="例：1.85">
+      </div>
       <div class="manual-item">
         <label>ETF 近5日净流入(亿美元) <a href="https://farside.co.uk/bitcoin-etf/" target="_blank">🔗 Farside</a></label>
         <input type="number" step="0.1" id="inp_etf" placeholder="例：8.5（负数表示流出）">
@@ -642,6 +652,10 @@
         <a href="https://www.cmegroup.com/markets/interest-rates/cme-fedwatch-tool.html" target="_blank">CME FedWatch</a>
         <div class="source-desc">美联储利率预期概率 · 免费</div>
       </div>
+      <div class="source-item">
+        <a href="https://fred.stlouisfed.org/series/DFII10" target="_blank">FRED · DFII10</a>
+        <div class="source-desc">10年期美债实际利率(TIPS) · 免费</div>
+      </div>
     </div>
   </div>
 
@@ -660,7 +674,7 @@ const state = {
   ma200val: null, dominance: null, fg: null, p30d: null,
   // manual
   mvrv: null, nupl: null, puell: null, lth: null,
-  fed: null, etf5d: null, stbl: null, fr: null,
+  fed: null, dxy: null, tips: null, etf5d: null, stbl: null, fr: null,
 };
 
 // ============================================================
@@ -735,10 +749,20 @@ function calcScores() {
   if (state.fed === 'cut2') fed_score = 10;
   else if (state.fed === 'cut1') fed_score = 5;
   else if (state.fed === 'hike') { fed_score = 0; vetoTriggered = true; }
-  // DXY (7pts) - 已移除手动输入，固定使用中性值4分
-  let dxy_score = 4;
-  // TIPS (5pts) - 已移除手动输入，固定使用中性值3分
-  let tips_score = 3;
+  // DXY (7pts)
+  let dxy_score = 4; // default
+  if (state.dxy !== null) {
+    if (state.dxy < 101) dxy_score = 7;
+    else if (state.dxy <= 105) dxy_score = 4;
+    else dxy_score = 0;
+  }
+  // TIPS (5pts substituting for 8pts, scaled)
+  let tips_score = 3; // default
+  if (state.tips !== null) {
+    if (state.tips < 0.5) tips_score = 5;
+    else if (state.tips <= 1.5) tips_score = 3;
+    else tips_score = 0;
+  }
   s1 = Math.min(25, fg_score + fed_score + dxy_score + tips_score);
 
   // ---- MODULE 2: FLOW (25pts) ----
@@ -937,7 +961,10 @@ function render() {
   if(state.fg!==null){ setText('m1fg', state.fg+' ('+sc.fg_score+'/3)'); setBar('m1fg_bar', barWidth(sc.fg_score,3), barColor(sc.fg_score,3)); }
   setText('m1fed', state.fed? ({cut2:'降息≥2次',cut1:'降息1次/暂停',hike:'加息'}[state.fed]+' ('+sc.fed_score+'/10)') : '--');
   setBar('m1fed_bar', barWidth(sc.fed_score,10), barColor(sc.fed_score,10));
-
+  setText('m1dxy', state.dxy? state.dxy+' ('+sc.dxy_score+'/7)' : '--');
+  setBar('m1dxy_bar', barWidth(sc.dxy_score,7), barColor(sc.dxy_score,7));
+  setText('m1tips', state.tips!==null? state.tips+'% ('+sc.tips_score+'/5)' : '--');
+  setBar('m1tips_bar', barWidth(sc.tips_score,5), barColor(sc.tips_score,5));
 
   // M2
   if(state.dominance!==null){ setText('m2dom', state.dominance.toFixed(1)+'% ('+sc.dom_score+'/5)'); setBar('m2dom_bar', barWidth(sc.dom_score,5), barColor(sc.dom_score,5)); }
@@ -1008,6 +1035,8 @@ function applyManual() {
   state.puell = n(g('inp_puell'));
   state.lth = g('inp_lth') || null;
   state.fed = g('inp_fed') || null;
+  state.dxy = n(g('inp_dxy'));
+  state.tips = n(g('inp_tips'));
   state.etf5d = n(g('inp_etf'));
   state.stbl = g('inp_stbl') || null;
   state.fr = n(g('inp_fr'));
