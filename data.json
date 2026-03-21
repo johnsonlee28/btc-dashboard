@@ -1,0 +1,28 @@
+{
+  "timestamp": "2026-03-21T01:40:06.254468+00:00",
+  "timestamp_cn": "2026-03-21 09:40",
+  "etf": {
+    "days": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "sum5d": null,
+    "latest_date": null
+  },
+  "onchain": {
+    "mvrv_zscore": 2.04,
+    "nupl": null
+  },
+  "fed": {
+    "fed_direction": "hike",
+    "reasoning": "HTML内容未包含具体的概率数据，无法判断主流预期方向。根据指令，当无法提取时默认返回hike。"
+  },
+  "funding_rate": null,
+  "stablecoin": {
+    "total_b": 306.8,
+    "trend": "expand"
+  }
+}
