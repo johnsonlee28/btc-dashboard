@@ -1045,12 +1045,79 @@ function applyManual() {
 }
 
 // ============================================================
+// LOAD data.json (auto-fetched backend data)
+// ============================================================
+async function fetchDataJson() {
+  try {
+    // Add cache-buster to always get latest
+    const res = await fetch('./data.json?t=' + Date.now());
+    if (!res.ok) return;
+    const d = await res.json();
+
+    // 更新数据来源标签
+    const autoTag = document.getElementById('autoDataTime');
+    if (autoTag && d.timestamp_cn) {
+      autoTag.textContent = '链上数据更新于: ' + d.timestamp_cn;
+      autoTag.style.display = 'block';
+    }
+
+    // 链上指标
+    if (d.onchain) {
+      if (d.onchain.mvrv_zscore !== null && d.onchain.mvrv_zscore !== undefined) {
+        state.mvrv = d.onchain.mvrv_zscore;
+        const el = document.getElementById('inp_mvrv');
+        if (el) el.value = state.mvrv;
+      }
+      if (d.onchain.nupl !== null && d.onchain.nupl !== undefined) {
+        state.nupl = d.onchain.nupl;
+        const el = document.getElementById('inp_nupl');
+        if (el) el.value = state.nupl;
+      }
+    }
+
+    // ETF 净流入 (单位：百万美元 → 转换为亿)
+    if (d.etf && d.etf.sum5d !== null && d.etf.sum5d !== undefined) {
+      state.etf5d = d.etf.sum5d / 100; // M → 亿
+      const el = document.getElementById('inp_etf');
+      if (el) el.value = state.etf5d.toFixed(2);
+    }
+
+    // 美联储方向
+    if (d.fed && d.fed.fed_direction) {
+      // 只有在 DeepSeek 有足够置信度时才自动填（排除fallback hike）
+      if (d.fed.reasoning && !d.fed.reasoning.includes('默认') && !d.fed.reasoning.includes('无法')) {
+        state.fed = d.fed.fed_direction;
+        const el = document.getElementById('inp_fed');
+        if (el) el.value = state.fed;
+      }
+    }
+
+    // 资金费率
+    if (d.funding_rate !== null && d.funding_rate !== undefined) {
+      state.fr = d.funding_rate;
+      const el = document.getElementById('inp_fr');
+      if (el) el.value = state.fr;
+    }
+
+    // 稳定币趋势
+    if (d.stablecoin && d.stablecoin.trend) {
+      state.stbl = d.stablecoin.trend;
+      const el = document.getElementById('inp_stbl');
+      if (el) el.value = state.stbl;
+    }
+
+  } catch(e) {
+    console.log('data.json not available yet:', e.message);
+  }
+}
+
+// ============================================================
 // LOAD ALL
 // ============================================================
 async function loadAll() {
   const btn = document.getElementById('refreshBtn');
   if(btn) { btn.disabled = true; btn.textContent = '加载中...'; }
-  await Promise.all([fetchCoingecko(), fetchFG()]);
+  await Promise.all([fetchCoingecko(), fetchFG(), fetchDataJson()]);
   render();
   if(btn) { btn.disabled = false; btn.textContent = '🔄 刷新数据'; }
 }
