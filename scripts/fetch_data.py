@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 
 DEEPSEEK_KEY = os.environ.get("DEEPSEEK_KEY", "")
 GH_TOKEN = os.environ.get("GH_TOKEN", "")
+FRED_KEY = os.environ.get("FRED_KEY", "")
 REPO_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_FILE = os.path.join(REPO_DIR, "data.json")
 
@@ -226,6 +227,27 @@ def fetch_funding_rate():
 # ============================================================
 # 5. 稳定币趋势 - DeFiLlama
 # ============================================================
+
+# ============================================================
+# TIPS 实际利率 - FRED API
+# ============================================================
+def fetch_tips():
+    log("抓取 TIPS 实际利率 (FRED)...")
+    url = f"https://api.stlouisfed.org/fred/series/observations?series_id=DFII10&api_key={FRED_KEY}&sort_order=desc&limit=1&file_type=json"
+    data = http_get(url)
+    if data:
+        try:
+            d = json.loads(data)
+            obs = d.get('observations', [])
+            if obs and obs[0].get('value') not in ('.', ''):
+                val = float(obs[0]['value'])
+                log(f"  ✅ TIPS: {val}% (日期: {obs[0]['date']})")
+                return val
+        except Exception as e:
+            log(f"  解析失败: {e}")
+    log("  ⚠️ TIPS 获取失败")
+    return None
+
 def fetch_stablecoin():
     log("抓取稳定币市值 (DeFiLlama)...")
     url = "https://stablecoins.llama.fi/stablecoins?includePrices=true"
@@ -261,7 +283,8 @@ def main():
         "onchain": {"mvrv_zscore": None, "nupl": None},
         "fed": None,
         "funding_rate": None,
-        "stablecoin": None
+        "stablecoin": None,
+        "tips": None
     }
 
     # 按顺序抓取，加间隔避免频率限制
@@ -288,6 +311,11 @@ def main():
     if stbl:
         data["stablecoin"] = stbl
 
+    time.sleep(1)
+    tips = fetch_tips()
+    if tips is not None:
+        data["tips"] = tips
+
     # 汇总输出
     log("\n" + "=" * 55)
     log("抓取结果汇总:")
@@ -297,6 +325,7 @@ def main():
     log(f"  美联储方向:    {data['fed']['fed_direction'] if data['fed'] else 'N/A'}")
     log(f"  资金费率:      {data['funding_rate']}%/8h")
     log(f"  稳定币趋势:    {data['stablecoin']['trend'] if data['stablecoin'] else 'N/A'} ({data['stablecoin']['total_b'] if data['stablecoin'] else 'N/A'}B)")
+    log(f"  TIPS 实际利率: {data['tips']}%")
     log("=" * 55)
 
     # 写入文件
