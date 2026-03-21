@@ -1,19 +1,19 @@
 {
-  "timestamp": "2026-03-21T05:00:01.401184+00:00",
-  "timestamp_cn": "2026-03-21 13:00",
+  "timestamp": "2026-03-21T11:00:01.457915+00:00",
+  "timestamp_cn": "2026-03-21 19:00",
   "etf": {
     "days": [
       -190.0,
       -139.0,
+      -65.0,
       -51.0,
-      216.0,
-      295.0
+      0.0
     ],
-    "sum5d": 131.0,
+    "sum5d": -445.0,
     "latest_date": "2024-07-19"
   },
   "onchain": {
-    "mvrv_zscore": 2.04,
+    "mvrv_zscore": 2.15,
     "nupl": 0.64
   },
   "fed": {
@@ -23,7 +23,7 @@
   },
   "funding_rate": 0.01,
   "stablecoin": {
-    "total_b": 314.8,
+    "total_b": 315.0,
     "trend": "expand"
   },
   "tips": 1.88
