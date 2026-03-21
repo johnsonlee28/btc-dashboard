@@ -530,20 +530,11 @@
 
   <!-- MANUAL INPUT -->
   <div class="manual-card">
-    <h3>✍️ 手动输入区（链上 + 宏观数据）</h3>
+    <h3>✍️ 手动补充（4项）</h3>
     <p style="font-size:12px; color:var(--muted); margin-bottom:14px;">
-      以下数据无法自动拉取，需每次查阅后手动填入。数据填入后点击「更新评分」，仪表盘将重新计算。
-      <br>查询方式见下方「数据源」。
+      以下4项数据暂无法自动抓取，需手动填入后点击「更新评分」。
     </p>
     <div class="manual-grid">
-      <div class="manual-item">
-        <label>MVRV Z-Score <a href="https://www.lookintobitcoin.com/charts/mvrv-zscore/" target="_blank">🔗查询</a></label>
-        <input type="number" step="0.1" id="inp_mvrv" placeholder="例：2.3">
-      </div>
-      <div class="manual-item">
-        <label>NUPL <a href="https://www.lookintobitcoin.com/charts/relative-unrealized-profit--loss/" target="_blank">🔗查询</a></label>
-        <input type="number" step="0.01" id="inp_nupl" placeholder="例：0.42">
-      </div>
       <div class="manual-item">
         <label>Puell Multiple <a href="https://www.lookintobitcoin.com/charts/puell-multiple/" target="_blank">🔗查询</a></label>
         <input type="number" step="0.01" id="inp_puell" placeholder="例：1.2">
@@ -558,38 +549,12 @@
         </select>
       </div>
       <div class="manual-item">
-        <label>美联储方向 <a href="https://www.cmegroup.com/markets/interest-rates/cme-fedwatch-tool.html" target="_blank">🔗 FedWatch</a></label>
-        <select id="inp_fed">
-          <option value="">-- 选择 --</option>
-          <option value="cut2">未来12个月降息≥2次（利多）</option>
-          <option value="cut1">降息1次或暂停（中性）</option>
-          <option value="hike">加息预期（利空）</option>
-        </select>
-      </div>
-      <div class="manual-item">
         <label>DXY 美元指数 <a href="https://www.tradingview.com/chart/?symbol=DXY" target="_blank">🔗 TradingView</a></label>
         <input type="number" step="0.1" id="inp_dxy" placeholder="例：104.5">
       </div>
       <div class="manual-item">
         <label>10年实际利率 TIPS% <a href="https://fred.stlouisfed.org/series/DFII10" target="_blank">🔗 FRED</a></label>
         <input type="number" step="0.01" id="inp_tips" placeholder="例：1.85">
-      </div>
-      <div class="manual-item">
-        <label>ETF 近5日净流入(亿美元) <a href="https://farside.co.uk/bitcoin-etf/" target="_blank">🔗 Farside</a></label>
-        <input type="number" step="0.1" id="inp_etf" placeholder="例：8.5（负数表示流出）">
-      </div>
-      <div class="manual-item">
-        <label>稳定币总市值趋势</label>
-        <select id="inp_stbl">
-          <option value="">-- 选择 --</option>
-          <option value="expand">持续扩张（月增>5%）</option>
-          <option value="flat">横盘</option>
-          <option value="shrink">收缩</option>
-        </select>
-      </div>
-      <div class="manual-item">
-        <label>资金费率/8h <a href="https://www.coinglass.com/FundingRate" target="_blank">🔗 Coinglass</a></label>
-        <input type="number" step="0.001" id="inp_fr" placeholder="例：0.01（负数表示负费率）">
       </div>
     </div>
     <button class="apply-btn" onclick="applyManual()">✅ 更新评分</button>
@@ -1030,16 +995,10 @@ function applyManual() {
   const g = id => document.getElementById(id).value;
   const n = v => v === '' ? null : parseFloat(v);
 
-  state.mvrv = n(g('inp_mvrv'));
-  state.nupl = n(g('inp_nupl'));
   state.puell = n(g('inp_puell'));
   state.lth = g('inp_lth') || null;
-  state.fed = g('inp_fed') || null;
   state.dxy = n(g('inp_dxy'));
   state.tips = n(g('inp_tips'));
-  state.etf5d = n(g('inp_etf'));
-  state.stbl = g('inp_stbl') || null;
-  state.fr = n(g('inp_fr'));
 
   render();
 }
