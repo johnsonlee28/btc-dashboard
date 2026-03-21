@@ -345,6 +345,51 @@
     .price-bar { flex-direction: column; gap: 12px; }
     .modules-grid { grid-template-columns: 1fr; }
   }
+
+  /* GUIDE CARD */
+  .guide-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .guide-card h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 16px; }
+  .guide-step {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 18px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .guide-step:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .guide-step-num {
+    flex-shrink: 0;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: #f7931a22;
+    color: #f7931a;
+    font-size: 13px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .guide-step-body { flex: 1; }
+  .guide-step-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+  .guide-step-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
+  .guide-manual-list { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+  .guide-manual-item { font-size: 12px; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; }
+  .guide-manual-item a { color: #f7931a; text-decoration: none; flex-shrink: 0; }
+  .guide-manual-item a:hover { text-decoration: underline; }
+  .guide-grade-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; font-size: 13px; }
+  .guide-grade {
+    display: inline-block; width: 68px; text-align: center;
+    padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 12px; flex-shrink: 0;
+  }
+  .guide-grade.grade-A { background: #00c853aa; color: #fff; }
+  .guide-grade.grade-B { background: #2979ffaa; color: #fff; }
+  .guide-grade.grade-C { background: #ffab00aa; color: #111; }
+  .guide-grade.grade-D { background: #ff1744aa; color: #fff; }
+  .guide-note { margin-top: 10px; font-size: 12px; color: var(--muted); background: #f7931a11; border-left: 3px solid #f7931a; padding: 6px 10px; border-radius: 4px; }
+
 </style>
 </head>
 <body>
@@ -650,6 +695,65 @@
         <div class="source-desc">10年期美债实际利率(TIPS) · 免费</div>
       </div>
     </div>
+  </div>
+
+
+  <!-- GUIDE -->
+  <div class="guide-card">
+    <h3>📖 使用指南 — 3步完成一次评估</h3>
+
+    <div class="guide-step">
+      <div class="guide-step-num">01</div>
+      <div class="guide-step-body">
+        <div class="guide-step-title">刷新数据（自动）</div>
+        <div class="guide-step-desc">页面加载后自动拉取：BTC价格、MA200、恐贪指数、MVRV、NUPL、资金费率、稳定币趋势、美联储方向、TIPS实际利率。每5分钟自动刷新，也可点击右上角「🔄 刷新数据」。</div>
+      </div>
+    </div>
+
+    <div class="guide-step">
+      <div class="guide-step-num">02</div>
+      <div class="guide-step-body">
+        <div class="guide-step-title">补充3项数据（每周更新一次）</div>
+        <div class="guide-step-desc">以下3项无法自动抓取，手动查询后填入底部「补充数据」区，点击「保存并更新」即自动存入浏览器，<strong>刷新不丢失</strong>：</div>
+        <div class="guide-manual-list">
+          <div class="guide-manual-item">
+            <a href="https://www.lookintobitcoin.com/charts/puell-multiple/" target="_blank">🔗 Puell Multiple</a>
+            <span>→ lookintobitcoin.com → 查图表当前值（绿色区 &lt;0.5 极度低估，红色区 &gt;4 过热）</span>
+          </div>
+          <div class="guide-manual-item">
+            <a href="https://www.lookintobitcoin.com/charts/long-term-holder-net-position-change/" target="_blank">🔗 LTH 长期持有者</a>
+            <span>→ 看柱状图颜色：持续绿柱=增持，红柱=派发</span>
+          </div>
+          <div class="guide-manual-item">
+            <a href="https://www.tradingview.com/chart/?symbol=DXY" target="_blank">🔗 DXY 美元指数</a>
+            <span>→ TradingView 搜索 DXY，填入当前价格（&lt;101 利多BTC，&gt;107 利空）</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="guide-step">
+      <div class="guide-step-num">03</div>
+      <div class="guide-step-body">
+        <div class="guide-step-title">读懂评级结论</div>
+        <div class="guide-step-desc">
+          <div class="guide-grade-row"><span class="guide-grade grade-A">A ≥80分</span><span>值得投入 — 可分3-5批建仓，不追单日大阳线</span></div>
+          <div class="guide-grade-row"><span class="guide-grade grade-B">B 65-79分</span><span>轻仓定投 — 小仓位试探，不重仓追高</span></div>
+          <div class="guide-grade-row"><span class="guide-grade grade-C">C 50-64分</span><span>观察期 — 等待信号更明确</span></div>
+          <div class="guide-grade-row"><span class="guide-grade grade-D">D &lt;50分</span><span>不建议入场 — 赔率差或有极端风险信号</span></div>
+        </div>
+        <div class="guide-note">⚠️ 一票否决：MVRV&gt;6、NUPL&gt;0.75、美联储加息 → 任一触发直接降D，无论总分多高。</div>
+      </div>
+    </div>
+
+    <div class="guide-step">
+      <div class="guide-step-num">💡</div>
+      <div class="guide-step-body">
+        <div class="guide-step-title">评分频率建议</div>
+        <div class="guide-step-desc">日常：每周看一次即可。链上指标变化慢，频繁刷新意义不大。<br>特殊时刻：BTC大跌 &gt;15%、美联储开会前后、ETF异常净流出时 → 及时重新评估。</div>
+      </div>
+    </div>
+
   </div>
 
 </div><!-- end container -->
