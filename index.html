@@ -424,7 +424,7 @@
           <div class="metric-bar-wrap"><div class="metric-bar" id="m1fed_bar" style="width:0%"></div></div>
         </div>
         <div class="metric-row">
-          <div class="metric-name">DXY趋势（手动）</div>
+          <div class="metric-name">DXY 美元指数</div>
           <div class="metric-value" id="m1dxy">--</div>
           <div class="metric-bar-wrap"><div class="metric-bar" id="m1dxy_bar" style="width:0%"></div></div>
         </div>
@@ -484,12 +484,12 @@
           <div class="metric-bar-wrap"><div class="metric-bar" id="m3nupl_bar" style="width:0%"></div></div>
         </div>
         <div class="metric-row">
-          <div class="metric-name">Puell Multiple（手动）</div>
+          <div class="metric-name">Puell Multiple</div>
           <div class="metric-value" id="m3puell">--</div>
           <div class="metric-bar-wrap"><div class="metric-bar" id="m3puell_bar" style="width:0%"></div></div>
         </div>
         <div class="metric-row">
-          <div class="metric-name">LTH 长期持有者（手动）</div>
+          <div class="metric-name">LTH 长期持有者</div>
           <div class="metric-value" id="m3lth">--</div>
           <div class="metric-bar-wrap"><div class="metric-bar" id="m3lth_bar" style="width:0%"></div></div>
         </div>
@@ -530,9 +530,9 @@
 
   <!-- MANUAL INPUT -->
   <div class="manual-card">
-    <h3>✍️ 手动补充（3项）</h3>
+    <h3>📝 补充数据（3项）</h3>
     <p style="font-size:12px; color:var(--muted); margin-bottom:14px;">
-      以下3项数据暂无法自动抓取，需手动填入后点击「更新评分」。
+      以下3项数据填入后自动保存，刷新不丢失。
     </p>
     <div class="manual-grid">
       <div class="manual-item">
@@ -553,7 +553,8 @@
         <input type="number" step="0.1" id="inp_dxy" placeholder="例：104.5">
       </div>
     </div>
-    <button class="apply-btn" onclick="applyManual()">✅ 更新评分</button>
+    <button class="apply-btn" onclick="applyManual()">✅ 保存并更新</button>
+    <div id="manualSavedAt" style="font-size:11px; color:var(--muted); margin-top:8px;"></div>
   </div>
 
   <!-- MONITOR -->
@@ -995,9 +996,42 @@ function applyManual() {
   state.puell = n(g('inp_puell'));
   state.lth = g('inp_lth') || null;
   state.dxy = n(g('inp_dxy'));
-  state.tips = n(g('inp_tips'));
+
+  // 保存到 localStorage（持久化，刷新不丢失）
+  const saved = {
+    puell: g('inp_puell'),
+    lth: g('inp_lth'),
+    dxy: g('inp_dxy'),
+    savedAt: new Date().toLocaleString('zh-CN')
+  };
+  localStorage.setItem('btc_manual', JSON.stringify(saved));
 
   render();
+}
+
+// 从 localStorage 恢复手动输入
+function loadManualFromStorage() {
+  try {
+    const raw = localStorage.getItem('btc_manual');
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    if (saved.puell) {
+      document.getElementById('inp_puell').value = saved.puell;
+      state.puell = parseFloat(saved.puell);
+    }
+    if (saved.lth) {
+      document.getElementById('inp_lth').value = saved.lth;
+      state.lth = saved.lth;
+    }
+    if (saved.dxy) {
+      document.getElementById('inp_dxy').value = saved.dxy;
+      state.dxy = parseFloat(saved.dxy);
+    }
+    if (saved.savedAt) {
+      const hint = document.getElementById('manualSavedAt');
+      if (hint) hint.textContent = '上次保存：' + saved.savedAt;
+    }
+  } catch(e) { console.warn('loadManualFromStorage error', e); }
 }
 
 // ============================================================
@@ -1031,11 +1065,16 @@ async function fetchDataJson() {
       }
     }
 
-    // ETF 净流入 (单位：百万美元 → 转换为亿)
+    // ETF 净流入 (单位：百万美元 → 转换为亿, 1亿=100M)
     if (d.etf && d.etf.sum5d !== null && d.etf.sum5d !== undefined) {
-      state.etf5d = d.etf.sum5d / 100; // M → 亿
-      const el = document.getElementById('inp_etf');
-      if (el) el.value = state.etf5d.toFixed(2);
+      // 过滤 farside 解析失败时返回的 0.0（实际无流入/流出极为少见，0.0 通常是解析问题）
+      // 仅当 sum5d 来自真实数据（非0或有明确来源标记）才更新
+      const rawEtf = d.etf.sum5d;
+      if (rawEtf !== 0 || (d.etf.source && d.etf.source !== 'fallback')) {
+        state.etf5d = rawEtf / 100; // M → 亿
+        const el = document.getElementById('inp_etf');
+        if (el) el.value = state.etf5d.toFixed(2);
+      }
     }
 
     // 美联储方向
@@ -1088,6 +1127,7 @@ async function loadAll() {
 // ============================================================
 // INIT
 // ============================================================
+loadManualFromStorage();
 loadAll();
 // Auto refresh every 5 minutes
 setInterval(loadAll, 5*60*1000);
