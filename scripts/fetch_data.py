@@ -1,0 +1,327 @@
+#!/usr/bin/env python3
+"""
+BTC Dashboard - 自动数据抓取脚本
+每6小时运行一次，抓取链上/宏观数据，写入 data.json，推送到 GitHub
+"""
+
+import json, urllib.request, urllib.error, time, subprocess, os, re
+from datetime import datetime, timezone
+
+DEEPSEEK_KEY = os.environ.get("DEEPSEEK_KEY", "")
+GH_TOKEN = os.environ.get("GH_TOKEN", "")
+REPO_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_FILE = os.path.join(REPO_DIR, "data.json")
+
+def log(msg):
+    print(f"[{datetime.now().strftime('%H:%M:%S')}] {msg}")
+
+def http_get(url, headers=None, timeout=25):
+    h = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36'}
+    if headers:
+        h.update(headers)
+    req = urllib.request.Request(url, headers=h)
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            return r.read().decode('utf-8', errors='replace')
+    except Exception as e:
+        log(f"  fetch error {url[:70]}: {e}")
+        return None
+
+def ask_deepseek(prompt, content, max_tokens=300):
+    payload = json.dumps({
+        "model": "deepseek-chat",
+        "messages": [
+            {"role": "system", "content": "你是数据解析助手。从给定内容中精确提取数值。只返回JSON，不含任何解释或markdown代码块。"},
+            {"role": "user", "content": f"{prompt}\n\n---内容---\n{content[:10000]}"}
+        ],
+        "max_tokens": max_tokens,
+        "temperature": 0
+    }).encode()
+
+    req = urllib.request.Request(
+        "https://api.deepseek.com/chat/completions",
+        data=payload,
+        headers={
+            "Authorization": f"Bearer {DEEPSEEK_KEY}",
+            "Content-Type": "application/json"
+        }
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            result = json.loads(r.read())
+            text = result['choices'][0]['message']['content'].strip()
+            # 清理可能的 markdown 代码块
+            text = re.sub(r'```(?:json)?\s*', '', text).strip()
+            text = text.rstrip('`').strip()
+            return json.loads(text)
+    except Exception as e:
+        log(f"  DeepSeek parse error: {e}")
+        return None
+
+# ============================================================
+# 1. ETF 净流入 - farside.co.uk
+# ============================================================
+def fetch_farside_etf():
+    log("抓取 ETF 流入 (farside.co.uk)...")
+    html = http_get("https://farside.co.uk/bitcoin-etf/")
+    if not html:
+        return None
+
+    result = ask_deepseek(
+        """这是farside.co.uk比特币现货ETF流入表格页面。
+        请找出最近5个有数据的交易日，各日所有ETF的净流入合计（Total列，单位百万美元，负数=流出）。
+        返回JSON：{"days":[d1,d2,d3,d4,d5], "sum5d": 5天合计, "latest_date":"YYYY-MM-DD"}
+        如果Total列不存在，请自行加总各ETF列数据。
+        数值必须是数字类型，不是字符串。""",
+        html
+    )
+    if result and isinstance(result.get('sum5d'), (int, float)):
+        log(f"  ✅ ETF 5日净流入: ${result['sum5d']}M (最新: {result.get('latest_date','')})")
+        return result
+    log("  ⚠️ ETF 数据解析失败")
+    return None
+
+# ============================================================
+# 2. 链上指标 - lookintobitcoin.com
+# ============================================================
+def fetch_lookintobitcoin():
+    log("抓取链上指标 (lookintobitcoin.com)...")
+    mvrv_val = None
+    nupl_val = None
+
+    # MVRV Z-Score
+    html = http_get("https://www.lookintobitcoin.com/charts/mvrv-zscore/")
+    if html:
+        # 先尝试在 HTML 中直接正则匹配数字（比AI更可靠）
+        # 页面通常有类似 "Current Value: 2.04" 的文字
+        patterns = [
+            r'current[_\s-]*value["\s:]+([0-9.-]+)',
+            r'mvrv["\s:]+([0-9.-]+)',
+            r'"value"\s*:\s*([0-9.-]+)',
+        ]
+        for p in patterns:
+            m = re.search(p, html, re.IGNORECASE)
+            if m:
+                try:
+                    mvrv_val = float(m.group(1))
+                    if 0 < mvrv_val < 20:  # 合理范围校验
+                        log(f"  ✅ MVRV Z-Score (regex): {mvrv_val}")
+                        break
+                    mvrv_val = None
+                except:
+                    pass
+
+        if mvrv_val is None:
+            result = ask_deepseek(
+                """这是 lookintobitcoin.com 的 MVRV Z-Score 页面HTML。
+                请找出当前/最新的 MVRV Z-Score 数值（通常在 -2 到 10 之间）。
+                返回JSON：{"mvrv_zscore": 数值} 或 {"error": "找不到"}""",
+                html
+            )
+            if result and isinstance(result.get('mvrv_zscore'), (int, float)):
+                mvrv_val = result['mvrv_zscore']
+                log(f"  ✅ MVRV Z-Score (AI): {mvrv_val}")
+
+    time.sleep(3)
+
+    # NUPL
+    html2 = http_get("https://www.lookintobitcoin.com/charts/relative-unrealized-profit--loss/")
+    if html2:
+        result = ask_deepseek(
+            """这是 lookintobitcoin.com 的 NUPL（Net Unrealized Profit/Loss）页面HTML。
+            NUPL 数值范围通常在 -1 到 1 之间（或 -100% 到 100%，那就除以100）。
+            请找出当前/最新的 NUPL 数值。
+            返回JSON：{"nupl": 数值（小数形式，如0.64）} 或 {"error": "找不到"}""",
+            html2
+        )
+        if result and isinstance(result.get('nupl'), (int, float)):
+            nupl_val = result['nupl']
+            # 如果是百分比形式自动转换
+            if abs(nupl_val) > 1:
+                nupl_val = nupl_val / 100
+            log(f"  ✅ NUPL (AI): {nupl_val}")
+
+    return {"mvrv_zscore": mvrv_val, "nupl": nupl_val}
+
+# ============================================================
+# 3. 美联储方向 - 通过多个备用源
+# ============================================================
+def fetch_fed_direction():
+    log("抓取美联储预期 (多源)...")
+
+    # 备用1: 直接查 CME FedWatch 工具页面
+    sources = [
+        "https://www.cmegroup.com/markets/interest-rates/cme-fedwatch-tool.html",
+        "https://www.investing.com/central-banks/fed-rate-monitor",
+    ]
+
+    for url in sources:
+        html = http_get(url)
+        if html and len(html) > 1000:
+            result = ask_deepseek(
+                """从这个页面中找出当前美联储下次会议的加息/降息/维持不变的市场预期概率。
+                基于概率最高的选项判断方向：
+                - "cut2" = 市场主要预期降息（概率>50%，降息≥25bps）
+                - "cut1" = 市场主要预期维持不变或轻微降息
+                - "hike" = 市场主要预期加息
+                只有在页面有明确概率数据时才判断，否则返回 {"error": "无数据"}
+                返回JSON：{"fed_direction": "cut2|cut1|hike", "reasoning": "百分比数据说明", "confidence": "high|low"}""",
+                html,
+                max_tokens=200
+            )
+            if result and result.get('confidence') == 'high' and 'fed_direction' in result:
+                log(f"  ✅ 美联储方向: {result['fed_direction']} ({result.get('reasoning','')})")
+                return result
+            time.sleep(2)
+
+    # 备用2: MacroMicro 或其他公开源
+    html = http_get("https://finance.yahoo.com/news/fed-rate-decision/")
+    if html:
+        result = ask_deepseek(
+            """从这篇文章中判断当前美联储利率政策方向：是在降息、维持不变、还是加息？
+            返回JSON：{"fed_direction": "cut2|cut1|hike", "reasoning": "简短依据", "confidence": "high|low"}""",
+            html
+        )
+        if result and 'fed_direction' in result:
+            log(f"  ✅ 美联储方向(yahoo): {result['fed_direction']}")
+            return result
+
+    log("  ⚠️ 美联储方向获取失败，使用默认值 cut1")
+    return {"fed_direction": "cut1", "reasoning": "数据获取失败，使用中性默认值", "confidence": "low"}
+
+# ============================================================
+# 4. 资金费率 - Coinglass
+# ============================================================
+def fetch_funding_rate():
+    log("抓取资金费率 (Coinglass)...")
+
+    # 尝试 Coinglass 公开数据页面
+    html = http_get("https://www.coinglass.com/FundingRate")
+    if html:
+        result = ask_deepseek(
+            """这是 Coinglass 资金费率页面。请找出 BTC 在主流交易所（Binance/Bybit/OKX）的当前资金费率（%/8h）。
+            正常范围 -0.1% 到 +0.1%，正数代表多头付空头。
+            返回JSON：{"funding_rate": Binance的数值, "avg": 平均值} 或 {"error": "找不到"}""",
+            html
+        )
+        if result and isinstance(result.get('funding_rate'), (int, float)):
+            fr = result['funding_rate']
+            log(f"  ✅ 资金费率: {fr}%/8h")
+            return fr
+
+    # 备用: Binance 公开API
+    binance_url = "https://fapi.binance.com/fapi/v1/premiumIndex?symbol=BTCUSDT"
+    data = http_get(binance_url)
+    if data:
+        try:
+            d = json.loads(data)
+            fr = float(d.get('lastFundingRate', 0)) * 100
+            log(f"  ✅ 资金费率(Binance API): {fr:.4f}%/8h")
+            return round(fr, 4)
+        except Exception as e:
+            log(f"  Binance API parse error: {e}")
+
+    return None
+
+# ============================================================
+# 5. 稳定币趋势 - DeFiLlama
+# ============================================================
+def fetch_stablecoin():
+    log("抓取稳定币市值 (DeFiLlama)...")
+    url = "https://stablecoins.llama.fi/stablecoins?includePrices=true"
+    data = http_get(url)
+    if data:
+        try:
+            d = json.loads(data)
+            pegs = d.get('peggedAssets', [])
+            total = sum(
+                p.get('circulating', {}).get('peggedUSD', 0)
+                for p in pegs if p.get('circulating', {}).get('peggedUSD', 0) > 0
+            ) / 1e9
+            trend = "expand" if total > 180 else "flat" if total > 140 else "shrink"
+            log(f"  ✅ 稳定币总市值: ${total:.1f}B → {trend}")
+            return {"total_b": round(total, 1), "trend": trend}
+        except Exception as e:
+            log(f"  解析失败: {e}")
+    return None
+
+# ============================================================
+# 主流程
+# ============================================================
+def main():
+    log("=" * 55)
+    log("BTC Dashboard 数据抓取 v2")
+    log(f"时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    log("=" * 55)
+
+    data = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp_cn": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "etf": None,
+        "onchain": {"mvrv_zscore": None, "nupl": None},
+        "fed": None,
+        "funding_rate": None,
+        "stablecoin": None
+    }
+
+    # 按顺序抓取，加间隔避免频率限制
+    etf = fetch_farside_etf()
+    if etf:
+        data["etf"] = etf
+    time.sleep(2)
+
+    onchain = fetch_lookintobitcoin()
+    data["onchain"] = onchain
+    time.sleep(2)
+
+    fed = fetch_fed_direction()
+    if fed:
+        data["fed"] = fed
+    time.sleep(2)
+
+    fr = fetch_funding_rate()
+    if fr is not None:
+        data["funding_rate"] = fr
+    time.sleep(1)
+
+    stbl = fetch_stablecoin()
+    if stbl:
+        data["stablecoin"] = stbl
+
+    # 汇总输出
+    log("\n" + "=" * 55)
+    log("抓取结果汇总:")
+    log(f"  ETF 5日净流入: {data['etf']['sum5d'] if data['etf'] else 'N/A'}M USD")
+    log(f"  MVRV Z-Score:  {data['onchain']['mvrv_zscore']}")
+    log(f"  NUPL:          {data['onchain']['nupl']}")
+    log(f"  美联储方向:    {data['fed']['fed_direction'] if data['fed'] else 'N/A'}")
+    log(f"  资金费率:      {data['funding_rate']}%/8h")
+    log(f"  稳定币趋势:    {data['stablecoin']['trend'] if data['stablecoin'] else 'N/A'} ({data['stablecoin']['total_b'] if data['stablecoin'] else 'N/A'}B)")
+    log("=" * 55)
+
+    # 写入文件
+    with open(DATA_FILE, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    log(f"\n✅ 数据已写入: {DATA_FILE}")
+
+    # 推送到 GitHub
+    log("推送到 GitHub...")
+    try:
+        os.chdir(REPO_DIR)
+        subprocess.run(["git", "add", "data.json", "index.html"], check=True, capture_output=True)
+        result = subprocess.run(
+            ["git", "commit", "-m", f"data: auto-update {data['timestamp_cn']}"],
+            capture_output=True, text=True
+        )
+        if "nothing to commit" in result.stdout:
+            log("  无变化，跳过 push")
+        else:
+            subprocess.run(["git", "push"], check=True, capture_output=True)
+            log("  ✅ 推送成功")
+    except subprocess.CalledProcessError as e:
+        log(f"  Git 操作: {e.stderr if e.stderr else str(e)}")
+
+    return data
+
+if __name__ == "__main__":
+    main()
