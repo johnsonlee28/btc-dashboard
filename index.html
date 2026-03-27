@@ -400,7 +400,7 @@
     <div class="logo">🧮</div>
     <div class="title-block">
       <h1>BTC 投资评分仪表盘</h1>
-      <p>算盘 · 模型 v2 · 实时评分</p>
+      <p>算盘 · 模型 v3 · 实时评分</p>
     </div>
   </div>
   <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
@@ -774,7 +774,7 @@
 </div><!-- end container -->
 
 <footer>
-  🧮 算盘 BTC投资模型 v2 · 数据来源：CoinGecko API + Alternative.me + 手动输入 · 仅供参考，不构成投资建议<br>
+  🧮 算盘 BTC投资模型 v3 · 数据来源：CoinGecko API + Alternative.me + 手动输入 · 仅供参考，不构成投资建议<br>
   Made by <a href="https://blog.zhixingshe.cc" target="_blank" style="color:#f7931a;text-decoration:none;">成诺</a> · <a href="https://blog.zhixingshe.cc" target="_blank" style="color:#f7931a;text-decoration:none;">blog.zhixingshe.cc</a>
 </footer>
 
@@ -863,167 +863,200 @@ function calcScores() {
   let s1=0, s2=0, s3=0, s4=0;
   let vetoTriggered = false;
 
-  // ---- MODULE 1: MACRO (25pts) ----
-  // Fear & Greed proxy for macro sentiment (3pts)
-  let fg_score = 0;
-  if (state.fg !== null) {
-    if (state.fg >= 60) fg_score = 3;
-    else if (state.fg >= 40) fg_score = 2;
-    else if (state.fg >= 20) fg_score = 1;
-    else fg_score = 0;
-  }
-  // Fed (10pts)
-  let fed_score = 5; // default middle
-  if (state.fed === 'cut2') fed_score = 10;
-  else if (state.fed === 'cut1') fed_score = 5;
-  else if (state.fed === 'hike') { fed_score = 0; vetoTriggered = true; }
-  // DXY (7pts)
+  // ---- MODULE 1: 宏观环境 (25pts) ----
+  // 美联储方向 (10pts) — 流动性最核心驱动
+  let fed_score = 5; // default: 暂停
+  if (state.fed === 'cut2') fed_score = 10;       // 连续降息
+  else if (state.fed === 'cut1') fed_score = 7;   // 降息1次/暂停偏鸽
+  else if (state.fed === 'hold') fed_score = 5;   // 观望
+  else if (state.fed === 'hike') { fed_score = 0; vetoTriggered = true; } // 加息=一票否决
+
+  // DXY美元指数 (7pts)
   let dxy_score = 4; // default
   if (state.dxy !== null) {
-    if (state.dxy < 101) dxy_score = 7;
-    else if (state.dxy <= 105) dxy_score = 4;
-    else dxy_score = 0;
+    if (state.dxy < 100) dxy_score = 7;       // 强烈利多
+    else if (state.dxy < 103) dxy_score = 5;  // 偏利多
+    else if (state.dxy <= 106) dxy_score = 3; // 中性偏压
+    else dxy_score = 0;                        // 强势美元利空
   }
-  // TIPS (5pts substituting for 8pts, scaled)
+
+  // TIPS实际利率 (5pts)
   let tips_score = 3; // default
   if (state.tips !== null) {
-    if (state.tips < 0.5) tips_score = 5;
+    if (state.tips < 0) tips_score = 5;          // 负实际利率，极度利多
+    else if (state.tips < 0.5) tips_score = 4;
     else if (state.tips <= 1.5) tips_score = 3;
-    else tips_score = 0;
+    else if (state.tips <= 2.5) tips_score = 1;
+    else tips_score = 0;                          // 高实际利率压制风险资产
   }
-  s1 = Math.min(25, fg_score + fed_score + dxy_score + tips_score);
 
-  // ---- MODULE 2: FLOW (25pts) ----
-  // Dominance (5pts)
-  let dom_score = 3;
-  if (state.dominance !== null) {
-    if (state.dominance >= 55) dom_score = 5;
-    else if (state.dominance >= 45) dom_score = 3;
-    else dom_score = 1;
+  // 恐惧贪婪指数 (3pts) — 情绪辅助参考
+  let fg_score = 1;
+  if (state.fg !== null) {
+    if (state.fg <= 20) fg_score = 3;      // 极度恐慌=买入机会
+    else if (state.fg <= 40) fg_score = 2; // 恐惧=偏好
+    else if (state.fg <= 60) fg_score = 1; // 中性
+    else if (state.fg <= 80) fg_score = 1; // 贪婪=谨慎
+    else fg_score = 0;                     // 极度贪婪=危险
   }
-  // ETF (10pts)
+  s1 = Math.min(25, fed_score + dxy_score + tips_score + fg_score);
+
+  // ---- MODULE 2: 资金流向 (25pts) ----
+  // ETF净流入 (10pts) — 机构资金最直接信号
   let etf_score = 5;
   if (state.etf5d !== null) {
-    if (state.etf5d > 5) etf_score = 10;
-    else if (state.etf5d >= -5) etf_score = 5;
-    else { etf_score = 0; }
+    if (state.etf5d > 10) etf_score = 10;       // 大幅净流入
+    else if (state.etf5d > 3) etf_score = 8;    // 稳定流入
+    else if (state.etf5d >= -3) etf_score = 5;  // 中性
+    else if (state.etf5d >= -10) etf_score = 2; // 净流出
+    else { etf_score = 0; }                      // 大幅净流出
   }
-  // Stablecoin (5pts)
+
+  // 稳定币扩张 (6pts) — 场外资金储备
   let stbl_score = 3;
-  if (state.stbl === 'expand') stbl_score = 5;
+  if (state.stbl === 'expand') stbl_score = 6;   // 场外子弹充足
   else if (state.stbl === 'flat') stbl_score = 3;
-  else if (state.stbl === 'shrink') stbl_score = 0;
-  // Funding Rate (5pts)
-  let fr_score = 3;
+  else if (state.stbl === 'shrink') stbl_score = 0; // 子弹消耗完
+
+  // BTC主导率 (5pts) — 判断牛市阶段
+  let dom_score = 3;
+  if (state.dominance !== null) {
+    if (state.dominance >= 58) dom_score = 5;    // 高主导率=BTC强势期
+    else if (state.dominance >= 50) dom_score = 4;
+    else if (state.dominance >= 43) dom_score = 2; // 山寨季
+    else dom_score = 1;
+  }
+
+  // 资金费率 (4pts) — 衍生品市场温度
+  let fr_score = 2;
   if (state.fr !== null) {
-    if (state.fr >= 0 && state.fr <= 0.03) fr_score = 5;
-    else if (state.fr > 0.03 && state.fr <= 0.05) fr_score = 2;
-    else if (state.fr > 0.05) fr_score = 0;
-    else fr_score = 2; // negative rate
+    if (state.fr < 0) fr_score = 4;              // 负费率=空头过多=反弹信号
+    else if (state.fr <= 0.01) fr_score = 4;     // 极低=冷静
+    else if (state.fr <= 0.03) fr_score = 3;     // 正常偏低
+    else if (state.fr <= 0.06) fr_score = 1;     // 偏高=多头拥挤
+    else fr_score = 0;                            // 极高=过热
   }
   s2 = Math.min(25, dom_score + etf_score + stbl_score + fr_score);
 
-  // ---- MODULE 3: ONCHAIN (30pts) ----
-  // MVRV (8pts)
-  let mvrv_score = 4;
+  // ---- MODULE 3: 链上估值 (30pts) ----
+  // MVRV Z-Score (9pts) — 最核心的市场估值指标
+  let mvrv_score = 5; // default中性
   if (state.mvrv !== null) {
-    if (state.mvrv < 0) mvrv_score = 8;
-    else if (state.mvrv < 3) mvrv_score = 7;
-    else if (state.mvrv < 6) mvrv_score = 4;
-    else { mvrv_score = 0; vetoTriggered = true; }
+    if (state.mvrv < 0) mvrv_score = 9;          // 极度低估
+    else if (state.mvrv < 1) mvrv_score = 8;     // 低估
+    else if (state.mvrv < 3) mvrv_score = 6;     // 健康
+    else if (state.mvrv < 6) mvrv_score = 3;     // 偏高
+    else { mvrv_score = 0; vetoTriggered = true; } // 极度高估=一票否决
   }
-  // NUPL (5pts)
-  let nupl_score = 3;
-  if (state.nupl !== null) {
-    if (state.nupl < 0) nupl_score = 5;
-    else if (state.nupl <= 0.5) nupl_score = 4;
-    else if (state.nupl <= 0.75) nupl_score = 2;
-    else { nupl_score = 0; vetoTriggered = true; }
-  }
-  // Puell (5pts)
-  let puell_score = 3;
-  if (state.puell !== null) {
-    if (state.puell < 0.5) puell_score = 5;
-    else if (state.puell <= 2) puell_score = 4;
-    else if (state.puell <= 4) puell_score = 2;
-    else puell_score = 0;
-  }
-  // LTH (7pts)
-  let lth_score = 2;
-  if (state.lth === 'accumulate') lth_score = 4;
-  else if (state.lth === 'neutral') lth_score = 2;
-  else if (state.lth === 'distribute') lth_score = 0;
 
-  // LTH MVRV Z-Score (5分): <1极度低估=5, 1-2健康=4, 2-3偏高=2, >3过热=0
-  let lthmvrv_score = 3; // 默认中性
+  // LTH MVRV Z-Score (7pts) — 长期持有者专项估值
+  let lthmvrv_score = 4; // default中性
   if (state.lthmvrv !== null) {
-    if (state.lthmvrv < 1) lthmvrv_score = 5;
-    else if (state.lthmvrv < 2) lthmvrv_score = 4;
-    else if (state.lthmvrv < 3) lthmvrv_score = 2;
-    else lthmvrv_score = 0;
+    if (state.lthmvrv < 0) lthmvrv_score = 7;    // LTH亏损持有=强烈低估
+    else if (state.lthmvrv < 1) lthmvrv_score = 6;
+    else if (state.lthmvrv < 2) lthmvrv_score = 5; // LTH轻微盈利=健康
+    else if (state.lthmvrv < 3.5) lthmvrv_score = 3; // LTH高度盈利=注意
+    else lthmvrv_score = 0;                        // LTH极度盈利=分发风险
   }
 
-  s3 = Math.min(30, mvrv_score + nupl_score + puell_score + lth_score + lthmvrv_score);
+  // NUPL (7pts) — 全网未实现盈亏
+  let nupl_score = 4; // default中性
+  if (state.nupl !== null) {
+    if (state.nupl < 0) nupl_score = 7;           // 全网亏损=抄底机会
+    else if (state.nupl < 0.25) nupl_score = 6;  // 希望/恐惧区
+    else if (state.nupl <= 0.5) nupl_score = 5;  // 乐观/信念区
+    else if (state.nupl <= 0.75) nupl_score = 2; // 贪婪=减仓警告
+    else { nupl_score = 0; vetoTriggered = true; } // 极度狂热=一票否决
+  }
 
-  // ---- MODULE 4: RISK/REWARD (20pts) ----
-  // ATH distance (5pts)
+  // Puell Multiple (4pts) — 矿工收入周期
+  let puell_score = 2; // default
+  if (state.puell !== null) {
+    if (state.puell < 0.5) puell_score = 4;      // 矿工极度承压=历史底部
+    else if (state.puell <= 1.5) puell_score = 3; // 正常区间
+    else if (state.puell <= 3) puell_score = 2;
+    else if (state.puell <= 5) puell_score = 1;
+    else puell_score = 0;                          // 矿工暴利=顶部信号
+  }
+
+  // LTH Supply趋势 (3pts) — 聪明钱行为
+  let lth_score = 1;
+  if (state.lth === 'accumulate') lth_score = 3;  // LTH增持=强烈看好
+  else if (state.lth === 'neutral') lth_score = 2;
+  else if (state.lth === 'distribute') lth_score = 0; // LTH派发=减仓信号
+
+  s3 = Math.min(30, mvrv_score + lthmvrv_score + nupl_score + puell_score + lth_score);
+
+  // ---- MODULE 4: 赔率/周期 (20pts) ----
+  // MA200偏离度 (6pts) — 最直观的价格位置指标
+  let ma200_score = 3; // default
+  if (state.ma200dev !== null) {
+    if (state.ma200dev < -20) ma200_score = 6;      // 大幅低于均线=历史性机会
+    else if (state.ma200dev < 0) ma200_score = 5;   // 低于均线=低估
+    else if (state.ma200dev <= 15) ma200_score = 4; // 略高于均线=健康
+    else if (state.ma200dev <= 40) ma200_score = 2; // 明显高于均线=偏贵
+    else ma200_score = 0;                            // 严重偏离=极度泡沫
+  }
+
+  // 距历史高点 (5pts) — 赔率直接体现
   let ath_score = 2;
   if (state.athPct !== null) {
-    const d = Math.abs(state.athPct); // positive number, how far below ATH
-    if (d > 40) ath_score = 5;
-    else if (d > 20) ath_score = 3;
-    else ath_score = 1;
+    const d = Math.abs(state.athPct);
+    if (d > 60) ath_score = 5;      // 距高点>60%=历史级低估
+    else if (d > 40) ath_score = 4; // 腰斩=高赔率
+    else if (d > 20) ath_score = 3; // 中度回调
+    else if (d > 10) ath_score = 2; // 接近高点
+    else ath_score = 1;             // 创新高附近
   }
-  // MA200 deviation (5pts)
-  let ma200_score = 2;
-  if (state.ma200dev !== null) {
-    const dev = Math.abs(state.ma200dev);
-    if (dev <= 15 && state.ma200dev > 0) ma200_score = 4; // slightly above, good
-    else if (state.ma200dev < 0) ma200_score = 5; // below MA200 = cheap (but risky)
-    else if (dev <= 30) ma200_score = 3;
-    else ma200_score = 1; // far above = expensive
-  }
-  // Halving cycle (5pts) - last halving April 2024
+
+  // 减半周期位置 (5pts)
   const halvingDate = new Date('2024-04-19');
   const now = new Date();
   const monthsSinceHalving = (now - halvingDate) / (1000*60*60*24*30);
   let halving_score;
-  if (monthsSinceHalving >= 6 && monthsSinceHalving <= 18) halving_score = 5; // historical bull window
-  else if (monthsSinceHalving < 6 || (monthsSinceHalving > 18 && monthsSinceHalving <= 24)) halving_score = 3;
-  else halving_score = 2;
-  // 30d change (5pts)
-  let p30_score = 3;
+  if (monthsSinceHalving >= 6 && monthsSinceHalving <= 18) halving_score = 5;  // 历史牛市窗口
+  else if (monthsSinceHalving > 18 && monthsSinceHalving <= 30) halving_score = 3; // 牛市尾段
+  else if (monthsSinceHalving < 6) halving_score = 3; // 减半后初期
+  else halving_score = 1; // 熊市区间
+
+  // 30日价格变化 (4pts) — 动量参考
+  let p30_score = 2;
   if (state.p30d !== null) {
-    if (state.p30d > -10 && state.p30d < 30) p30_score = 5; // healthy range
-    else if (state.p30d <= -20) p30_score = 4; // dip = opportunity
-    else if (state.p30d > 50) p30_score = 1; // overbought
-    else p30_score = 3;
+    if (state.p30d <= -30) p30_score = 4;           // 深度回调=买入机会
+    else if (state.p30d <= -15) p30_score = 3;      // 中度回调
+    else if (state.p30d > -15 && state.p30d < 20) p30_score = 2; // 正常波动
+    else if (state.p30d >= 20 && state.p30d < 40) p30_score = 1; // 短期过热
+    else p30_score = 0;                              // 月涨>40%=严重过热
   }
-  s4 = Math.min(20, ath_score + ma200_score + halving_score + p30_score);
+  s4 = Math.min(20, ma200_score + ath_score + halving_score + p30_score);
 
   let total = s1 + s2 + s3 + s4;
   let grade, title, desc, verdictClass;
 
   if (vetoTriggered) {
     grade = 'D'; total = Math.min(total, 45);
-    title = '⛔ 一票否决触发 — 不建议投入';
-    desc = '检测到极端风险信号（链上过热 / 加息周期）。即便其他指标良好，此时入场风险极高。';
+    title = '⛔ 一票否决 — 立即停止买入';
+    desc = '⚠️ 检测到极端风险信号（链上严重过热 / 主动加息周期 / NUPL狂热）。操作建议：停止新增仓位，已有仓位减至底仓20-30%，等待信号解除。';
     verdictClass = 'verdict-D';
-  } else if (total >= 80) {
-    grade = 'A'; title = '✅ 值得投入 — 可分批建仓';
-    desc = '宏观、资金、链上、赔率四维均较为友好。建议分3-5批建仓，不追单日大阳线。';
+  } else if (total >= 82) {
+    grade = 'A+'; title = '🚀 重仓机会 — 历史级低估';
+    desc = '四维指标高度共振，出现历史级买入机会（通常对应大熊市底部）。操作建议：可重仓3-5批建仓，总仓位可达计划上限的80-100%，每跌5%加一批。';
     verdictClass = 'verdict-A';
-  } else if (total >= 65) {
-    grade = 'B'; title = '🟡 可以投 — 轻仓定投优先';
-    desc = '整体信号偏正面但存在不确定性。适合定投或小仓位试探，不建议重仓追高。';
+  } else if (total >= 72) {
+    grade = 'A'; title = '✅ 积极建仓 — 赔率良好';
+    desc = '宏观、资金、链上、赔率四维均较为友好，整体偏向低估。操作建议：分3-5批建仓，总仓位60-80%，不追单日大阳线，逢回调加仓。';
+    verdictClass = 'verdict-A';
+  } else if (total >= 60) {
+    grade = 'B'; title = '🟡 轻仓参与 — 定投为主';
+    desc = '信号偏正面但存在不确定性，市场处于中性偏多区间。操作建议：定投为主，仓位控制在30-50%，不追高，等待更好的入场点。';
     verdictClass = 'verdict-B';
-  } else if (total >= 50) {
-    grade = 'C'; title = '⏸ 观察期 — 等待更好赔率';
-    desc = '当前信号混杂，没有出现明显的低估或高风险信号。等待更确定性信号出现。';
+  } else if (total >= 45) {
+    grade = 'C'; title = '⏸ 观望等待 — 赔率不足';
+    desc = '当前信号混杂，估值偏贵或宏观不明朗。操作建议：维持底仓（10-20%），暂停新增，等待MVRV/NUPL回落或宏观改善再行动。';
     verdictClass = 'verdict-C';
   } else {
-    grade = 'D'; title = '❌ 不建议投入 — 赔率太差';
-    desc = '宏观逆风 / 估值偏贵 / 资金面弱。不是 BTC 没有长期价值，是当前时点性价比不足。';
+    grade = 'D'; title = '❌ 清仓观望 — 风险大于机会';
+    desc = '宏观逆风 + 估值偏贵 + 资金面弱，多重不利信号叠加。操作建议：减仓至底仓或空仓，等待至少2-3个维度出现明显改善后再重新评估。';
     verdictClass = 'verdict-D';
   }
 
@@ -1113,20 +1146,20 @@ function render() {
   setBar('m2fr_bar', barWidth(sc.fr_score,5), barColor(sc.fr_score,5));
 
   // M3
-  setText('m3mvrv', state.mvrv!==null? state.mvrv+' ('+sc.mvrv_score+'/8)' : '--');
-  setBar('m3mvrv_bar', barWidth(sc.mvrv_score,8), barColor(sc.mvrv_score,8));
-  setText('m3nupl', state.nupl!==null? state.nupl+' ('+sc.nupl_score+'/5)' : '--');
-  setBar('m3nupl_bar', barWidth(sc.nupl_score,5), barColor(sc.nupl_score,5));
-  setText('m3puell', state.puell!==null? state.puell+' ('+sc.puell_score+'/5)' : '--');
-  setBar('m3puell_bar', barWidth(sc.puell_score,5), barColor(sc.puell_score,5));
-  setText('m3lth', state.lth? ({accumulate:'增持',neutral:'横盘',distribute:'派发'}[state.lth]+' ('+sc.lth_score+'/4)') : '--');
-  setBar('m3lth_bar', barWidth(sc.lth_score,4), barColor(sc.lth_score,4));
-  setText('m3lthmvrv', state.lthmvrv!==null? state.lthmvrv+' ('+sc.lthmvrv_score+'/5)' : '--');
-  setBar('m3lthmvrv_bar', barWidth(sc.lthmvrv_score,5), barColor(sc.lthmvrv_score,5));
+  setText('m3mvrv', state.mvrv!==null? state.mvrv+' ('+sc.mvrv_score+'/9)' : '--');
+  setBar('m3mvrv_bar', barWidth(sc.mvrv_score,9), barColor(sc.mvrv_score,9));
+  setText('m3nupl', state.nupl!==null? state.nupl+' ('+sc.nupl_score+'/7)' : '--');
+  setBar('m3nupl_bar', barWidth(sc.nupl_score,7), barColor(sc.nupl_score,7));
+  setText('m3puell', state.puell!==null? state.puell+' ('+sc.puell_score+'/4)' : '--');
+  setBar('m3puell_bar', barWidth(sc.puell_score,4), barColor(sc.puell_score,4));
+  setText('m3lth', state.lth? ({accumulate:'增持',neutral:'横盘',distribute:'派发'}[state.lth]+' ('+sc.lth_score+'/3)') : '--');
+  setBar('m3lth_bar', barWidth(sc.lth_score,3), barColor(sc.lth_score,3));
+  setText('m3lthmvrv', state.lthmvrv!==null? state.lthmvrv+' ('+sc.lthmvrv_score+'/7)' : '--');
+  setBar('m3lthmvrv_bar', barWidth(sc.lthmvrv_score,7), barColor(sc.lthmvrv_score,7));
 
   // M4
   if(state.athPct!==null){ setText('m4ath', state.athPct.toFixed(1)+'% ('+sc.ath_score+'/5)'); setBar('m4ath_bar', barWidth(sc.ath_score,5), barColor(sc.ath_score,5)); }
-  if(state.ma200dev!==null){ setText('m4ma200', (state.ma200dev>=0?'+':'')+state.ma200dev.toFixed(1)+'% ('+sc.ma200_score+'/5)'); setBar('m4ma200_bar', barWidth(sc.ma200_score,5), barColor(sc.ma200_score,5)); }
+  if(state.ma200dev!==null){ setText('m4ma200', (state.ma200dev>=0?'+':'')+state.ma200dev.toFixed(1)+'% ('+sc.ma200_score+'/5)'); setBar('m4ma200_bar', barWidth(sc.ma200_score,6), barColor(sc.ma200_score,6)); }
   const hm = sc.monthsSinceHalving;
   const halvLabel = hm < 6 ? '减半后<6个月' : hm <= 18 ? `减半后${hm.toFixed(0)}个月（历史牛市窗口）` : `减半后${hm.toFixed(0)}个月`;
   setText('m4halving', halvLabel+' ('+sc.halving_score+'/5)');
