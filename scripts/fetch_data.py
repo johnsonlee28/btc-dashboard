@@ -114,6 +114,43 @@ def fetch_farside_etf():
     except Exception as e:
         log(f"  ⚠️ ETF 解析异常: {e}")
         return None
+
+# ============================================================
+# 0. BTC 价格 - CoinGecko（服务端抓，绕过浏览器限流）
+# ============================================================
+def fetch_btc_price():
+    log("抓取 BTC 价格 (CoinGecko)...")
+    try:
+        import json as _json
+        url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true&include_market_cap=false"
+        data = http_get(url)
+        if data:
+            d = _json.loads(data)
+            btc = d.get("bitcoin", {})
+            price = btc.get("usd")
+            change24h = btc.get("usd_24h_change")
+            if price:
+                log(f"  ✅ BTC 价格: ${price:,.0f} ({change24h:+.2f}%)")
+                return {"price": price, "change24h": round(change24h, 2) if change24h else None}
+    except Exception as e:
+        log(f"  ⚠️ 价格抓取失败: {e}")
+    
+    # 备用：Binance API
+    try:
+        import json as _json
+        data = http_get("https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT")
+        if data:
+            d = _json.loads(data)
+            price = float(d.get("lastPrice", 0))
+            change24h = float(d.get("priceChangePercent", 0))
+            if price:
+                log(f"  ✅ BTC 价格(Binance): ${price:,.0f} ({change24h:+.2f}%)")
+                return {"price": price, "change24h": round(change24h, 2)}
+    except Exception as e:
+        log(f"  ⚠️ Binance备用也失败: {e}")
+    
+    return None
+
 # ============================================================
 # 2. 链上指标 - lookintobitcoin.com
 # ============================================================
@@ -311,6 +348,7 @@ def main():
     data = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "timestamp_cn": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "price": None,
         "etf": None,
         "onchain": {"mvrv_zscore": None, "nupl": None},
         "fed": None,
@@ -325,6 +363,9 @@ def main():
         data["etf"] = etf
     time.sleep(2)
 
+    btc_price = fetch_btc_price()
+    if btc_price:
+        data["price"] = btc_price
     onchain = fetch_lookintobitcoin()
     data["onchain"] = onchain
     time.sleep(2)
