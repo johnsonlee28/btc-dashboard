@@ -780,16 +780,31 @@ const state = {
 // ============================================================
 // FETCH AUTO DATA
 // ============================================================
+async function cgFetch(url, retries=3) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const res = await fetch(url);
+      if (res.status === 429) {
+        await new Promise(r => setTimeout(r, 2000 * (i+1)));
+        continue;
+      }
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return await res.json();
+    } catch(e) {
+      if (i === retries-1) throw e;
+      await new Promise(r => setTimeout(r, 1500 * (i+1)));
+    }
+  }
+}
+
 async function fetchCoingecko() {
   try {
-    const [priceRes, globalRes, chartRes] = await Promise.all([
-      fetch('https://api.coingecko.com/api/v3/coins/bitcoin?localization=false&tickers=false&community_data=false&developer_data=false'),
-      fetch('https://api.coingecko.com/api/v3/global'),
-      fetch('https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=200&interval=daily')
-    ]);
-    const price = await priceRes.json();
-    const global = await globalRes.json();
-    const chart = await chartRes.json();
+    // 串行请求，避免同时触发限流
+    const price = await cgFetch('https://api.coingecko.com/api/v3/coins/bitcoin?localization=false&tickers=false&community_data=false&developer_data=false');
+    await new Promise(r => setTimeout(r, 600));
+    const global = await cgFetch('https://api.coingecko.com/api/v3/global');
+    await new Promise(r => setTimeout(r, 600));
+    const chart = await cgFetch('https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=200&interval=daily');
 
     const md = price.market_data;
     state.price = md.current_price.usd;
