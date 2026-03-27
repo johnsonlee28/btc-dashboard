@@ -1,0 +1,13 @@
+{
+  "rewrites": [
+    { "source": "/eth", "destination": "/eth.html" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" }
+      ]
+    }
+  ]
+}
