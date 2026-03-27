@@ -64,24 +64,56 @@ def ask_deepseek(prompt, content, max_tokens=300):
 # ============================================================
 def fetch_farside_etf():
     log("抓取 ETF 流入 (farside.co.uk)...")
-    html = http_get("https://farside.co.uk/bitcoin-etf/")
+    html = http_get("https://farside.co.uk/bitcoin-etf/", headers={"Referer": "https://www.google.com/"})
     if not html:
+        log("  ⚠️ ETF 页面抓取失败")
         return None
+    try:
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(html, "html.parser")
+        tables = soup.find_all("table")
+        target = None
+        for t in tables:
+            rows = t.find_all("tr")
+            if len(rows) > 10:
+                header = [c.get_text(strip=True) for c in rows[0].find_all(["th","td"])]
+                if "Date" in header and "Total" in header:
+                    target = (t, rows, header)
+                    break
+        if not target:
+            log("  ⚠️ 未找到ETF表格")
+            return None
+        t, rows, header = target
+        total_idx = header.index("Total")
 
-    result = ask_deepseek(
-        """这是farside.co.uk比特币现货ETF流入表格页面。
-        请找出最近5个有数据的交易日，各日所有ETF的净流入合计（Total列，单位百万美元，负数=流出）。
-        返回JSON：{"days":[d1,d2,d3,d4,d5], "sum5d": 5天合计, "latest_date":"YYYY-MM-DD"}
-        如果Total列不存在，请自行加总各ETF列数据。
-        数值必须是数字类型，不是字符串。""",
-        html
-    )
-    if result and isinstance(result.get('sum5d'), (int, float)):
-        log(f"  ✅ ETF 5日净流入: ${result['sum5d']}M (最新: {result.get('latest_date','')})")
-        return result
-    log("  ⚠️ ETF 数据解析失败")
-    return None
+        def parse_val(text):
+            text = text.strip().replace(",", "")
+            if not text or text in ["-", "—"]: return None
+            if text.startswith("(") and text.endswith(")"):
+                try: return -float(text[1:-1])
+                except: return None
+            try: return float(text)
+            except: return None
 
+        skip = {"total", "average", "maximum", "minimum", ""}
+        valid = []
+        for row in rows[1:]:
+            cols = row.find_all(["td","th"])
+            if len(cols) <= total_idx: continue
+            date = cols[0].get_text(strip=True)
+            if date.lower() in skip: continue
+            val = parse_val(cols[total_idx].get_text(strip=True))
+            if val is not None:
+                valid.append({"date": date, "value": val})
+
+        recent5 = valid[-5:] if len(valid) >= 5 else valid
+        sum5d = round(sum(d["value"] for d in recent5), 1)
+        latest = recent5[-1]["date"] if recent5 else ""
+        log(f"  ✅ ETF 5日净流入: ${sum5d}M | 最新: {latest} | 明细: {[round(d['value'],1) for d in recent5]}")
+        return {"sum5d": sum5d, "days": [d["value"] for d in recent5], "latest_date": latest, "source": "farside_parsed"}
+    except Exception as e:
+        log(f"  ⚠️ ETF 解析异常: {e}")
+        return None
 # ============================================================
 # 2. 链上指标 - lookintobitcoin.com
 # ============================================================
