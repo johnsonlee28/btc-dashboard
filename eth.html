@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ETH 链上观察 | 以太坊筹码集中度分析 | 算盘</title>
+<meta name="description" content="以太坊链上筹码分布观察：鲸鱼持仓占比、地址分布热力图、交易所净流量、质押集中度，实时追踪庄家筹码动向。">
+<meta name="keywords" content="以太坊链上数据,ETH鲸鱼持仓,筹码集中度,ETH链上分析,以太坊庄家,ETH持仓分布">
+<link rel="canonical" href="https://btc.zhixingshe.cc/eth">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://btc.zhixingshe.cc/eth">
+<meta property="og:title" content="ETH 链上观察 | 筹码集中度分析">
+<meta property="og:description" content="追踪以太坊鲸鱼筹码分布、交易所净流量，判断大户建仓/派发状态。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:site_name" content="知行社 · 算盘">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #111118;
+    --bg3: #1a1a24;
+    --border: #2a2a3a;
+    --text: #e8e8f0;
+    --muted: #888899;
+    --accent: #627eea; /* ETH purple-blue */
+    --accent2: #8a9ff5;
+    --green: #00d4aa;
+    --red: #ff4466;
+    --yellow: #ffcc00;
+    --blue: #4488ff;
+    --purple: #aa66ff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, 'PingFang SC', 'Helvetica Neue', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  a { color: var(--accent2); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* HEADER */
+  .header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .logo { font-size: 28px; }
+  .title-block h1 { font-size: 18px; font-weight: 700; color: var(--accent); }
+  .title-block p { font-size: 12px; color: var(--muted); }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .last-updated { font-size: 12px; color: var(--muted); text-align: right; }
+  .refresh-btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+    transition: opacity 0.2s;
+  }
+  .refresh-btn:hover { opacity: 0.85; }
+  .refresh-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .nav-link {
+    font-size: 13px;
+    color: var(--muted);
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: all 0.2s;
+  }
+  .nav-link:hover { color: var(--text); border-color: var(--accent); text-decoration: none; }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 20px 16px 40px; }
+
+  /* SIGNAL BOX */
+  .signal-box {
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    border: 1px solid var(--border);
+    background: var(--bg2);
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .signal-grade {
+    font-size: 56px;
+    font-weight: 900;
+    line-height: 1;
+    min-width: 70px;
+    text-align: center;
+  }
+  .grade-accumulate { color: var(--green); }
+  .grade-neutral { color: var(--yellow); }
+  .grade-distribute { color: var(--red); }
+  .signal-text h2 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+  .signal-text p { color: var(--muted); font-size: 13px; max-width: 600px; }
+  .signal-score { margin-left: auto; text-align: center; min-width: 100px; }
+  .signal-score .score-num { font-size: 36px; font-weight: 800; color: var(--accent); }
+  .signal-score .score-label { font-size: 11px; color: var(--muted); }
+
+  /* SECTION */
+  .section { margin-bottom: 32px; }
+  .section-title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title .icon { font-size: 16px; }
+
+  /* METRIC GRID */
+  .metric-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+  }
+  .metric-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    transition: border-color 0.2s;
+  }
+  .metric-card:hover { border-color: var(--accent); }
+  .metric-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .metric-value { font-size: 22px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .metric-sub { font-size: 11px; color: var(--muted); }
+  .metric-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-top: 4px;
+  }
+  .badge-bull { background: rgba(0,212,170,0.15); color: var(--green); }
+  .badge-bear { background: rgba(255,68,102,0.15); color: var(--red); }
+  .badge-neutral { background: rgba(255,204,0,0.15); color: var(--yellow); }
+
+  /* SCORE ROW */
+  .score-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 8px;
+  }
+  .score-row-icon { font-size: 18px; width: 24px; text-align: center; }
+  .score-row-label { flex: 1; font-size: 13px; }
+  .score-row-label small { color: var(--muted); font-size: 11px; display: block; }
+  .score-row-val { font-size: 13px; font-weight: 600; min-width: 140px; text-align: right; }
+  .score-bar-wrap { width: 80px; background: var(--border); border-radius: 3px; height: 6px; flex-shrink: 0; }
+  .score-bar { height: 6px; border-radius: 3px; transition: width 0.5s; }
+
+  /* DISTRIBUTION TABLE */
+  .dist-table { width: 100%; border-collapse: collapse; }
+  .dist-table th {
+    text-align: left;
+    padding: 8px 12px;
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--border);
+  }
+  .dist-table td {
+    padding: 10px 12px;
+    font-size: 13px;
+    border-bottom: 1px solid rgba(42,42,58,0.5);
+    vertical-align: middle;
+  }
+  .dist-table tr:last-child td { border-bottom: none; }
+  .dist-table .rank { color: var(--muted); font-size: 12px; }
+  .dist-bar-cell { width: 120px; }
+  .dist-mini-bar { height: 4px; background: var(--accent); border-radius: 2px; opacity: 0.7; }
+
+  /* ALERT BOX */
+  .alert-box {
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .alert-bull { background: rgba(0,212,170,0.08); border: 1px solid rgba(0,212,170,0.25); }
+  .alert-bear { background: rgba(255,68,102,0.08); border: 1px solid rgba(255,68,102,0.25); }
+  .alert-neutral { background: rgba(255,204,0,0.08); border: 1px solid rgba(255,204,0,0.25); }
+  .alert-icon { font-size: 16px; flex-shrink: 0; }
+  .alert-text strong { display: block; margin-bottom: 2px; }
+  .alert-text span { color: var(--muted); font-size: 12px; }
+
+  /* INTERPRETATION */
+  .interp-box {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.8;
+  }
+  .interp-box strong { color: var(--text); }
+
+  /* DATA SOURCE TAG */
+  .data-source-tag {
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 3px 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .dot-live { width: 6px; height: 6px; background: var(--green); border-radius: 50%; display: inline-block; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* LOADING */
+  .loading-placeholder {
+    color: var(--muted);
+    font-size: 13px;
+    padding: 20px;
+    text-align: center;
+    animation: blink 1.5s infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* FOOTER */
+  .footer {
+    border-top: 1px solid var(--border);
+    padding: 20px 24px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .footer a { color: var(--muted); }
+
+  @media(max-width:600px) {
+    .signal-box { flex-direction: column; gap: 12px; }
+    .signal-score { margin-left: 0; }
+    .score-bar-wrap { display: none; }
+    .metric-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="logo">⟠</div>
+    <div class="title-block">
+      <h1>ETH 链上观察</h1>
+      <p>以太坊筹码集中度 · 链上资金分布 · 庄家行为追踪</p>
+    </div>
+  </div>
+  <div class="header-right">
+    <a href="/" class="nav-link">← BTC 评分仪表盘</a>
+    <div>
+      <div class="last-updated" id="lastUpdated">加载中...</div>
+      <div id="autoDataTime" style="display:none;font-size:11px;color:var(--muted);text-align:right;"></div>
+    </div>
+    <button class="refresh-btn" onclick="loadAll()" id="refreshBtn">🔄 刷新</button>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- 综合信号 -->
+  <div class="signal-box" id="signalBox">
+    <div class="signal-grade grade-neutral" id="signalGrade">?</div>
+    <div class="signal-text">
+      <h2 id="signalTitle">加载中...</h2>
+      <p id="signalDesc">正在获取链上数据...</p>
+    </div>
+    <div class="signal-score">
+      <div class="score-num" id="signalScore">--</div>
+      <div class="score-label">综合评分</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:4px;">满分 30</div>
+    </div>
+  </div>
+
+  <!-- 核心指标 -->
+  <div class="section">
+    <div class="section-title"><span class="icon">📊</span> 核心链上指标</div>
+    <div class="metric-grid">
+      <div class="metric-card">
+        <div class="metric-label">ETH 当前价格</div>
+        <div class="metric-value" id="ethPrice">--</div>
+        <div class="metric-sub" id="ethPriceChange">24h涨跌: --</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">总持币地址数</div>
+        <div class="metric-value" id="holderCount">--</div>
+        <div class="metric-sub">持有 > 0 ETH</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">活跃地址 (7日均)</div>
+        <div class="metric-value" id="activeAddr">--</div>
+        <div class="metric-sub" id="activeAddrSub">链上活跃度</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">流通供应量</div>
+        <div class="metric-value" id="totalSupply">--</div>
+        <div class="metric-sub" id="stakedPct">质押占比: --</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 筹码集中度评分 -->
+  <div class="section">
+    <div class="section-title"><span class="icon">🎯</span> 筹码集中度评分</div>
+
+    <div class="score-row">
+      <div class="score-row-icon">🐳</div>
+      <div class="score-row-label">
+        鲸鱼持仓占比（前100地址）
+        <small>占比越高 = 筹码越集中 = 庄家控盘越强</small>
+      </div>
+      <div class="score-bar-wrap"><div class="score-bar" id="whale100_bar" style="width:0%;background:var(--accent)"></div></div>
+      <div class="score-row-val" id="whale100_val">--</div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-row-icon">🏦</div>
+      <div class="score-row-label">
+        交易所净流出（7日）
+        <small>净流出 = 鲸鱼囤币 = 供给减少（看多信号）</small>
+      </div>
+      <div class="score-bar-wrap"><div class="score-bar" id="exflow_bar" style="width:0%"></div></div>
+      <div class="score-row-val" id="exflow_val">--</div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-row-icon">💎</div>
+      <div class="score-row-label">
+        长期持有者占比（>1年不动）
+        <small>占比越高 = 钻石手越多 = 抛压越小</small>
+      </div>
+      <div class="score-bar-wrap"><div class="score-bar" id="lth_bar" style="width:0%;background:var(--green)"></div></div>
+      <div class="score-row-val" id="lth_val">--</div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-row-icon">⚡</div>
+      <div class="score-row-label">
+        质押集中度（前5验证者组）
+        <small>集中度高可能引发去中心化质疑</small>
+      </div>
+      <div class="score-bar-wrap"><div class="score-bar" id="stake_bar" style="width:0%;background:var(--yellow)"></div></div>
+      <div class="score-row-val" id="stake_val">--</div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-row-icon">📉</div>
+      <div class="score-row-label">
+        ETH 销毁速率（EIP-1559）
+        <small>销毁越快 = 通缩压力越强 = 供给减少</small>
+      </div>
+      <div class="score-bar-wrap"><div class="score-bar" id="burn_bar" style="width:0%;background:var(--purple)"></div></div>
+      <div class="score-row-val" id="burn_val">--</div>
+    </div>
+
+    <div class="score-row">
+      <div class="score-row-icon">🌊</div>
+      <div class="score-row-label">
+        稳定币在ETH上市值
+        <small>稳定币增加 = 场外资金蓄势 = 潜在买入力量</small>
+      </div>
+      <div class="score-bar-wrap"><div class="score-bar" id="stbl_bar" style="width:0%;background:var(--blue)"></div></div>
+      <div class="score-row-val" id="stbl_val">--</div>
+    </div>
+  </div>
+
+  <!-- 地址分布 -->
+  <div class="section">
+    <div class="section-title"><span class="icon">📍</span> 持仓地址分层分布</div>
+    <div style="overflow-x:auto;">
+      <table class="dist-table" id="distTable">
+        <thead>
+          <tr>
+            <th>持仓层级</th>
+            <th>地址数量</th>
+            <th>持仓 ETH</th>
+            <th>占总供给</th>
+            <th></th>
+            <th>信号意义</th>
+          </tr>
+        </thead>
+        <tbody id="distTableBody">
+          <tr><td colspan="6" class="loading-placeholder">数据加载中...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 交易所流量 -->
+  <div class="section">
+    <div class="section-title"><span class="icon">🏛️</span> 主要交易所 ETH 储备</div>
+    <div class="metric-grid" id="exchangeGrid">
+      <div class="loading-placeholder" style="grid-column:1/-1">加载中...</div>
+    </div>
+  </div>
+
+  <!-- 信号解读 -->
+  <div class="section">
+    <div class="section-title"><span class="icon">🔍</span> 庄家行为信号</div>
+    <div id="signalAlerts">
+      <div class="loading-placeholder">加载中...</div>
+    </div>
+  </div>
+
+  <!-- 如何看懂这个页面 -->
+  <div class="section">
+    <div class="section-title"><span class="icon">📖</span> 如何解读筹码集中度</div>
+    <div class="interp-box">
+      <p>
+        <strong>筹码集中度（Supply Concentration）</strong> 是判断庄家控盘程度的核心链上指标。
+        核心逻辑：如果大量 ETH 集中在少数地址（鲸鱼）中，市场价格更容易被这些大户影响。
+      </p>
+      <br>
+      <p>
+        📈 <strong>建仓信号</strong>：鲸鱼地址持仓占比上升 + 交易所 ETH 持续净流出 + 长期持有者增多
+        → 大概率庄家在默默囤货，短期拉盘概率增加。
+      </p>
+      <br>
+      <p>
+        📉 <strong>派发信号</strong>：交易所 ETH 净流入增加 + 鲸鱼持仓减少 + 链上大额转账增多
+        → 大概率庄家开始出货，警惕顶部风险。
+      </p>
+      <br>
+      <p>
+        ⚖️ <strong>重要前提</strong>：链上数据是辅助工具，不是水晶球。
+        部分"鲸鱼地址"实际上是交易所冷钱包或 ETF 托管地址，需结合背景判断。
+        本页数据每日自动更新，数据源：Etherscan · CoinGecko · DefiLlama。
+      </p>
+    </div>
+  </div>
+
+  <!-- 数据来源 -->
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px;">
+    <span class="data-source-tag"><span class="dot-live"></span> CoinGecko API</span>
+    <span class="data-source-tag">📊 Etherscan API</span>
+    <span class="data-source-tag">🦙 DefiLlama API</span>
+    <span class="data-source-tag">📡 每日自动更新</span>
+  </div>
+
+</div>
+
+<div class="footer">
+  <p>⟠ ETH 链上观察 · <a href="/">BTC 评分仪表盘</a> · <a href="https://zhixingshe.cc" target="_blank">知行社</a></p>
+  <p style="margin-top:6px">数据仅供参考，不构成投资建议。投资有风险，入市需谨慎。</p>
+</div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+const ethState = {
+  price: null,
+  priceChange24h: null,
+  holderCount: null,
+  activeAddr: null,
+  totalSupply: null,
+  stakedPct: null,
+  // Scores (each 0-5)
+  whale100Pct: null,    // top 100 addr hold pct
+  exflow7d: null,        // exchange netflow (ETH, positive = outflow = bullish)
+  lthPct: null,          // long term holder pct
+  stakeConc: null,       // staking concentration pct
+  burnRate: null,        // ETH burned per day
+  stblMcap: null,        // stablecoin mcap on ETH (billions)
+};
+
+// ============================================================
+// SCORE ENGINE
+// ============================================================
+function calcScores() {
+  const s = ethState;
+  const sc = {};
+
+  // 1. 鲸鱼集中度 (0-5): >40%=5, 35-40%=4, 30-35%=3, <30%=2
+  if (s.whale100Pct !== null) {
+    sc.whale = s.whale100Pct >= 40 ? 5 : s.whale100Pct >= 35 ? 4 : s.whale100Pct >= 30 ? 3 : 2;
+  } else { sc.whale = null; }
+
+  // 2. 交易所净流出 (0-5): >100k ETH=5, 50-100k=4, 0-50k=3, 净流入=1
+  if (s.exflow7d !== null) {
+    sc.exflow = s.exflow7d > 100000 ? 5 : s.exflow7d > 50000 ? 4 : s.exflow7d > 0 ? 3 : s.exflow7d > -50000 ? 2 : 1;
+  } else { sc.exflow = null; }
+
+  // 3. 长期持有者占比 (0-5): >65%=5, 60-65%=4, 55-60%=3, <55%=2
+  if (s.lthPct !== null) {
+    sc.lth = s.lthPct >= 65 ? 5 : s.lthPct >= 60 ? 4 : s.lthPct >= 55 ? 3 : 2;
+  } else { sc.lth = null; }
+
+  // 4. 质押集中度 (0-5): 适中=好, 越集中越低分（去中心化风险）
+  // <33%=5, 33-50%=4, 50-60%=3, >60%=2
+  if (s.stakeConc !== null) {
+    sc.stake = s.stakeConc < 33 ? 5 : s.stakeConc < 50 ? 4 : s.stakeConc < 60 ? 3 : 2;
+  } else { sc.stake = null; }
+
+  // 5. 销毁速率 (0-5): >5k/day=5, 3-5k=4, 1-3k=3, <1k=2
+  if (s.burnRate !== null) {
+    sc.burn = s.burnRate >= 5000 ? 5 : s.burnRate >= 3000 ? 4 : s.burnRate >= 1000 ? 3 : 2;
+  } else { sc.burn = null; }
+
+  // 6. 稳定币市值 (0-5): >100B=5, 70-100B=4, 50-70B=3, <50B=2
+  if (s.stblMcap !== null) {
+    sc.stbl = s.stblMcap >= 100 ? 5 : s.stblMcap >= 70 ? 4 : s.stblMcap >= 50 ? 3 : 2;
+  } else { sc.stbl = null; }
+
+  const scores = [sc.whale, sc.exflow, sc.lth, sc.stake, sc.burn, sc.stbl].filter(v => v !== null);
+  sc.total = scores.length > 0 ? scores.reduce((a,b)=>a+b,0) : null;
+  sc.maxPossible = scores.length * 5;
+
+  return sc;
+}
+
+function getSignal(sc) {
+  if (sc.total === null) return { grade:'?', title:'数据加载中', desc:'正在获取链上数据...', cls:'grade-neutral' };
+  const pct = sc.total / sc.maxPossible;
+  if (pct >= 0.72) return { grade:'🟢', title:'筹码集中 · 积极信号', desc:'大户持续囤货，交易所库存减少，链上供给收紧。此阶段通常是庄家建仓期，但不代表短期即刻拉升。', cls:'grade-accumulate' };
+  if (pct >= 0.50) return { grade:'🟡', title:'筹码横盘 · 观望信号', desc:'大户行为中性，既无明显建仓也无大规模出货。等待方向选择。', cls:'grade-neutral' };
+  return { grade:'🔴', title:'筹码分散 · 警戒信号', desc:'交易所 ETH 流入增加，鲸鱼可能在出货。需结合价格行情谨慎判断。', cls:'grade-distribute' };
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function setText(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+function setBar(id, width, color) {
+  const el = document.getElementById(id);
+  if (el) { el.style.width = width + '%'; if (color) el.style.background = color; }
+}
+function barW(score, max) { return score !== null ? Math.round(score/max*100) : 0; }
+
+function render() {
+  const sc = calcScores();
+  const sig = getSignal(sc);
+
+  // Signal box
+  const gradeEl = document.getElementById('signalGrade');
+  gradeEl.textContent = sig.grade;
+  gradeEl.className = 'signal-grade ' + sig.cls;
+  setText('signalTitle', sig.title);
+  setText('signalDesc', sig.desc);
+  setText('signalScore', sc.total !== null ? sc.total + '/' + sc.maxPossible : '--');
+
+  // Core metrics
+  if (ethState.price !== null) setText('ethPrice', '$' + ethState.price.toLocaleString());
+  if (ethState.priceChange24h !== null) {
+    const chg = ethState.priceChange24h;
+    const el = document.getElementById('ethPriceChange');
+    el.textContent = '24h: ' + (chg >= 0 ? '+' : '') + chg.toFixed(2) + '%';
+    el.style.color = chg >= 0 ? 'var(--green)' : 'var(--red)';
+  }
+  if (ethState.holderCount !== null) setText('holderCount', (ethState.holderCount / 1e6).toFixed(2) + 'M');
+  if (ethState.activeAddr !== null) setText('activeAddr', ethState.activeAddr.toLocaleString());
+  if (ethState.totalSupply !== null) setText('totalSupply', (ethState.totalSupply / 1e6).toFixed(2) + 'M ETH');
+  if (ethState.stakedPct !== null) setText('stakedPct', '质押占比: ' + ethState.stakedPct.toFixed(1) + '%');
+
+  // Score rows
+  const whaleColor = sc.whale >= 4 ? 'var(--green)' : sc.whale >= 3 ? 'var(--yellow)' : 'var(--red)';
+  setBar('whale100_bar', barW(sc.whale, 5), whaleColor);
+  setText('whale100_val', ethState.whale100Pct !== null
+    ? ethState.whale100Pct.toFixed(2) + '% (' + (sc.whale||'--') + '/5)'
+    : '数据获取中...');
+
+  const exColor = sc.exflow >= 3 ? 'var(--green)' : 'var(--red)';
+  setBar('exflow_bar', barW(sc.exflow, 5), exColor);
+  setText('exflow_val', ethState.exflow7d !== null
+    ? (ethState.exflow7d >= 0 ? '净流出 ' : '净流入 ') + Math.abs(ethState.exflow7d).toLocaleString() + ' ETH (' + (sc.exflow||'--') + '/5)'
+    : '数据获取中...');
+
+  setBar('lth_bar', barW(sc.lth, 5), 'var(--green)');
+  setText('lth_val', ethState.lthPct !== null
+    ? ethState.lthPct.toFixed(1) + '% 长期持有 (' + (sc.lth||'--') + '/5)'
+    : '数据获取中...');
+
+  const stakeColor = sc.stake >= 4 ? 'var(--green)' : sc.stake >= 3 ? 'var(--yellow)' : 'var(--red)';
+  setBar('stake_bar', barW(sc.stake, 5), stakeColor);
+  setText('stake_val', ethState.stakeConc !== null
+    ? '前5实体占 ' + ethState.stakeConc.toFixed(1) + '% (' + (sc.stake||'--') + '/5)'
+    : '数据获取中...');
+
+  setBar('burn_bar', barW(sc.burn, 5), 'var(--purple)');
+  setText('burn_val', ethState.burnRate !== null
+    ? Math.round(ethState.burnRate).toLocaleString() + ' ETH/天 (' + (sc.burn||'--') + '/5)'
+    : '数据获取中...');
+
+  setBar('stbl_bar', barW(sc.stbl, 5), 'var(--blue)');
+  setText('stbl_val', ethState.stblMcap !== null
+    ? '$' + ethState.stblMcap.toFixed(0) + 'B 稳定币 (' + (sc.stbl||'--') + '/5)'
+    : '数据获取中...');
+
+  // Alerts
+  renderAlerts(sc);
+
+  setText('lastUpdated', '更新于 ' + new Date().toLocaleTimeString('zh-CN'));
+}
+
+function renderAlerts(sc) {
+  const container = document.getElementById('signalAlerts');
+  const alerts = [];
+
+  if (ethState.exflow7d !== null) {
+    if (ethState.exflow7d > 50000) {
+      alerts.push({ cls:'bull', icon:'📤', title:'交易所 ETH 大量流出', desc:`过去7天净流出 ${Math.abs(ethState.exflow7d).toLocaleString()} ETH，机构/大户正在将筹码转移到冷钱包囤积。` });
+    } else if (ethState.exflow7d < -50000) {
+      alerts.push({ cls:'bear', icon:'📥', title:'交易所 ETH 大量流入', desc:`过去7天净流入 ${Math.abs(ethState.exflow7d).toLocaleString()} ETH，警惕大户将筹码搬上交易所准备出售。` });
+    }
+  }
+
+  if (ethState.lthPct !== null && ethState.lthPct >= 60) {
+    alerts.push({ cls:'bull', icon:'💎', title:'长期持有者占主导', desc:`${ethState.lthPct.toFixed(1)}% 的 ETH 超过1年未移动，钻石手比例极高，短期抛压有限。` });
+  }
+
+  if (ethState.whale100Pct !== null && ethState.whale100Pct >= 38) {
+    alerts.push({ cls:'neutral', icon:'🐳', title:'鲸鱼集中度偏高', desc:`前100地址持有 ${ethState.whale100Pct.toFixed(2)}% 的 ETH，庄家控盘能力强，波动可能放大。` });
+  }
+
+  if (ethState.burnRate !== null && ethState.burnRate < 500) {
+    alerts.push({ cls:'bear', icon:'🔥', title:'销毁速率偏低', desc:`当日销毁 ${Math.round(ethState.burnRate)} ETH，链上活跃度不足，通缩机制效果减弱。` });
+  }
+
+  if (alerts.length === 0) {
+    alerts.push({ cls:'neutral', icon:'📊', title:'当前无特殊信号', desc:'各指标处于正常范围，保持观察。' });
+  }
+
+  container.innerHTML = alerts.map(a => `
+    <div class="alert-box alert-${a.cls}">
+      <div class="alert-icon">${a.icon}</div>
+      <div class="alert-text">
+        <strong>${a.title}</strong>
+        <span>${a.desc}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderDistTable(rows) {
+  const tbody = document.getElementById('distTableBody');
+  if (!rows || rows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="color:var(--muted);padding:20px;text-align:center;">数据加载中...</td></tr>';
+    return;
+  }
+  const maxPct = Math.max(...rows.map(r => r.pct));
+  tbody.innerHTML = rows.map(r => {
+    const barW = Math.round(r.pct / maxPct * 100);
+    const signalColor = r.signal === 'bull' ? 'var(--green)' : r.signal === 'bear' ? 'var(--red)' : 'var(--muted)';
+    return `
+      <tr>
+        <td>${r.tier}</td>
+        <td>${r.count}</td>
+        <td>${r.eth}</td>
+        <td style="font-weight:600;color:var(--accent2)">${r.pct.toFixed(2)}%</td>
+        <td class="dist-bar-cell"><div class="dist-mini-bar" style="width:${barW}%;background:${signalColor}"></div></td>
+        <td style="color:var(--muted);font-size:12px">${r.meaning}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function renderExchangeGrid(data) {
+  const grid = document.getElementById('exchangeGrid');
+  if (!data || data.length === 0) {
+    grid.innerHTML = '<div style="color:var(--muted);grid-column:1/-1;text-align:center;padding:20px">加载中...</div>';
+    return;
+  }
+  grid.innerHTML = data.map(ex => {
+    const flowColor = ex.flow >= 0 ? 'var(--green)' : 'var(--red)';
+    const flowIcon = ex.flow >= 0 ? '↓' : '↑';
+    const flowLabel = ex.flow >= 0 ? '净流出' : '净流入';
+    return `
+      <div class="metric-card">
+        <div class="metric-label">${ex.name}</div>
+        <div class="metric-value">${ex.reserve}</div>
+        <div class="metric-sub">ETH 储备</div>
+        <div style="margin-top:8px;font-size:12px;color:${flowColor};font-weight:600">
+          ${flowIcon} 7日${flowLabel} ${Math.abs(ex.flow).toLocaleString()} ETH
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ============================================================
+// DATA FETCHING
+// ============================================================
+
+// 1. CoinGecko - ETH price + supply + stablecoin mcap
+async function fetchCoinGecko() {
+  try {
+    const res = await fetch('https://api.coingecko.com/api/v3/coins/ethereum?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false');
+    if (!res.ok) return;
+    const d = await res.json();
+    ethState.price = d.market_data.current_price.usd;
+    ethState.priceChange24h = d.market_data.price_change_percentage_24h;
+    ethState.totalSupply = d.market_data.circulating_supply;
+  } catch(e) { console.log('CoinGecko err:', e.message); }
+}
+
+// 2. DefiLlama - stablecoin mcap on Ethereum
+async function fetchStablecoin() {
+  try {
+    const res = await fetch('https://stablecoins.llama.fi/stablecoins?includePrices=false');
+    if (!res.ok) return;
+    const d = await res.json();
+    // Sum all ETH-chain stablecoins
+    let total = 0;
+    for (const sc of d.peggedAssets || []) {
+      const chains = sc.chainCirculating || {};
+      if (chains.Ethereum) {
+        total += (chains.Ethereum.current?.peggedUSD || 0);
+      }
+    }
+    ethState.stblMcap = total / 1e9; // → billions
+  } catch(e) { console.log('DefiLlama stbl err:', e.message); }
+}
+
+// 3. ETH burn rate from ultrasound.money API
+async function fetchBurnRate() {
+  try {
+    // Use public endpoint for burn data
+    const res = await fetch('https://api.ultrasound.money/fees/all?limit=1');
+    if (res.ok) {
+      const d = await res.json();
+      // fallback to estimated from last epoch data
+    }
+  } catch(e) {}
+
+  // Fallback: estimate from EtherScan gas tracker
+  try {
+    const res = await fetch('https://api.etherscan.io/api?module=stats&action=ethsupply2&apikey=YourApiKeyToken');
+    if (res.ok) {
+      const d = await res.json();
+      if (d.result && d.result.BurntFees) {
+        // rough daily estimate
+        ethState.burnRate = parseFloat(d.result.BurntFees) / 1e18 / 365;
+      }
+    }
+  } catch(e) {}
+}
+
+// 4. Load from eth-data.json (server-side fetched)
+async function fetchEthDataJson() {
+  try {
+    const res = await fetch('./eth-data.json?t=' + Date.now());
+    if (!res.ok) return;
+    const d = await res.json();
+
+    if (d.timestamp_cn) {
+      const el = document.getElementById('autoDataTime');
+      el.textContent = '链上数据: ' + d.timestamp_cn;
+      el.style.display = 'block';
+    }
+
+    if (d.holder_count) ethState.holderCount = d.holder_count;
+    if (d.active_addr_7d) ethState.activeAddr = d.active_addr_7d;
+    if (d.staked_pct) ethState.stakedPct = d.staked_pct;
+    if (d.whale_top100_pct !== undefined) ethState.whale100Pct = d.whale_top100_pct;
+    if (d.exchange_netflow_7d !== undefined) ethState.exflow7d = d.exchange_netflow_7d;
+    if (d.lth_pct !== undefined) ethState.lthPct = d.lth_pct;
+    if (d.stake_conc_top5 !== undefined) ethState.stakeConc = d.stake_conc_top5;
+    if (d.burn_rate_daily !== undefined) ethState.burnRate = d.burn_rate_daily;
+
+    // Distribution table
+    if (d.distribution) renderDistTable(d.distribution);
+
+    // Exchange reserves
+    if (d.exchanges) renderExchangeGrid(d.exchanges);
+
+  } catch(e) { console.log('eth-data.json not ready:', e.message); }
+}
+
+// ============================================================
+// LOAD ALL
+// ============================================================
+async function loadAll() {
+  const btn = document.getElementById('refreshBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '加载中...'; }
+
+  await Promise.all([
+    fetchCoinGecko(),
+    fetchStablecoin(),
+    fetchEthDataJson()
+  ]);
+
+  render();
+
+  if (btn) { btn.disabled = false; btn.textContent = '🔄 刷新'; }
+}
+
+// INIT
+loadAll();
+setInterval(loadAll, 5 * 60 * 1000);
+</script>
+</body>
+</html>

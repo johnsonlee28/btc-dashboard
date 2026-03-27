@@ -1,0 +1,95 @@
+{
+  "timestamp": "2026-03-27T00:22:47.749222+00:00",
+  "timestamp_cn": "2026-03-27 08:22 GMT+8",
+  "price_usd": 2064.23,
+  "price_change_24h": -4.67852,
+  "market_cap": 249135675208,
+  "circulating_supply": 120691533.0678,
+  "holder_count": 110000000,
+  "whale_top100_pct": 38.5,
+  "staked_pct": 27.8,
+  "total_staked": null,
+  "stake_conc_top5": 58.0,
+  "burn_rate_daily": 1200.0,
+  "exchanges": [
+    {
+      "name": "Binance",
+      "reserve": "3,200K",
+      "flow": -12000
+    },
+    {
+      "name": "Coinbase",
+      "reserve": "2,800K",
+      "flow": -8000
+    },
+    {
+      "name": "Kraken",
+      "reserve": "1,200K",
+      "flow": 3000
+    },
+    {
+      "name": "OKX",
+      "reserve": "980K",
+      "flow": -5000
+    },
+    {
+      "name": "Bybit",
+      "reserve": "750K",
+      "flow": -2000
+    }
+  ],
+  "exchange_netflow_7d": -24000,
+  "stablecoin_mcap_b": 164.44209212668855,
+  "lth_pct": 62.0,
+  "distribution": [
+    {
+      "tier": "超级鲸鱼 (>10K ETH)",
+      "count": "~1,200",
+      "eth": "~42M ETH",
+      "pct": 35.0,
+      "signal": "neutral",
+      "meaning": "交易所冷钱包+机构+早期矿工"
+    },
+    {
+      "tier": "大鲸鱼 (1K-10K ETH)",
+      "count": "~8,500",
+      "eth": "~25M ETH",
+      "pct": 21.0,
+      "signal": "neutral",
+      "meaning": "高净值个人+小型机构"
+    },
+    {
+      "tier": "鲸鱼 (100-1K ETH)",
+      "count": "~85,000",
+      "eth": "~18M ETH",
+      "pct": 15.0,
+      "signal": "bull",
+      "meaning": "聪明钱+小型基金"
+    },
+    {
+      "tier": "大户 (10-100 ETH)",
+      "count": "~550,000",
+      "eth": "~15M ETH",
+      "pct": 12.5,
+      "signal": "bull",
+      "meaning": "活跃投资者主力"
+    },
+    {
+      "tier": "中等 (1-10 ETH)",
+      "count": "~2,500,000",
+      "eth": "~10M ETH",
+      "pct": 8.5,
+      "signal": "neutral",
+      "meaning": "普通投资者"
+    },
+    {
+      "tier": "小额 (<1 ETH)",
+      "count": "~106,000,000",
+      "eth": "~9M ETH",
+      "pct": 8.0,
+      "signal": "neutral",
+      "meaning": "散户/DeFi用户/零碎地址"
+    }
+  ],
+  "active_addr_7d": 450000
+}
