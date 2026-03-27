@@ -567,9 +567,14 @@
           <div class="metric-bar-wrap"><div class="metric-bar" id="m3puell_bar" style="width:0%"></div></div>
         </div>
         <div class="metric-row">
-          <div class="metric-name">LTH 长期持有者</div>
+          <div class="metric-name">LTH Supply 趋势</div>
           <div class="metric-value" id="m3lth">--</div>
           <div class="metric-bar-wrap"><div class="metric-bar" id="m3lth_bar" style="width:0%"></div></div>
+        </div>
+        <div class="metric-row">
+          <div class="metric-name">LTH MVRV Z-Score（手动）</div>
+          <div class="metric-value" id="m3lthmvrv">--</div>
+          <div class="metric-bar-wrap"><div class="metric-bar" id="m3lthmvrv_bar" style="width:0%"></div></div>
         </div>
       </div>
     </div>
@@ -608,9 +613,9 @@
 
   <!-- MANUAL INPUT -->
   <div class="manual-card">
-    <h3>📝 补充数据（3项）</h3>
+    <h3>📝 补充数据（4项）</h3>
     <p style="font-size:12px; color:var(--muted); margin-bottom:14px;">
-      以下3项数据填入后自动保存，刷新不丢失。
+      以下4项数据填入后自动保存，刷新不丢失。
     </p>
     <div class="manual-grid">
       <div class="manual-item">
@@ -618,13 +623,17 @@
         <input type="number" step="0.01" id="inp_puell" placeholder="例：1.2">
       </div>
       <div class="manual-item">
-        <label>长期持有者(LTH)趋势</label>
+        <label>LTH Supply 趋势 <a href="https://www.bitcoinmagazinepro.com/charts/long-term-holder-supply/" target="_blank">🔗查询</a></label>
         <select id="inp_lth">
           <option value="">-- 选择 --</option>
           <option value="accumulate">持续增持（利多）</option>
           <option value="neutral">横盘震荡（中性）</option>
           <option value="distribute">加速派发（利空）</option>
         </select>
+      </div>
+      <div class="manual-item">
+        <label>LTH MVRV Z-Score <a href="https://www.bitcoinmagazinepro.com/charts/long-term-holder-mvrv-zscore/" target="_blank">🔗查询</a></label>
+        <input type="number" step="0.01" id="inp_lthmvrv" placeholder="例：2.5">
       </div>
       <div class="manual-item">
         <label>DXY 美元指数 <a href="https://www.tradingview.com/chart/?symbol=DXY" target="_blank">🔗 TradingView</a></label>
@@ -723,8 +732,12 @@
             <span>→ bitcoinmagazinepro.com → 查图表当前值（绿色区 &lt;0.5 极度低估，红色区 &gt;4 过热）</span>
           </div>
           <div class="guide-manual-item">
-            <a href="https://www.bitcoinmagazinepro.com/charts/long-term-holder-supply/" target="_blank">🔗 LTH 长期持有者</a>
-            <span>→ 看 LTH Supply 趋势：持续上升=增持（利多），下降=派发（利空）</span>
+            <a href="https://www.bitcoinmagazinepro.com/charts/long-term-holder-supply/" target="_blank">🔗 LTH Supply 趋势</a>
+            <span>→ 看曲线方向：持续上升=长期持有者增持（利多），下降=派发（利空）</span>
+          </li>
+          <li>
+            <a href="https://www.bitcoinmagazinepro.com/charts/long-term-holder-mvrv-zscore/" target="_blank">🔗 LTH MVRV Z-Score</a>
+            <span>→ 衡量长期持有者盈利程度：&lt;1 极度低估，1-2 健康，2-3 偏高，&gt;3 过热预警</span>
           </div>
           <div class="guide-manual-item">
             <a href="https://www.tradingview.com/chart/?symbol=DXY" target="_blank">🔗 DXY 美元指数</a>
@@ -773,7 +786,7 @@ const state = {
   price: null, change24h: null, athPct: null, ma200dev: null,
   ma200val: null, dominance: null, fg: null, p30d: null,
   // manual
-  mvrv: null, nupl: null, puell: null, lth: null,
+  mvrv: null, nupl: null, puell: null, lth: null, lthmvrv: null,
   fed: null, dxy: null, tips: null, etf5d: null, stbl: null, fr: null,
 };
 
@@ -936,12 +949,21 @@ function calcScores() {
     else puell_score = 0;
   }
   // LTH (7pts)
-  let lth_score = 4;
-  if (state.lth === 'accumulate') lth_score = 7;
-  else if (state.lth === 'neutral') lth_score = 4;
+  let lth_score = 2;
+  if (state.lth === 'accumulate') lth_score = 4;
+  else if (state.lth === 'neutral') lth_score = 2;
   else if (state.lth === 'distribute') lth_score = 0;
-  // SOPR: embedded in overall, use remaining 5pts as default 3
-  s3 = Math.min(30, mvrv_score + nupl_score + puell_score + lth_score + 3);
+
+  // LTH MVRV Z-Score (5分): <1极度低估=5, 1-2健康=4, 2-3偏高=2, >3过热=0
+  let lthmvrv_score = 3; // 默认中性
+  if (state.lthmvrv !== null) {
+    if (state.lthmvrv < 1) lthmvrv_score = 5;
+    else if (state.lthmvrv < 2) lthmvrv_score = 4;
+    else if (state.lthmvrv < 3) lthmvrv_score = 2;
+    else lthmvrv_score = 0;
+  }
+
+  s3 = Math.min(30, mvrv_score + nupl_score + puell_score + lth_score + lthmvrv_score);
 
   // ---- MODULE 4: RISK/REWARD (20pts) ----
   // ATH distance (5pts)
@@ -1009,7 +1031,7 @@ function calcScores() {
            vetoTriggered, monthsSinceHalving,
            fg_score, fed_score, dxy_score, tips_score,
            dom_score, etf_score, stbl_score, fr_score,
-           mvrv_score, nupl_score, puell_score, lth_score,
+           mvrv_score, nupl_score, puell_score, lth_score, lthmvrv_score,
            ath_score, ma200_score, halving_score, p30_score };
 }
 
@@ -1097,8 +1119,10 @@ function render() {
   setBar('m3nupl_bar', barWidth(sc.nupl_score,5), barColor(sc.nupl_score,5));
   setText('m3puell', state.puell!==null? state.puell+' ('+sc.puell_score+'/5)' : '--');
   setBar('m3puell_bar', barWidth(sc.puell_score,5), barColor(sc.puell_score,5));
-  setText('m3lth', state.lth? ({accumulate:'增持',neutral:'横盘',distribute:'派发'}[state.lth]+' ('+sc.lth_score+'/7)') : '--');
-  setBar('m3lth_bar', barWidth(sc.lth_score,7), barColor(sc.lth_score,7));
+  setText('m3lth', state.lth? ({accumulate:'增持',neutral:'横盘',distribute:'派发'}[state.lth]+' ('+sc.lth_score+'/4)') : '--');
+  setBar('m3lth_bar', barWidth(sc.lth_score,4), barColor(sc.lth_score,4));
+  setText('m3lthmvrv', state.lthmvrv!==null? state.lthmvrv+' ('+sc.lthmvrv_score+'/5)' : '--');
+  setBar('m3lthmvrv_bar', barWidth(sc.lthmvrv_score,5), barColor(sc.lthmvrv_score,5));
 
   // M4
   if(state.athPct!==null){ setText('m4ath', state.athPct.toFixed(1)+'% ('+sc.ath_score+'/5)'); setBar('m4ath_bar', barWidth(sc.ath_score,5), barColor(sc.ath_score,5)); }
@@ -1147,12 +1171,14 @@ function applyManual() {
 
   state.puell = n(g('inp_puell'));
   state.lth = g('inp_lth') || null;
+  state.lthmvrv = n(g('inp_lthmvrv'));
   state.dxy = n(g('inp_dxy'));
 
   // 保存到 localStorage（持久化，刷新不丢失）
   const saved = {
     puell: g('inp_puell'),
     lth: g('inp_lth'),
+    lthmvrv: g('inp_lthmvrv'),
     dxy: g('inp_dxy'),
     savedAt: new Date().toLocaleString('zh-CN')
   };
@@ -1174,6 +1200,10 @@ function loadManualFromStorage() {
     if (saved.lth) {
       document.getElementById('inp_lth').value = saved.lth;
       state.lth = saved.lth;
+    }
+    if (saved.lthmvrv) {
+      document.getElementById('inp_lthmvrv').value = saved.lthmvrv;
+      state.lthmvrv = parseFloat(saved.lthmvrv);
     }
     if (saved.dxy) {
       document.getElementById('inp_dxy').value = saved.dxy;
