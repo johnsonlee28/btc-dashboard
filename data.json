@@ -1,6 +1,6 @@
 {
-  "timestamp": "2026-03-27T23:00:01.609570+00:00",
-  "timestamp_cn": "2026-03-28 07:00",
+  "timestamp": "2026-03-27T23:07:20.781807+00:00",
+  "timestamp_cn": "2026-03-28 07:07",
   "etf": {
     "sum5d": -70.8,
     "days": [
@@ -14,18 +14,18 @@
     "source": "farside_parsed"
   },
   "onchain": {
-    "mvrv_zscore": 2.04,
-    "nupl": 0.64
+    "mvrv_zscore": null,
+    "nupl": null
   },
   "fed": {
     "fed_direction": "cut1",
-    "reasoning": "维持不变概率为52.8%，降息25bps概率为47.2%",
-    "confidence": "high"
+    "reasoning": "数据获取失败，使用中性默认值",
+    "confidence": "low"
   },
-  "funding_rate": -0.0056,
+  "funding_rate": -0.0061,
   "stablecoin": {
     "total_b": 313.7,
     "trend": "expand"
   },
-  "tips": 2.08
+  "tips": null
 }
