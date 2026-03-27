@@ -1,6 +1,10 @@
 {
-  "timestamp": "2026-03-27T23:07:20.781807+00:00",
-  "timestamp_cn": "2026-03-28 07:07",
+  "timestamp": "2026-03-27T23:10:35.932795+00:00",
+  "timestamp_cn": "2026-03-28 07:10",
+  "price": {
+    "price": 65935,
+    "change24h": -4.21
+  },
   "etf": {
     "sum5d": -70.8,
     "days": [
@@ -22,7 +26,7 @@
     "reasoning": "数据获取失败，使用中性默认值",
     "confidence": "low"
   },
-  "funding_rate": -0.0061,
+  "funding_rate": -0.0063,
   "stablecoin": {
     "total_b": 313.7,
     "trend": "expand"
