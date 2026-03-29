@@ -1,9 +1,9 @@
 {
-  "timestamp": "2026-03-28T22:00:01.538545+00:00",
-  "timestamp_cn": "2026-03-29 06:00",
+  "timestamp": "2026-03-29T00:23:18.739584+00:00",
+  "timestamp_cn": "2026-03-29 08:23",
   "price": {
-    "price": 66645,
-    "change24h": 0.94
+    "price": 66390,
+    "change24h": 0.11
   },
   "etf": {
     "sum5d": -296.3,
@@ -23,10 +23,10 @@
   },
   "fed": {
     "fed_direction": "cut1",
-    "reasoning": "维持不变概率为52.8%，降息25bps概率为47.2%",
+    "reasoning": "维持不变概率为55.5%，降息25bps概率为44.5%",
     "confidence": "high"
   },
-  "funding_rate": -0.003,
+  "funding_rate": 0.01,
   "stablecoin": {
     "total_b": 314.5,
     "trend": "expand"
