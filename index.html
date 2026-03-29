@@ -818,9 +818,32 @@ async function cgFetch(url, retries=3) {
   }
 }
 
-async function fetchCoingecko() {
+// ---- 缓存工具 ----
+const CACHE_TTL = 5 * 60 * 1000; // 5分钟
+function cacheGet(key) {
   try {
-    // 串行请求，避免同时触发限流
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const { ts, data } = JSON.parse(raw);
+    if (Date.now() - ts > CACHE_TTL) return null;
+    return data;
+  } catch(e) { return null; }
+}
+function cacheSet(key, data) {
+  try { localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data })); } catch(e) {}
+}
+
+async function fetchCoingecko() {
+  // 1. 先尝试读缓存
+  const cached = cacheGet('cg_btc_data');
+  if (cached) {
+    Object.assign(state, cached);
+    console.log('[CG] 使用缓存数据');
+    return;
+  }
+
+  try {
+    // 2. 串行请求 CoinGecko，避免同时触发限流
     const price = await cgFetch('https://api.coingecko.com/api/v3/coins/bitcoin?localization=false&tickers=false&community_data=false&developer_data=false');
     await new Promise(r => setTimeout(r, 600));
     const global = await cgFetch('https://api.coingecko.com/api/v3/global');
@@ -828,18 +851,33 @@ async function fetchCoingecko() {
     const chart = await cgFetch('https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=200&interval=daily');
 
     const md = price.market_data;
-    state.price = md.current_price.usd;
-    state.change24h = md.price_change_percentage_24h;
-    state.athPct = md.ath_change_percentage.usd; // negative
-    state.p30d = md.price_change_percentage_30d;
-    state.dominance = global.data.market_cap_percentage.btc;
-
+    const fresh = {
+      price: md.current_price.usd,
+      change24h: md.price_change_percentage_24h,
+      athPct: md.ath_change_percentage.usd,
+      p30d: md.price_change_percentage_30d,
+      dominance: global.data.market_cap_percentage.btc,
+    };
     // MA200
     const prices = chart.prices.map(x => x[1]);
-    state.ma200val = prices.reduce((a,b)=>a+b,0)/prices.length;
-    state.ma200dev = (state.price - state.ma200val) / state.ma200val * 100;
+    fresh.ma200val = prices.reduce((a,b)=>a+b,0)/prices.length;
+    fresh.ma200dev = (fresh.price - fresh.ma200val) / fresh.ma200val * 100;
 
-  } catch(e) { console.error('CoinGecko error', e); }
+    Object.assign(state, fresh);
+    cacheSet('cg_btc_data', fresh);
+
+  } catch(e) {
+    console.error('CoinGecko error', e);
+    // 3. 降级：用 Alternative.me 拿价格（不限速）
+    try {
+      const alt = await fetch('https://api.alternative.me/v2/ticker/bitcoin/?convert=USD');
+      const d = await alt.json();
+      const btc = d.data['1'];
+      state.price = parseFloat(btc.quotes.USD.price);
+      state.change24h = btc.quotes.USD.percentage_change_24h;
+      console.warn('[CG] 已降级至 Alternative.me 价格源');
+    } catch(e2) { console.error('Alternative.me fallback error', e2); }
+  }
 }
 
 async function fetchFG() {
