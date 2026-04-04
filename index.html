@@ -391,6 +391,62 @@
   .guide-grade.grade-D { background: #ff1744aa; color: #fff; }
   .guide-note { margin-top: 10px; font-size: 12px; color: var(--muted); background: #f7931a11; border-left: 3px solid #f7931a; padding: 6px 10px; border-radius: 4px; }
 
+
+  /* MINER SHUTDOWN MODULE */
+  .miner-card {
+    background: var(--bg3); border-radius: 12px; border: 1px solid var(--border);
+    padding: 20px; margin-bottom: 20px;
+  }
+  .miner-card h3 { font-size: 15px; color: var(--muted); margin-bottom: 4px; }
+  .miner-header-row {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 10px; margin-bottom: 14px;
+  }
+  .miner-elec-ctrl { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+  .miner-elec-slider {
+    width: 150px; height: 4px; -webkit-appearance: none; appearance: none;
+    background: linear-gradient(90deg, var(--green), var(--accent), var(--red));
+    border-radius: 3px; outline: none;
+  }
+  .miner-elec-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 14px; height: 14px;
+    background: #fff; border-radius: 50%; cursor: pointer;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  }
+  .miner-summary { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
+  .miner-stat { flex: 1; min-width: 110px; background: var(--bg2); border-radius: 8px; padding: 10px 14px; }
+  .miner-stat-label { font-size: 11px; color: var(--muted); margin-bottom: 3px; }
+  .miner-stat-val { font-size: 18px; font-weight: 700; }
+  .miner-stat-val.green { color: var(--green); }
+  .miner-stat-val.red { color: var(--red); }
+  .miner-stat-val.accent { color: var(--accent); }
+  .miner-verdict {
+    font-size: 13px; padding: 8px 14px; border-radius: 8px; margin-bottom: 14px; line-height: 1.5;
+  }
+  .miner-verdict.safe { background: rgba(0,212,170,0.08); border: 1px solid rgba(0,212,170,0.25); color: var(--green); }
+  .miner-verdict.warn { background: rgba(255,204,0,0.08); border: 1px solid rgba(255,204,0,0.25); color: var(--yellow); }
+  .miner-verdict.danger { background: rgba(255,68,102,0.08); border: 1px solid rgba(255,68,102,0.25); color: var(--red); }
+  .miner-tbl-wrap { overflow-x: auto; }
+  .miner-tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .miner-tbl th {
+    text-align: left; color: var(--muted); font-size: 11px; font-weight: 500;
+    padding: 6px 8px; border-bottom: 1px solid var(--border);
+  }
+  .miner-tbl td { padding: 7px 8px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .miner-tbl tr:last-child td { border-bottom: none; }
+  .miner-tbl tr:hover td { background: rgba(255,255,255,0.02); }
+  .miner-tbl .profit { color: var(--green); font-weight: 600; }
+  .miner-tbl .loss { color: var(--red); font-weight: 600; }
+  .miner-badge { display: inline-block; padding: 2px 7px; border-radius: 9px; font-size: 10px; font-weight: 600; }
+  .badge-profit { background: rgba(0,212,170,0.15); color: var(--green); }
+  .badge-loss { background: rgba(255,68,102,0.12); color: var(--red); }
+  .miner-chart-title { font-size: 11px; color: var(--muted); margin: 14px 0 8px; }
+  .miner-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+  .miner-bar-lbl { font-size: 10px; color: var(--muted); width: 148px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .miner-bar-track { flex: 1; height: 10px; background: rgba(255,255,255,0.06); border-radius: 3px; position: relative; }
+  .miner-bar-fill { height: 100%; border-radius: 3px; position: absolute; top: 0; left: 0; }
+  .miner-price-line { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--accent); border-radius: 1px; z-index: 5; }
+
 </style>
 </head>
 <body>
@@ -712,6 +768,53 @@
     </div>
   </div>
 
+
+
+  <!-- MINER SHUTDOWN -->
+  <div class="miner-card">
+    <div class="miner-header-row">
+      <h3>⛏️ 矿机关机价分析</h3>
+      <div class="miner-elec-ctrl">
+        <span>电价</span>
+        <input type="range" class="miner-elec-slider" id="minerElecSlider"
+          min="0.03" max="0.12" step="0.005" value="0.06"
+          oninput="updateMinerElec(this.value)">
+        <span class="miner-elec-val" id="minerElecVal">$0.060/kWh</span>
+      </div>
+    </div>
+    <div class="miner-summary">
+      <div class="miner-stat">
+        <div class="miner-stat-label">当前 BTC 价格</div>
+        <div class="miner-stat-val accent" id="minerBtcPrice">--</div>
+      </div>
+      <div class="miner-stat">
+        <div class="miner-stat-label">盈利矿机</div>
+        <div class="miner-stat-val green" id="minerProfitCount">--</div>
+      </div>
+      <div class="miner-stat">
+        <div class="miner-stat-label">关机价范围</div>
+        <div class="miner-stat-val" id="minerRange" style="font-size:13px">--</div>
+      </div>
+      <div class="miner-stat">
+        <div class="miner-stat-label">距最近关机线</div>
+        <div class="miner-stat-val accent" id="minerNearestGap">--</div>
+      </div>
+    </div>
+    <div class="miner-verdict" id="minerVerdict">正在计算...</div>
+    <div class="miner-chart-title">关机价可视化（绿=盈利 红=亏损，橙线=当前价格）</div>
+    <div id="minerChartBars"></div>
+    <div class="miner-tbl-wrap" style="margin-top:16px">
+      <table class="miner-tbl">
+        <thead>
+          <tr><th>矿机型号</th><th>算力</th><th>功耗</th><th>效率</th><th>关机价</th><th>状态</th></tr>
+        </thead>
+        <tbody id="minerTbody"></tbody>
+      </table>
+    </div>
+    <div style="margin-top:10px;font-size:11px;color:var(--muted)">
+      数据来源：mempool.space（全网算力实时）· BTC价格同主面板 · 矿机参数来自公开规格表 · 拖动电价滑块查看不同电价场景
+    </div>
+  </div>
 
   <!-- GUIDE -->
   <div class="guide-card">
@@ -1387,14 +1490,126 @@ async function fetchDataJson() {
   }
 }
 
+
+// ============================================================
+// MINER SHUTDOWN PRICE MODULE
+// ============================================================
+const MINERS = [
+  { model: 'Antminer S21+ Hyd.', hashrate: 319, power: 4785 },
+  { model: 'Antminer S21 Hyd.',  hashrate: 335, power: 5360 },
+  { model: 'Antminer S21 Pro',   hashrate: 234, power: 3510 },
+  { model: 'Antminer S21',       hashrate: 200, power: 3500 },
+  { model: 'Antminer T21',       hashrate: 190, power: 3610 },
+  { model: 'Whatsminer M73',     hashrate: 512, power: 7424 },
+  { model: 'Whatsminer M70',     hashrate: 310, power: 5270 },
+  { model: 'Whatsminer M66S',    hashrate: 298, power: 5067 },
+  { model: 'Whatsminer M63S',    hashrate: 390, power: 7215 },
+  { model: 'Whatsminer M60S',    hashrate: 186, power: 3422 },
+  { model: 'Antminer S19 XP',    hashrate: 140, power: 3010 },
+  { model: 'Whatsminer M50S+',   hashrate: 140, power: 3080 },
+  { model: 'Whatsminer M50',     hashrate: 118, power: 3276 },
+  { model: 'Antminer S19j Pro+', hashrate: 122, power: 3355 },
+  { model: 'Antminer S19 Pro',   hashrate: 110, power: 3250 },
+  { model: 'Antminer S19j Pro',  hashrate: 104, power: 3068 },
+];
+
+let minerElec = 0.06;
+let networkHashrateTH = null;
+
+async function fetchNetworkHashrate() {
+  const cached = cacheGet('miner_hr');
+  if (cached) { networkHashrateTH = cached; return; }
+  try {
+    const r = await fetch('https://mempool.space/api/v1/mining/hashrate/3d');
+    const d = await r.json();
+    networkHashrateTH = d.currentHashrate / 1e12; // H/s -> TH/s
+    cacheSet('miner_hr', networkHashrateTH);
+  } catch(e) {
+    networkHashrateTH = 850e6; // fallback 850 EH/s in TH/s
+    console.warn('hashrate fallback used');
+  }
+}
+
+function calcSP(hashrateTH, powerW, elec, netTH) {
+  const btcPerDay = (hashrateTH * 86400 * 3.125) / (netTH * 600);
+  const dailyElec = (powerW * 24 / 1000) * elec;
+  return dailyElec / btcPerDay;
+}
+
+function renderMinerModule() {
+  if (!state.price || !networkHashrateTH) return;
+  const price = state.price;
+  const fmt = v => '$' + Math.round(v).toLocaleString('en-US');
+
+  const data = MINERS.map(m => {
+    const sp = calcSP(m.hashrate, m.power, minerElec, networkHashrateTH);
+    return { ...m, sp, eff: (m.power / m.hashrate).toFixed(1), profit: price > sp };
+  }).sort((a, b) => a.sp - b.sp);
+
+  const profitCount = data.filter(d => d.profit).length;
+  const spMin = Math.min(...data.map(d => d.sp));
+  const spMax = Math.max(...data.map(d => d.sp));
+  const nearest = data.reduce((p, c) => Math.abs(c.sp - price) < Math.abs(p.sp - price) ? c : p);
+  const nearestGap = ((price - nearest.sp) / nearest.sp * 100);
+
+  document.getElementById('minerBtcPrice').textContent = fmt(price);
+  document.getElementById('minerProfitCount').textContent = profitCount + ' / ' + data.length;
+  document.getElementById('minerRange').textContent = fmt(spMin) + ' ~ ' + fmt(spMax);
+
+  const gapEl = document.getElementById('minerNearestGap');
+  gapEl.textContent = (nearestGap >= 0 ? '+' : '') + nearestGap.toFixed(1) + '%';
+  gapEl.className = 'miner-stat-val ' + (nearestGap > 20 ? 'green' : nearestGap > 5 ? 'accent' : 'red');
+
+  const vEl = document.getElementById('minerVerdict');
+  if (profitCount === data.length) {
+    vEl.className = 'miner-verdict safe';
+    vEl.textContent = '✅ 当前价格高于所有主流矿机关机价，矿工整体盈利，大规模被动关机风险低。';
+  } else if (profitCount >= Math.ceil(data.length * 0.6)) {
+    vEl.className = 'miner-verdict warn';
+    vEl.textContent = '⚠️ 当前价格已低于部分老旧矿机关机价，效率较低的矿机面临压力，可能带来结构性矿工卖压。';
+  } else {
+    vEl.className = 'miner-verdict danger';
+    vEl.textContent = '🚨 当前价格已低于超过半数矿机关机价，矿工承压严重，可能引发关机潮，短期抛压风险高。';
+  }
+
+  const xMax = Math.max(price * 1.08, spMax * 1.04);
+  const pricePct = (price / xMax * 100).toFixed(2);
+
+  document.getElementById('minerChartBars').innerHTML = data.map(d => {
+    const wPct = (d.sp / xMax * 100).toFixed(2);
+    const color = d.profit ? 'var(--green)' : 'var(--red)';
+    return '<div class="miner-bar-row"><div class="miner-bar-lbl" title="' + d.model + '">' + d.model + '</div>' +
+      '<div class="miner-bar-track">' +
+      '<div class="miner-bar-fill" style="width:' + wPct + '%;background:' + color + ';opacity:0.7"></div>' +
+      '<div class="miner-price-line" style="left:' + pricePct + '%"></div>' +
+      '</div></div>';
+  }).join('');
+
+  document.getElementById('minerTbody').innerHTML = data.map(d =>
+    '<tr><td>' + d.model + '</td>' +
+    '<td style="color:var(--muted)">' + d.hashrate + ' TH/s</td>' +
+    '<td style="color:var(--muted)">' + d.power + ' W</td>' +
+    '<td style="color:var(--muted)">' + d.eff + ' W/TH</td>' +
+    '<td class="' + (d.profit ? 'profit' : 'loss') + '">' + fmt(d.sp) + '</td>' +
+    '<td><span class="miner-badge ' + (d.profit ? 'badge-profit' : 'badge-loss') + '">' + (d.profit ? '盈利' : '亏损') + '</span></td></tr>'
+  ).join('');
+}
+
+function updateMinerElec(val) {
+  minerElec = parseFloat(val);
+  document.getElementById('minerElecVal').textContent = '$' + minerElec.toFixed(3) + '/kWh';
+  renderMinerModule();
+}
+
 // ============================================================
 // LOAD ALL
 // ============================================================
 async function loadAll() {
   const btn = document.getElementById('refreshBtn');
   if(btn) { btn.disabled = true; btn.textContent = '加载中...'; }
-  await Promise.all([fetchCoingecko(), fetchFG(), fetchDataJson()]);
+  await Promise.all([fetchCoingecko(), fetchFG(), fetchDataJson(), fetchNetworkHashrate()]);
   render();
+  renderMinerModule();
   if(btn) { btn.disabled = false; btn.textContent = '🔄 刷新数据'; }
 }
 
