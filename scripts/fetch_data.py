@@ -121,11 +121,10 @@ def fetch_farside_etf():
 def fetch_btc_price():
     log("抓取 BTC 价格 (CoinGecko)...")
     try:
-        import json as _json
         url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true&include_market_cap=false"
         data = http_get(url)
         if data:
-            d = _json.loads(data)
+            d = json.loads(data)
             btc = d.get("bitcoin", {})
             price = btc.get("usd")
             change24h = btc.get("usd_24h_change")
@@ -134,13 +133,12 @@ def fetch_btc_price():
                 return {"price": price, "change24h": round(change24h, 2) if change24h else None}
     except Exception as e:
         log(f"  ⚠️ 价格抓取失败: {e}")
-    
+
     # 备用：Binance API
     try:
-        import json as _json
         data = http_get("https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT")
         if data:
-            d = _json.loads(data)
+            d = json.loads(data)
             price = float(d.get("lastPrice", 0))
             change24h = float(d.get("priceChangePercent", 0))
             if price:
@@ -148,7 +146,7 @@ def fetch_btc_price():
                 return {"price": price, "change24h": round(change24h, 2)}
     except Exception as e:
         log(f"  ⚠️ Binance备用也失败: {e}")
-    
+
     return None
 
 # ============================================================
@@ -162,8 +160,6 @@ def fetch_lookintobitcoin():
     # MVRV Z-Score
     html = http_get("https://www.lookintobitcoin.com/charts/mvrv-zscore/")
     if html:
-        # 先尝试在 HTML 中直接正则匹配数字（比AI更可靠）
-        # 页面通常有类似 "Current Value: 2.04" 的文字
         patterns = [
             r'current[_\s-]*value["\s:]+([0-9.-]+)',
             r'mvrv["\s:]+([0-9.-]+)',
@@ -174,7 +170,7 @@ def fetch_lookintobitcoin():
             if m:
                 try:
                     mvrv_val = float(m.group(1))
-                    if 0 < mvrv_val < 20:  # 合理范围校验
+                    if 0 < mvrv_val < 20:
                         log(f"  ✅ MVRV Z-Score (regex): {mvrv_val}")
                         break
                     mvrv_val = None
@@ -206,7 +202,6 @@ def fetch_lookintobitcoin():
         )
         if result and isinstance(result.get('nupl'), (int, float)):
             nupl_val = result['nupl']
-            # 如果是百分比形式自动转换
             if abs(nupl_val) > 1:
                 nupl_val = nupl_val / 100
             log(f"  ✅ NUPL (AI): {nupl_val}")
@@ -214,12 +209,11 @@ def fetch_lookintobitcoin():
     return {"mvrv_zscore": mvrv_val, "nupl": nupl_val}
 
 # ============================================================
-# 3. 美联储方向 - 通过多个备用源
+# 3. 美联储方向 - 多源备用
 # ============================================================
 def fetch_fed_direction():
     log("抓取美联储预期 (多源)...")
 
-    # 备用1: 直接查 CME FedWatch 工具页面
     sources = [
         "https://www.cmegroup.com/markets/interest-rates/cme-fedwatch-tool.html",
         "https://www.investing.com/central-banks/fed-rate-monitor",
@@ -244,7 +238,6 @@ def fetch_fed_direction():
                 return result
             time.sleep(2)
 
-    # 备用2: MacroMicro 或其他公开源
     html = http_get("https://finance.yahoo.com/news/fed-rate-decision/")
     if html:
         result = ask_deepseek(
@@ -260,12 +253,11 @@ def fetch_fed_direction():
     return {"fed_direction": "cut1", "reasoning": "数据获取失败，使用中性默认值", "confidence": "low"}
 
 # ============================================================
-# 4. 资金费率 - Coinglass
+# 4. 资金费率 - Coinglass / Binance API
 # ============================================================
 def fetch_funding_rate():
     log("抓取资金费率 (Coinglass)...")
 
-    # 尝试 Coinglass 公开数据页面
     html = http_get("https://www.coinglass.com/FundingRate")
     if html:
         result = ask_deepseek(
@@ -294,8 +286,60 @@ def fetch_funding_rate():
     return None
 
 # ============================================================
-# 5. 稳定币趋势 - DeFiLlama
+# 5. 保证金借贷费率 + 未平仓合约 - Binance 公开 API（无需Key）
 # ============================================================
+def fetch_margin_lending():
+    """
+    借贷 BTC 做空的成本指标（Margin Borrow Rate）。
+    利率异常上涨 → 有机构/大户在大量借BTC准备做空。
+    结合 Open Interest 变化判断操纵意图。
+    """
+    log("抓取借贷费率 + 未平仓合约 (Binance 公开 API)...")
+
+    result = {
+        "btc_daily_rate": None,      # VIP0日利率（小数，如 0.00001116）
+        "btc_annual_rate": None,     # 年化利率（%，如 0.407）
+        "btc_borrow_limit": None,    # VIP0最大借款量（BTC）
+        "open_interest": None,       # 合约未平仓总量（BTC）
+        "open_interest_usd": None,   # 合约未平仓总量（美元估算）
+        "source": "binance_public"
+    }
+
+    # 1. 借贷利率（公开，无需签名）
+    try:
+        url = "https://www.binance.com/bapi/margin/v1/public/margin/vip/spec/list-all"
+        data = http_get(url)
+        if data:
+            d = json.loads(data)
+            for item in d.get('data', []):
+                if item.get('assetName') == 'BTC':
+                    specs = item.get('specs', [])
+                    vip0 = next((s for s in specs if s.get('vipLevel') == '0'), None)
+                    if vip0:
+                        daily = float(vip0.get('dailyInterestRate', 0))
+                        annual = round(daily * 365 * 100, 4)  # 转年化%
+                        borrow_limit = float(vip0.get('borrowLimit', 0))
+                        result['btc_daily_rate'] = daily
+                        result['btc_annual_rate'] = annual
+                        result['btc_borrow_limit'] = borrow_limit
+                        log(f"  ✅ BTC借贷年化利率: {annual}% | VIP0限额: {borrow_limit} BTC")
+                    break
+    except Exception as e:
+        log(f"  ⚠️ 借贷利率抓取失败: {e}")
+
+    # 2. 合约未平仓量（永续合约，公开API）
+    try:
+        oi_url = "https://fapi.binance.com/fapi/v1/openInterest?symbol=BTCUSDT"
+        oi_data = http_get(oi_url)
+        if oi_data:
+            oi = json.loads(oi_data)
+            oi_btc = float(oi.get('openInterest', 0))
+            result['open_interest'] = round(oi_btc, 0)
+            log(f"  ✅ BTC未平仓合约: {oi_btc:,.0f} BTC")
+    except Exception as e:
+        log(f"  ⚠️ 未平仓合约抓取失败: {e}")
+
+    return result
 
 # ============================================================
 # TIPS 实际利率 - FRED API
@@ -341,7 +385,7 @@ def fetch_stablecoin():
 # ============================================================
 def main():
     log("=" * 55)
-    log("BTC Dashboard 数据抓取 v2")
+    log("BTC Dashboard 数据抓取 v3（含借贷费率+未平仓合约）")
     log(f"时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     log("=" * 55)
 
@@ -353,6 +397,7 @@ def main():
         "onchain": {"mvrv_zscore": None, "nupl": None},
         "fed": None,
         "funding_rate": None,
+        "margin_lending": None,
         "stablecoin": None,
         "tips": None
     }
@@ -380,6 +425,11 @@ def main():
         data["funding_rate"] = fr
     time.sleep(1)
 
+    # 新增：借贷费率 + 未平仓合约
+    ml = fetch_margin_lending()
+    data["margin_lending"] = ml
+    time.sleep(1)
+
     stbl = fetch_stablecoin()
     if stbl:
         data["stablecoin"] = stbl
@@ -392,13 +442,16 @@ def main():
     # 汇总输出
     log("\n" + "=" * 55)
     log("抓取结果汇总:")
-    log(f"  ETF 5日净流入: {data['etf']['sum5d'] if data['etf'] else 'N/A'}M USD")
-    log(f"  MVRV Z-Score:  {data['onchain']['mvrv_zscore']}")
-    log(f"  NUPL:          {data['onchain']['nupl']}")
-    log(f"  美联储方向:    {data['fed']['fed_direction'] if data['fed'] else 'N/A'}")
-    log(f"  资金费率:      {data['funding_rate']}%/8h")
-    log(f"  稳定币趋势:    {data['stablecoin']['trend'] if data['stablecoin'] else 'N/A'} ({data['stablecoin']['total_b'] if data['stablecoin'] else 'N/A'}B)")
-    log(f"  TIPS 实际利率: {data['tips']}%")
+    log(f"  ETF 5日净流入:   {data['etf']['sum5d'] if data['etf'] else 'N/A'}M USD")
+    log(f"  MVRV Z-Score:    {data['onchain']['mvrv_zscore']}")
+    log(f"  NUPL:            {data['onchain']['nupl']}")
+    log(f"  美联储方向:      {data['fed']['fed_direction'] if data['fed'] else 'N/A'}")
+    log(f"  资金费率:        {data['funding_rate']}%/8h")
+    ml = data.get('margin_lending') or {}
+    log(f"  BTC借贷年化利率: {ml.get('btc_annual_rate')}%")
+    log(f"  BTC未平仓合约:   {ml.get('open_interest')} BTC")
+    log(f"  稳定币趋势:      {data['stablecoin']['trend'] if data['stablecoin'] else 'N/A'} ({data['stablecoin']['total_b'] if data['stablecoin'] else 'N/A'}B)")
+    log(f"  TIPS 实际利率:   {data['tips']}%")
     log("=" * 55)
 
     # 写入文件
