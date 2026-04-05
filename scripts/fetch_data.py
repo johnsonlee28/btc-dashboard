@@ -373,7 +373,7 @@ def fetch_stablecoin():
                 p.get('circulating', {}).get('peggedUSD', 0)
                 for p in pegs if p.get('circulating', {}).get('peggedUSD', 0) > 0
             ) / 1e9
-            trend = "expand" if total > 180 else "flat" if total > 140 else "shrink"
+            trend = "expand" if total > 250 else "flat" if total > 190 else "shrink"
             log(f"  ✅ 稳定币总市值: ${total:.1f}B → {trend}")
             return {"total_b": round(total, 1), "trend": trend}
         except Exception as e:
