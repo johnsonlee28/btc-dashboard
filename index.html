@@ -505,37 +505,65 @@
     </div>
     <div class="total-score-block">
       <div class="total-score-num loading" id="totalScore">--</div>
-      <div class="total-score-label">综合得分 / 100</div>
+      <div class="total-score-label">综合得分 / 105</div>
     </div>
   </div>
 
-  <!-- ONE VETO CHECK -->
-  <div class="veto-box">
-    <h3>⛔ Step 1 · 一票否决检查</h3>
-    <div class="veto-row">
-      <div class="veto-dot veto-unknown" id="veto1dot"></div>
-      <div class="veto-label">MVRV Z-Score 是否 > 6（链上极热）</div>
-      <div class="veto-value" id="veto1val">需手动输入</div>
-    </div>
-    <div class="veto-row">
-      <div class="veto-dot veto-unknown" id="veto2dot"></div>
-      <div class="veto-label">NUPL 是否 > 0.75（市场狂热）</div>
-      <div class="veto-value" id="veto2val">需手动输入</div>
-    </div>
-    <div class="veto-row">
-      <div class="veto-dot veto-unknown" id="veto3dot"></div>
-      <div class="veto-label">美联储是否处于主动加息周期</div>
-      <div class="veto-value" id="veto3val">需手动输入</div>
-    </div>
-    <div class="veto-row">
-      <div class="veto-dot veto-unknown" id="veto4dot"></div>
-      <div class="veto-label">ETF 连续10日净流出 > 30亿美元</div>
-      <div class="veto-value" id="veto4val">需手动输入</div>
-    </div>
-    <div style="margin-top:10px; font-size:12px; color:var(--muted);">
-      ⚠️ 以上需在下方「手动输入区」填写链上数据，触发任一条 → 评级自动降为 D
+  <!-- SCORING LOGIC -->
+  <div class="sources-card" style="margin-bottom:24px;">
+    <h3>⚖️ 综合评分加权逻辑（满分 105 分）</h3>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:14px;">
+      投资建议由五个维度加权合成。每个维度独立评分，满足阈值触发评级。<strong>任一一票否决条件触发时，总评自动降为 D 级。</strong>
+    </p>
+    <table style="width:100%;border-collapse:collapse;font-size:12px;">
+      <thead>
+        <tr style="color:var(--muted);text-align:left;border-bottom:1px solid rgba(255,255,255,0.08);">
+          <th style="padding:6px 8px;">维度</th>
+          <th style="padding:6px 8px;">满分</th>
+          <th style="padding:6px 8px;">核心指标</th>
+          <th style="padding:6px 8px;">逻辑依据</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+          <td style="padding:8px;color:var(--text);font-weight:600;">🌍 宏观环境</td>
+          <td style="padding:8px;color:var(--accent);font-weight:700;">25分</td>
+          <td style="padding:8px;color:var(--muted);">美联储方向(10) · DXY(7) · TIPS(5) · 恐贪(3)</td>
+          <td style="padding:8px;color:var(--muted);">流动性环境是BTC最核心的上涨驱动力。美联储降息周期 = 钱变便宜 = 风险资产上涨。</td>
+        </tr>
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+          <td style="padding:8px;color:var(--text);font-weight:600;">💰 资金结构</td>
+          <td style="padding:8px;color:var(--accent);font-weight:700;">30分</td>
+          <td style="padding:8px;color:var(--muted);">ETF净流入(10) · 稳定币(6) · BTC主导率(5) · 资金费率(4) · <strong style="color:var(--yellow)">借贷利率(3) · OI(3)</strong></td>
+          <td style="padding:8px;color:var(--muted);">机构和聪明钱用脚投票。借贷利率突涨说明有人在借BTC准备做空；高OI=高杠杆=脆弱。</td>
+        </tr>
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+          <td style="padding:8px;color:var(--text);font-weight:600;">🔗 链上估值</td>
+          <td style="padding:8px;color:var(--accent);font-weight:700;">30分</td>
+          <td style="padding:8px;color:var(--muted);">MVRV Z-Score(9) · NUPL(7) · LTH MVRV(7) · Puell(4) · LTH Supply(3)</td>
+          <td style="padding:8px;color:var(--muted);">链上数据是BTC独有的估值工具，反映全网持仓成本和盈亏分布，比传统PE更直接。</td>
+        </tr>
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+          <td style="padding:8px;color:var(--text);font-weight:600;">⚖️ 赔率/周期</td>
+          <td style="padding:8px;color:var(--accent);font-weight:700;">20分</td>
+          <td style="padding:8px;color:var(--muted);">MA200偏离(6) · 距ATH(5) · 减半周期(5) · 30日涨跌(4)</td>
+          <td style="padding:8px;color:var(--muted);">在对的时间买比在对的价格买更重要。减半后6-18个月是历史上最确定的上涨窗口期。</td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="margin-top:14px;padding:10px 14px;background:rgba(247,147,26,0.06);border-left:3px solid var(--accent);border-radius:4px;font-size:12px;">
+      <strong>评级对应分数：</strong>
+      <span style="margin-left:8px;color:var(--green)">A+ ≥90</span>
+      <span style="margin-left:8px;color:var(--green)">A ≥78</span>
+      <span style="margin-left:8px;color:var(--yellow)">B ≥65</span>
+      <span style="margin-left:8px;color:var(--muted)">C ≥50</span>
+      <span style="margin-left:8px;color:var(--red)">D &lt;50</span>
+      <span style="margin-left:8px;color:var(--red)">D（一票否决）</span>
+      &nbsp;&nbsp;·&nbsp;&nbsp;
+      <strong>借贷利率信号解读：</strong>利率 &lt;0.3%/年=无异常 · 0.5-0.8%=有做空压力 · &gt;0.8%=做空预警
     </div>
   </div>
+
 
   <!-- MODULES -->
   <div class="modules-grid" id="modulesGrid">
@@ -676,6 +704,35 @@
     </div>
 
   </div><!-- end modules-grid -->
+
+  <!-- ONE VETO CHECK -->
+  <div class="veto-box">
+    <h3>⛔ Step 1 · 一票否决检查</h3>
+    <div class="veto-row">
+      <div class="veto-dot veto-unknown" id="veto1dot"></div>
+      <div class="veto-label">MVRV Z-Score 是否 > 6（链上极热）</div>
+      <div class="veto-value" id="veto1val">需手动输入</div>
+    </div>
+    <div class="veto-row">
+      <div class="veto-dot veto-unknown" id="veto2dot"></div>
+      <div class="veto-label">NUPL 是否 > 0.75（市场狂热）</div>
+      <div class="veto-value" id="veto2val">需手动输入</div>
+    </div>
+    <div class="veto-row">
+      <div class="veto-dot veto-unknown" id="veto3dot"></div>
+      <div class="veto-label">美联储是否处于主动加息周期</div>
+      <div class="veto-value" id="veto3val">需手动输入</div>
+    </div>
+    <div class="veto-row">
+      <div class="veto-dot veto-unknown" id="veto4dot"></div>
+      <div class="veto-label">ETF 连续10日净流出 > 30亿美元</div>
+      <div class="veto-value" id="veto4val">需手动输入</div>
+    </div>
+    <div style="margin-top:10px; font-size:12px; color:var(--muted);">
+      ⚠️ 以上需在下方「手动输入区」填写链上数据，触发任一条 → 评级自动降为 D
+    </div>
+  </div>
+
 
   <!-- MANUAL INPUT -->
   <div class="manual-card">
@@ -835,61 +892,6 @@
   </div>
 
 
-  <!-- SCORING LOGIC -->
-  <div class="sources-card" style="margin-bottom:24px;">
-    <h3>⚖️ 综合评分加权逻辑（满分 105 分）</h3>
-    <p style="font-size:12px;color:var(--muted);margin-bottom:14px;">
-      投资建议由五个维度加权合成。每个维度独立评分，满足阈值触发评级。<strong>任一一票否决条件触发时，总评自动降为 D 级。</strong>
-    </p>
-    <table style="width:100%;border-collapse:collapse;font-size:12px;">
-      <thead>
-        <tr style="color:var(--muted);text-align:left;border-bottom:1px solid rgba(255,255,255,0.08);">
-          <th style="padding:6px 8px;">维度</th>
-          <th style="padding:6px 8px;">满分</th>
-          <th style="padding:6px 8px;">核心指标</th>
-          <th style="padding:6px 8px;">逻辑依据</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
-          <td style="padding:8px;color:var(--text);font-weight:600;">🌍 宏观环境</td>
-          <td style="padding:8px;color:var(--accent);font-weight:700;">25分</td>
-          <td style="padding:8px;color:var(--muted);">美联储方向(10) · DXY(7) · TIPS(5) · 恐贪(3)</td>
-          <td style="padding:8px;color:var(--muted);">流动性环境是BTC最核心的上涨驱动力。美联储降息周期 = 钱变便宜 = 风险资产上涨。</td>
-        </tr>
-        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
-          <td style="padding:8px;color:var(--text);font-weight:600;">💰 资金结构</td>
-          <td style="padding:8px;color:var(--accent);font-weight:700;">30分</td>
-          <td style="padding:8px;color:var(--muted);">ETF净流入(10) · 稳定币(6) · BTC主导率(5) · 资金费率(4) · <strong style="color:var(--yellow)">借贷利率(3) · OI(3)</strong></td>
-          <td style="padding:8px;color:var(--muted);">机构和聪明钱用脚投票。借贷利率突涨说明有人在借BTC准备做空；高OI=高杠杆=脆弱。</td>
-        </tr>
-        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
-          <td style="padding:8px;color:var(--text);font-weight:600;">🔗 链上估值</td>
-          <td style="padding:8px;color:var(--accent);font-weight:700;">30分</td>
-          <td style="padding:8px;color:var(--muted);">MVRV Z-Score(9) · NUPL(7) · LTH MVRV(7) · Puell(4) · LTH Supply(3)</td>
-          <td style="padding:8px;color:var(--muted);">链上数据是BTC独有的估值工具，反映全网持仓成本和盈亏分布，比传统PE更直接。</td>
-        </tr>
-        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
-          <td style="padding:8px;color:var(--text);font-weight:600;">⚖️ 赔率/周期</td>
-          <td style="padding:8px;color:var(--accent);font-weight:700;">20分</td>
-          <td style="padding:8px;color:var(--muted);">MA200偏离(6) · 距ATH(5) · 减半周期(5) · 30日涨跌(4)</td>
-          <td style="padding:8px;color:var(--muted);">在对的时间买比在对的价格买更重要。减半后6-18个月是历史上最确定的上涨窗口期。</td>
-        </tr>
-      </tbody>
-    </table>
-    <div style="margin-top:14px;padding:10px 14px;background:rgba(247,147,26,0.06);border-left:3px solid var(--accent);border-radius:4px;font-size:12px;">
-      <strong>评级对应分数：</strong>
-      <span style="margin-left:8px;color:var(--green)">A+ ≥90</span>
-      <span style="margin-left:8px;color:var(--green)">A ≥78</span>
-      <span style="margin-left:8px;color:var(--yellow)">B ≥65</span>
-      <span style="margin-left:8px;color:var(--muted)">C ≥50</span>
-      <span style="margin-left:8px;color:var(--red)">D &lt;50</span>
-      <span style="margin-left:8px;color:var(--red)">D（一票否决）</span>
-      &nbsp;&nbsp;·&nbsp;&nbsp;
-      <strong>借贷利率信号解读：</strong>利率 &lt;0.3%/年=无异常 · 0.5-0.8%=有做空压力 · &gt;0.8%=做空预警
-    </div>
-  </div>
-
   <!-- GUIDE -->
   <div class="guide-card">
     <h3>📖 使用指南 — 3步完成一次评估</h3>
@@ -937,10 +939,11 @@
       <div class="guide-step-body">
         <div class="guide-step-title">读懂评级结论</div>
         <div class="guide-step-desc">
-          <div class="guide-grade-row"><span class="guide-grade grade-A">A ≥80分</span><span>值得投入 — 可分3-5批建仓，不追单日大阳线</span></div>
-          <div class="guide-grade-row"><span class="guide-grade grade-B">B 65-79分</span><span>轻仓定投 — 小仓位试探，不重仓追高</span></div>
-          <div class="guide-grade-row"><span class="guide-grade grade-C">C 50-64分</span><span>观察期 — 等待信号更明确</span></div>
-          <div class="guide-grade-row"><span class="guide-grade grade-D">D &lt;50分</span><span>不建议入场 — 赔率差或有极端风险信号</span></div>
+          <div class="guide-grade-row"><span class="guide-grade grade-A">A+ ≥90分</span><span>历史级机会 — 重仓3-5批建仓，总仓位80-100%</span></div>
+          <div class="guide-grade-row"><span class="guide-grade grade-A">A ≥78分</span><span>积极建仓 — 分批建仓60-80%，不追单日大阳线</span></div>
+          <div class="guide-grade-row"><span class="guide-grade grade-B">B 65-77分</span><span>轻仓定投 — 仓位30-50%，不重仓追高</span></div>
+          <div class="guide-grade-row"><span class="guide-grade grade-C">C 50-64分</span><span>观望等待 — 维持底仓10-20%，暂停新增</span></div>
+          <div class="guide-grade-row"><span class="guide-grade grade-D">D &lt;50分</span><span>清仓观望 — 减至底仓或空仓，等多维度改善</span></div>
         </div>
         <div class="guide-note">⚠️ 一票否决：MVRV&gt;6、NUPL&gt;0.75、美联储加息 → 任一触发直接降D，无论总分多高。</div>
       </div>
@@ -1040,7 +1043,14 @@ async function fetchCoingecko() {
     fresh.ma200val = prices.reduce((a,b)=>a+b,0)/prices.length;
     fresh.ma200dev = (fresh.price - fresh.ma200val) / fresh.ma200val * 100;
 
-    Object.assign(state, fresh);
+    // 只补充 data.json 没提供的字段（价格优先用后端）
+    if (!state.price) state.price = fresh.price;
+    if (!state.change24h) state.change24h = fresh.change24h;
+    // 这些字段后端不提供，CG 独有
+    if (fresh.athPct) state.athPct = fresh.athPct;
+    if (fresh.p30d) state.p30d = fresh.p30d;
+    if (fresh.dominance) state.dominance = fresh.dominance;
+    if (fresh.ma200val) { state.ma200val = fresh.ma200val; state.ma200dev = fresh.ma200dev; }
     cacheSet('cg_btc_data', fresh);
 
   } catch(e) {
@@ -1169,7 +1179,7 @@ function calcScores() {
     else ml_score = 0;                            // 高利率=大量借BTC做空预警
   }
 
-  // 未平仓合约 OI (3pts) — 杠杆程度判断
+  // 未平仓合约 OI (3pts) — 杠杆程度判断（注：用绝对量近似，理想应用OI/市值比，后续迭代）
   let oi_score = 1;
   if (state.oi_btc !== null) {
     if (state.oi_btc < 60000) oi_score = 3;      // 低OI=低杠杆=健康
@@ -1595,6 +1605,13 @@ async function fetchDataJson() {
       state.tips = d.tips;
       const el = document.getElementById('inp_tips');
       if (el) el.value = state.tips;
+    }
+
+    // 后端价格（优先使用，绕过 CoinGecko 前端限流）
+    if (d.price && d.price.price) {
+      state.price = d.price.price;
+      if (d.price.change24h !== null) state.change24h = d.price.change24h;
+      console.log('[data.json] 使用后端价格: $' + state.price);
     }
 
   } catch(e) {

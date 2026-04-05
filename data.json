@@ -1,9 +1,9 @@
 {
-  "timestamp": "2026-04-05T04:30:18.267385+00:00",
-  "timestamp_cn": "2026-04-05 12:30",
+  "timestamp": "2026-04-05T05:04:46.172042+00:00",
+  "timestamp_cn": "2026-04-05 13:04",
   "price": {
-    "price": 67160,
-    "change24h": 0.48
+    "price": 67109,
+    "change24h": 0.37
   },
   "etf": {
     "sum5d": -203.3,
@@ -26,12 +26,12 @@
     "reasoning": "数据获取失败，使用中性默认值",
     "confidence": "low"
   },
-  "funding_rate": 0.0045,
+  "funding_rate": 0.005,
   "margin_lending": {
     "btc_daily_rate": 1.116e-05,
     "btc_annual_rate": 0.4073,
     "btc_borrow_limit": 60.0,
-    "open_interest": 91336.0,
+    "open_interest": 91417.0,
     "open_interest_usd": null,
     "source": "binance_public"
   },
