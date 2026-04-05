@@ -574,7 +574,7 @@
     <div class="module-card">
       <div class="module-header">
         <h3>💰 资金流与市场结构</h3>
-        <div class="module-score score-loading loading" id="score2">--/25</div>
+        <div class="module-score score-loading loading" id="score2">--/30</div>
       </div>
       <div class="module-body">
         <div class="metric-row">
@@ -596,6 +596,16 @@
           <div class="metric-name">资金费率（手动）</div>
           <div class="metric-value" id="m2fr">--</div>
           <div class="metric-bar-wrap"><div class="metric-bar" id="m2fr_bar" style="width:0%"></div></div>
+        </div>
+        <div class="metric-row">
+          <div class="metric-name">借贷年化利率 <span style="font-size:10px;color:var(--muted)">●自动</span></div>
+          <div class="metric-value loading" id="m2ml">--%</div>
+          <div class="metric-bar-wrap"><div class="metric-bar" id="m2ml_bar" style="width:0%"></div></div>
+        </div>
+        <div class="metric-row">
+          <div class="metric-name">未平仓合约(OI) <span style="font-size:10px;color:var(--muted)">●自动</span></div>
+          <div class="metric-value loading" id="m2oi">-- BTC</div>
+          <div class="metric-bar-wrap"><div class="metric-bar" id="m2oi_bar" style="width:0%"></div></div>
         </div>
       </div>
     </div>
@@ -765,6 +775,14 @@
         <a href="https://fred.stlouisfed.org/series/DFII10" target="_blank">FRED · DFII10</a>
         <div class="source-desc">10年期美债实际利率(TIPS) · 免费</div>
       </div>
+      <div class="source-item">
+        <a href="https://www.binance.com/en/margin" target="_blank">Binance Margin</a>
+        <div class="source-desc">BTC保证金借贷利率 · 自动抓取 · 无需API Key</div>
+      </div>
+      <div class="source-item">
+        <a href="https://www.coinglass.com/openInterest" target="_blank">Coinglass OI</a>
+        <div class="source-desc">BTC未平仓合约(Open Interest) · 自动抓取</div>
+      </div>
     </div>
   </div>
 
@@ -813,6 +831,62 @@
     </div>
     <div style="margin-top:10px;font-size:11px;color:var(--muted)">
       数据来源：mempool.space（全网算力实时）· BTC价格同主面板 · 矿机参数来自公开规格表 · 拖动电价滑块查看不同电价场景
+    </div>
+  </div>
+
+
+  <!-- SCORING LOGIC -->
+  <div class="sources-card" style="margin-bottom:24px;">
+    <h3>⚖️ 综合评分加权逻辑（满分 105 分）</h3>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:14px;">
+      投资建议由五个维度加权合成。每个维度独立评分，满足阈值触发评级。<strong>任一一票否决条件触发时，总评自动降为 D 级。</strong>
+    </p>
+    <table style="width:100%;border-collapse:collapse;font-size:12px;">
+      <thead>
+        <tr style="color:var(--muted);text-align:left;border-bottom:1px solid rgba(255,255,255,0.08);">
+          <th style="padding:6px 8px;">维度</th>
+          <th style="padding:6px 8px;">满分</th>
+          <th style="padding:6px 8px;">核心指标</th>
+          <th style="padding:6px 8px;">逻辑依据</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+          <td style="padding:8px;color:var(--text);font-weight:600;">🌍 宏观环境</td>
+          <td style="padding:8px;color:var(--accent);font-weight:700;">25分</td>
+          <td style="padding:8px;color:var(--muted);">美联储方向(10) · DXY(7) · TIPS(5) · 恐贪(3)</td>
+          <td style="padding:8px;color:var(--muted);">流动性环境是BTC最核心的上涨驱动力。美联储降息周期 = 钱变便宜 = 风险资产上涨。</td>
+        </tr>
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+          <td style="padding:8px;color:var(--text);font-weight:600;">💰 资金结构</td>
+          <td style="padding:8px;color:var(--accent);font-weight:700;">30分</td>
+          <td style="padding:8px;color:var(--muted);">ETF净流入(10) · 稳定币(6) · BTC主导率(5) · 资金费率(4) · <strong style="color:var(--yellow)">借贷利率(3) · OI(3)</strong></td>
+          <td style="padding:8px;color:var(--muted);">机构和聪明钱用脚投票。借贷利率突涨说明有人在借BTC准备做空；高OI=高杠杆=脆弱。</td>
+        </tr>
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+          <td style="padding:8px;color:var(--text);font-weight:600;">🔗 链上估值</td>
+          <td style="padding:8px;color:var(--accent);font-weight:700;">30分</td>
+          <td style="padding:8px;color:var(--muted);">MVRV Z-Score(9) · NUPL(7) · LTH MVRV(7) · Puell(4) · LTH Supply(3)</td>
+          <td style="padding:8px;color:var(--muted);">链上数据是BTC独有的估值工具，反映全网持仓成本和盈亏分布，比传统PE更直接。</td>
+        </tr>
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+          <td style="padding:8px;color:var(--text);font-weight:600;">⚖️ 赔率/周期</td>
+          <td style="padding:8px;color:var(--accent);font-weight:700;">20分</td>
+          <td style="padding:8px;color:var(--muted);">MA200偏离(6) · 距ATH(5) · 减半周期(5) · 30日涨跌(4)</td>
+          <td style="padding:8px;color:var(--muted);">在对的时间买比在对的价格买更重要。减半后6-18个月是历史上最确定的上涨窗口期。</td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="margin-top:14px;padding:10px 14px;background:rgba(247,147,26,0.06);border-left:3px solid var(--accent);border-radius:4px;font-size:12px;">
+      <strong>评级对应分数：</strong>
+      <span style="margin-left:8px;color:var(--green)">A+ ≥90</span>
+      <span style="margin-left:8px;color:var(--green)">A ≥78</span>
+      <span style="margin-left:8px;color:var(--yellow)">B ≥65</span>
+      <span style="margin-left:8px;color:var(--muted)">C ≥50</span>
+      <span style="margin-left:8px;color:var(--red)">D &lt;50</span>
+      <span style="margin-left:8px;color:var(--red)">D（一票否决）</span>
+      &nbsp;&nbsp;·&nbsp;&nbsp;
+      <strong>借贷利率信号解读：</strong>利率 &lt;0.3%/年=无异常 · 0.5-0.8%=有做空压力 · &gt;0.8%=做空预警
     </div>
   </div>
 
@@ -898,7 +972,7 @@ const state = {
   ma200val: null, dominance: null, fg: null, p30d: null,
   // manual
   mvrv: null, nupl: null, puell: null, lth: null, lthmvrv: null,
-  fed: null, dxy: null, tips: null, etf5d: null, stbl: null, fr: null,
+  fed: null, dxy: null, tips: null, etf5d: null, stbl: null, fr: null, ml_rate: null, oi_btc: null,
 };
 
 // ============================================================
@@ -1085,7 +1159,26 @@ function calcScores() {
     else if (state.fr <= 0.06) fr_score = 1;     // 偏高=多头拥挤
     else fr_score = 0;                            // 极高=过热
   }
-  s2 = Math.min(25, dom_score + etf_score + stbl_score + fr_score);
+
+  // 借贷年化利率 (3pts) — 机构借BTC做空成本，利率突升=做空压力预警
+  let ml_score = 1;
+  if (state.ml_rate !== null) {
+    if (state.ml_rate < 0.3) ml_score = 3;       // 极低=无明显做空需求
+    else if (state.ml_rate < 0.5) ml_score = 2;  // 正常偏低
+    else if (state.ml_rate < 0.8) ml_score = 1;  // 偏高=有借空需求
+    else ml_score = 0;                            // 高利率=大量借BTC做空预警
+  }
+
+  // 未平仓合约 OI (3pts) — 杠杆程度判断
+  let oi_score = 1;
+  if (state.oi_btc !== null) {
+    if (state.oi_btc < 60000) oi_score = 3;      // 低OI=低杠杆=健康
+    else if (state.oi_btc < 90000) oi_score = 2; // 中等OI=正常
+    else if (state.oi_btc < 120000) oi_score = 1; // 偏高OI=杠杆偏多
+    else oi_score = 0;                             // 极高OI=过度杠杆
+  }
+
+  s2 = Math.min(30, dom_score + etf_score + stbl_score + fr_score + ml_score + oi_score);
 
   // ---- MODULE 3: 链上估值 (30pts) ----
   // MVRV Z-Score (9pts) — 最核心的市场估值指标
@@ -1183,36 +1276,36 @@ function calcScores() {
   let grade, title, desc, verdictClass;
 
   if (vetoTriggered) {
-    grade = 'D'; total = Math.min(total, 45);
+    grade = 'D'; total = Math.min(total, 50);
     title = '⛔ 一票否决 — 立即停止买入';
     desc = '⚠️ 检测到极端风险信号（链上严重过热 / 主动加息周期 / NUPL狂热）。操作建议：停止新增仓位，已有仓位减至底仓20-30%，等待信号解除。';
     verdictClass = 'verdict-D';
-  } else if (total >= 82) {
+  } else if (total >= 90) {
     grade = 'A+'; title = '🚀 重仓机会 — 历史级低估';
-    desc = '四维指标高度共振，出现历史级买入机会（通常对应大熊市底部）。操作建议：可重仓3-5批建仓，总仓位可达计划上限的80-100%，每跌5%加一批。';
+    desc = '五维指标高度共振（含借贷结构健康+低杠杆），出现历史级买入机会。操作建议：可重仓3-5批建仓，总仓位可达计划上限的80-100%，每跌5%加一批。';
     verdictClass = 'verdict-A';
-  } else if (total >= 72) {
+  } else if (total >= 78) {
     grade = 'A'; title = '✅ 积极建仓 — 赔率良好';
-    desc = '宏观、资金、链上、赔率四维均较为友好，整体偏向低估。操作建议：分3-5批建仓，总仓位60-80%，不追单日大阳线，逢回调加仓。';
+    desc = '宏观、资金、借贷结构、链上、赔率多维均较友好，整体偏向低估。操作建议：分3-5批建仓，总仓位60-80%，不追单日大阳线，逢回调加仓。';
     verdictClass = 'verdict-A';
-  } else if (total >= 60) {
+  } else if (total >= 65) {
     grade = 'B'; title = '🟡 轻仓参与 — 定投为主';
     desc = '信号偏正面但存在不确定性，市场处于中性偏多区间。操作建议：定投为主，仓位控制在30-50%，不追高，等待更好的入场点。';
     verdictClass = 'verdict-B';
-  } else if (total >= 45) {
+  } else if (total >= 50) {
     grade = 'C'; title = '⏸ 观望等待 — 赔率不足';
     desc = '当前信号混杂，估值偏贵或宏观不明朗。操作建议：维持底仓（10-20%），暂停新增，等待MVRV/NUPL回落或宏观改善再行动。';
     verdictClass = 'verdict-C';
   } else {
     grade = 'D'; title = '❌ 清仓观望 — 风险大于机会';
-    desc = '宏观逆风 + 估值偏贵 + 资金面弱，多重不利信号叠加。操作建议：减仓至底仓或空仓，等待至少2-3个维度出现明显改善后再重新评估。';
+    desc = '宏观逆风 + 估值偏贵 + 资金面弱 + 借贷结构异常，多重不利信号叠加。操作建议：减仓至底仓或空仓，等待至少2-3个维度出现明显改善后再重新评估。';
     verdictClass = 'verdict-D';
   }
 
   return { s1, s2, s3, s4, total, grade, title, desc, verdictClass,
            vetoTriggered, monthsSinceHalving,
            fg_score, fed_score, dxy_score, tips_score,
-           dom_score, etf_score, stbl_score, fr_score,
+           dom_score, etf_score, stbl_score, fr_score, ml_score, oi_score,
            mvrv_score, nupl_score, puell_score, lth_score, lthmvrv_score,
            ath_score, ma200_score, halving_score, p30_score };
 }
@@ -1272,7 +1365,7 @@ function render() {
 
   // Module scores
   setText('score1', sc.s1+'/25'); setClass('score1', 'module-score '+scoreColor(sc.s1,25));
-  setText('score2', sc.s2+'/25'); setClass('score2', 'module-score '+scoreColor(sc.s2,25));
+  setText('score2', sc.s2+'/30'); setClass('score2', 'module-score '+scoreColor(sc.s2,30));
   setText('score3', sc.s3+'/30'); setClass('score3', 'module-score '+scoreColor(sc.s3,30));
   setText('score4', sc.s4+'/20'); setClass('score4', 'module-score '+scoreColor(sc.s4,20));
 
@@ -1291,8 +1384,19 @@ function render() {
   setBar('m2etf_bar', barWidth(sc.etf_score,10), barColor(sc.etf_score,10));
   setText('m2stbl', state.stbl? ({expand:'扩张',flat:'横盘',shrink:'收缩'}[state.stbl]+' ('+sc.stbl_score+'/5)') : '--');
   setBar('m2stbl_bar', barWidth(sc.stbl_score,5), barColor(sc.stbl_score,5));
-  setText('m2fr', state.fr!==null? state.fr+'%/8h ('+sc.fr_score+'/5)' : '--');
-  setBar('m2fr_bar', barWidth(sc.fr_score,5), barColor(sc.fr_score,5));
+  setText('m2fr', state.fr!==null? state.fr+'%/8h ('+sc.fr_score+'/4)' : '--');
+  setBar('m2fr_bar', barWidth(sc.fr_score,4), barColor(sc.fr_score,4));
+  if(state.ml_rate!==null){
+    setText('m2ml', state.ml_rate.toFixed(3)+'%/年 ('+sc.ml_score+'/3)');
+    setBar('m2ml_bar', barWidth(sc.ml_score,3), barColor(sc.ml_score,3));
+    document.getElementById('m2ml').classList.remove('loading');
+  }
+  if(state.oi_btc!==null){
+    const oiK = (state.oi_btc/1000).toFixed(1);
+    setText('m2oi', oiK+'K BTC ('+sc.oi_score+'/3)');
+    setBar('m2oi_bar', barWidth(sc.oi_score,3), barColor(sc.oi_score,3));
+    document.getElementById('m2oi').classList.remove('loading');
+  }
 
   // M3
   setText('m3mvrv', state.mvrv!==null? state.mvrv+' ('+sc.mvrv_score+'/9)' : '--');
@@ -1469,6 +1573,14 @@ async function fetchDataJson() {
       state.fr = d.funding_rate;
       const el = document.getElementById('inp_fr');
       if (el) el.value = state.fr;
+    }
+
+    // 借贷利率 + 未平仓合约
+    if (d.margin_lending) {
+      if (d.margin_lending.btc_annual_rate !== null && d.margin_lending.btc_annual_rate !== undefined)
+        state.ml_rate = d.margin_lending.btc_annual_rate;
+      if (d.margin_lending.open_interest !== null && d.margin_lending.open_interest !== undefined)
+        state.oi_btc = d.margin_lending.open_interest;
     }
 
     // 稳定币趋势
