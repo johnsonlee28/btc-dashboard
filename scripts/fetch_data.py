@@ -232,8 +232,59 @@ def fetch_lookintobitcoin():
 # ============================================================
 # 3. 美联储方向 - 多源备用
 # ============================================================
+
+
+def fetch_fed_direction_rateprob():
+    """
+    优先使用 JSON API 源，避免 CME/财经站点的 403/404。
+    来源: https://rateprobability.com/api/latest
+    """
+    url = "https://rateprobability.com/api/latest"
+    data = http_get(url, headers={"Accept": "application/json"})
+    if not data:
+        return None
+    try:
+        payload = json.loads(data)
+        today = payload.get("today") or {}
+        rows = today.get("rows") or []
+        midpoint = today.get("midpoint")
+        if not rows:
+            return None
+        next_meeting = rows[0]
+        prob = float(next_meeting.get("prob_move_pct", 0) or 0)
+        is_cut = bool(next_meeting.get("prob_is_cut"))
+        implied = next_meeting.get("implied_rate_post_meeting")
+        change_bps = float(next_meeting.get("change_bps", 0) or 0)
+        meeting = next_meeting.get("meeting") or next_meeting.get("meeting_iso") or "next meeting"
+
+        if is_cut and prob >= 50:
+            direction = "cut2"
+            confidence = "high"
+        elif (not is_cut) and (change_bps >= 12.5 or (midpoint is not None and implied is not None and float(implied) > float(midpoint) + 0.125)):
+            direction = "hike"
+            confidence = "high"
+        else:
+            direction = "cut1"
+            confidence = "medium" if prob >= 10 or abs(change_bps) >= 5 else "high"
+
+        reasoning = f"{meeting} 定价：{'降息' if is_cut else '加息/不降息'}概率 {prob:.2f}%，变动 {change_bps:.1f}bps"
+        log(f"  ✅ 美联储方向(RateProbability API): {direction} ({reasoning})")
+        return {
+            "fed_direction": direction,
+            "reasoning": reasoning,
+            "confidence": confidence,
+            "source": "rateprobability_api"
+        }
+    except Exception as e:
+        log(f"  RateProbability API parse error: {e}")
+        return None
+
 def fetch_fed_direction():
     log("抓取美联储预期 (多源)...")
+
+    api_result = fetch_fed_direction_rateprob()
+    if api_result and api_result.get("fed_direction"):
+        return api_result
 
     sources = [
         "https://www.cmegroup.com/markets/interest-rates/cme-fedwatch-tool.html",
