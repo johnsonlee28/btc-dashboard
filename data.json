@@ -1,9 +1,9 @@
 {
-  "timestamp": "2026-04-06T10:52:44.091915+00:00",
-  "timestamp_cn": "2026-04-06 18:52",
+  "timestamp": "2026-04-06T10:53:50.907467+00:00",
+  "timestamp_cn": "2026-04-06 18:53",
   "price": {
-    "price": 69786,
-    "change24h": 4.16
+    "price": 69745,
+    "change24h": 4.1
   },
   "etf": {
     "sum5d": -203.3,
@@ -18,8 +18,8 @@
     "source": "farside_parsed"
   },
   "onchain": {
-    "mvrv_zscore": null,
-    "nupl": null
+    "mvrv_zscore": 2.04,
+    "nupl": 0.64
   },
   "fed": {
     "fed_direction": "cut1",
@@ -31,7 +31,7 @@
     "btc_daily_rate": 1.089e-05,
     "btc_annual_rate": 0.3975,
     "btc_borrow_limit": 60.0,
-    "open_interest": 94702.0,
+    "open_interest": 94741.0,
     "open_interest_usd": null,
     "source": "binance_public"
   },
