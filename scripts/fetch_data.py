@@ -13,6 +13,27 @@ FRED_KEY = os.environ.get("FRED_KEY", "")
 REPO_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_FILE = os.path.join(REPO_DIR, "data.json")
 
+def load_previous_data():
+    try:
+        if os.path.exists(DATA_FILE):
+            with open(DATA_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+    except Exception as e:
+        log(f"  读取旧 data.json 失败: {e}")
+    return {}
+
+def carry_forward(previous, current, path, label):
+    old = previous
+    for key in path:
+        if not isinstance(old, dict):
+            old = None
+            break
+        old = old.get(key)
+    if current is None and old is not None:
+        log(f"  ♻️ {label} 本轮抓取失败，沿用上一版有效值: {old}")
+        return old
+    return current
+
 def log(msg):
     print(f"[{datetime.now().strftime('%H:%M:%S')}] {msg}")
 
@@ -389,6 +410,8 @@ def main():
     log(f"时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     log("=" * 55)
 
+    previous_data = load_previous_data()
+
     data = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "timestamp_cn": datetime.now().strftime("%Y-%m-%d %H:%M"),
@@ -412,11 +435,21 @@ def main():
     if btc_price:
         data["price"] = btc_price
     onchain = fetch_lookintobitcoin()
+    onchain["mvrv_zscore"] = carry_forward(previous_data, onchain.get("mvrv_zscore"), ["onchain", "mvrv_zscore"], "MVRV Z-Score")
+    onchain["nupl"] = carry_forward(previous_data, onchain.get("nupl"), ["onchain", "nupl"], "NUPL")
     data["onchain"] = onchain
     time.sleep(2)
 
     fed = fetch_fed_direction()
-    if fed:
+    prev_fed = (((previous_data or {}).get("fed") or {}))
+    if fed and fed.get("confidence") == "low" and prev_fed.get("fed_direction"):
+        data["fed"] = {
+            "fed_direction": prev_fed.get("fed_direction"),
+            "reasoning": f"沿用上一版有效值；本轮抓取失败。上一版依据：{prev_fed.get('reasoning', '')}".strip(),
+            "confidence": prev_fed.get("confidence", "carried_forward")
+        }
+        log(f"  ♻️ 美联储方向本轮抓取失败，沿用上一版有效值: {prev_fed.get('fed_direction')}")
+    elif fed:
         data["fed"] = fed
     time.sleep(2)
 
@@ -436,8 +469,7 @@ def main():
 
     time.sleep(1)
     tips = fetch_tips()
-    if tips is not None:
-        data["tips"] = tips
+    data["tips"] = carry_forward(previous_data, tips, ["tips"], "TIPS 实际利率")
 
     # 汇总输出
     log("\n" + "=" * 55)
