@@ -462,7 +462,7 @@
   <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
     <a href="/eth" style="font-size:13px;font-weight:700;color:#fff;background:linear-gradient(135deg,#627eea,#aa66ff);padding:8px 16px;border-radius:8px;text-decoration:none;display:inline-flex;align-items:center;gap:6px;box-shadow:0 0 12px rgba(98,126,234,0.4);transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">⟠ ETH 观察</a>
     <div class="last-updated" id="lastUpdated">加载中...</div>
-    <button class="refresh-btn" id="refreshBtn" onclick="loadAll()">🔄 刷新数据</button>
+    <button class="refresh-btn" id="refreshBtn" onclick="loadAll(true)">🔄 刷新数据</button>
   </div>
 </div>
 
@@ -1013,9 +1013,9 @@ function cacheSet(key, data) {
   try { localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data })); } catch(e) {}
 }
 
-async function fetchCoingecko() {
-  // 1. 先尝试读缓存
-  const cached = cacheGet('cg_btc_data');
+async function fetchCoingecko(forceFresh = false) {
+  // 1. 先尝试读缓存（手动刷新时可强制跳过）
+  const cached = !forceFresh ? cacheGet('cg_btc_data') : null;
   if (cached) {
     Object.assign(state, cached);
     console.log('[CG] 使用缓存数据');
@@ -1043,9 +1043,9 @@ async function fetchCoingecko() {
     fresh.ma200val = prices.reduce((a,b)=>a+b,0)/prices.length;
     fresh.ma200dev = (fresh.price - fresh.ma200val) / fresh.ma200val * 100;
 
-    // 只补充 data.json 没提供的字段（价格优先用后端）
-    if (!state.price) state.price = fresh.price;
-    if (!state.change24h) state.change24h = fresh.change24h;
+    // 实时价格始终以当前拉到的数据覆盖，避免被静态 data.json 压住
+    state.price = fresh.price;
+    state.change24h = fresh.change24h;
     // 这些字段后端不提供，CG 独有
     if (fresh.athPct) state.athPct = fresh.athPct;
     if (fresh.p30d) state.p30d = fresh.p30d;
@@ -1733,10 +1733,14 @@ function updateMinerElec(val) {
 // ============================================================
 // LOAD ALL
 // ============================================================
-async function loadAll() {
+async function loadAll(forceFresh = false) {
   const btn = document.getElementById('refreshBtn');
-  if(btn) { btn.disabled = true; btn.textContent = '加载中...'; }
-  await Promise.all([fetchCoingecko(), fetchFG(), fetchDataJson(), fetchNetworkHashrate()]);
+  if(btn) { btn.disabled = true; btn.textContent = forceFresh ? '实时刷新中...' : '加载中...'; }
+
+  // 先拿后端兜底数据，再让前端实时价覆盖，避免 Promise 竞态把价格压回旧值
+  await fetchDataJson();
+  await Promise.all([fetchCoingecko(forceFresh), fetchFG(), fetchNetworkHashrate()]);
+
   render();
   renderMinerModule();
   if(btn) { btn.disabled = false; btn.textContent = '🔄 刷新数据'; }
