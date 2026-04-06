@@ -1075,6 +1075,35 @@ async function fetchFG() {
   } catch(e) { console.error('FG error', e); }
 }
 
+async function fetchRealtimePrice() {
+  try {
+    const res = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT');
+    const d = await res.json();
+    const p = parseFloat(d.lastPrice);
+    const chg = parseFloat(d.priceChangePercent);
+    if (!Number.isNaN(p)) state.price = p;
+    if (!Number.isNaN(chg)) state.change24h = chg;
+    render();
+    renderMinerModule();
+    return;
+  } catch (e) {
+    console.warn('Binance realtime price error', e);
+  }
+
+  try {
+    const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true');
+    const d = await res.json();
+    const p = d?.bitcoin?.usd;
+    const chg = d?.bitcoin?.usd_24h_change;
+    if (typeof p === 'number') state.price = p;
+    if (typeof chg === 'number') state.change24h = chg;
+    render();
+    renderMinerModule();
+  } catch (e) {
+    console.warn('CG realtime price fallback error', e);
+  }
+}
+
 // ============================================================
 // SCORING ENGINE
 // ============================================================
@@ -1751,7 +1780,9 @@ async function loadAll(forceFresh = false) {
 // ============================================================
 loadManualFromStorage();
 loadAll();
-// Auto refresh every 5 minutes
+// 价格轻量自动刷新：每15秒只刷新价格与24h涨跌，避免整页重拉
+setInterval(fetchRealtimePrice, 15*1000);
+// 整体数据自动刷新：每5分钟
 setInterval(loadAll, 5*60*1000);
 </script>
 </body>
