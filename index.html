@@ -261,8 +261,8 @@
   .reserve-kicker { font-size: 11px; letter-spacing: 0.18em; color: var(--accent); text-transform: uppercase; margin-bottom: 6px; font-weight: 700; }
   .reserve-title { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
   .reserve-subtitle { color: var(--muted); max-width: 720px; font-size: 13px; }
-  .reserve-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
-  .reserve-badge { padding: 6px 10px; border: 1px solid rgba(255,255,255,0.08); border-radius: 999px; color: var(--muted); background: rgba(255,255,255,0.03); font-size: 11px; }
+  .reserve-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; margin-left: auto; }
+  .reserve-badge { padding: 6px 10px; border: 1px solid rgba(255,255,255,0.08); border-radius: 999px; color: var(--muted); background: rgba(255,255,255,0.03); font-size: 11px; white-space: nowrap; line-height: 1; display: inline-flex; align-items: center; }
   .reserve-badge strong { color: var(--text); }
   .reserve-tabs { display: inline-flex; border: 1px solid rgba(255,255,255,0.08); border-radius: 999px; padding: 4px; background: rgba(255,255,255,0.03); }
   .reserve-tab { border: none; background: transparent; color: var(--muted); padding: 6px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; cursor: pointer; transition: .2s ease; }
@@ -300,7 +300,7 @@
   .reserve-note-list strong { color: var(--text); }
   .reserve-footnote { margin-top: 16px; font-size: 11px; color: var(--muted); border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px; }
   @media (max-width: 1100px) { .reserve-summary-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .reserve-layout { grid-template-columns: 1fr; } }
-  @media (max-width: 720px) { .reserve-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .reserve-title { font-size: 18px; } .reserve-showcase { padding: 16px; } .reserve-panel { padding: 14px; } .reserve-table { font-size: 12px; } .reserve-table th:nth-child(4), .reserve-table td:nth-child(4) { display: none; } }
+  @media (max-width: 720px) { .reserve-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .reserve-title { font-size: 18px; } .reserve-showcase { padding: 16px; } .reserve-panel { padding: 14px; } .reserve-table { font-size: 12px; } .reserve-table th:nth-child(4), .reserve-table td:nth-child(4) { display: none; } .reserve-head { align-items: stretch; } .reserve-meta { width: 100%; justify-content: flex-start; gap: 8px; } .reserve-tabs { margin-left: 0; } }
 
   /* SOURCES TABLE */
   .sources-card {
