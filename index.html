@@ -291,7 +291,7 @@
   .reserve-panel { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 18px; }
   .reserve-panel h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 14px; }
   .reserve-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  .reserve-table th, .reserve-table td { padding: 10px 8px; text-align: right; border-bottom: 1px solid rgba(255,255,255,0.06); vertical-align: middle; }
+  .reserve-table th, .reserve-table td { padding: 10px 8px; text-align: right; border-bottom: 1px solid rgba(255,255,255,0.06); vertical-align: middle; white-space: nowrap; }
   .reserve-table th:first-child, .reserve-table td:first-child, .reserve-table th:nth-child(2), .reserve-table td:nth-child(2) { text-align: left; }
   .reserve-table th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
   .reserve-ex { display: flex; align-items: center; gap: 10px; font-weight: 700; }
@@ -308,12 +308,12 @@
   .reserve-mini-tab.active { color: var(--text); border-color: rgba(247,147,26,0.35); box-shadow: inset 0 0 0 1px rgba(247,147,26,0.2); }
   .reserve-chart-shell { border-radius: 14px; background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02)); border: 1px solid rgba(255,255,255,0.06); padding: 14px; }
   .reserve-chart-svg { width: 100%; height: 210px; display: block; }
-  .reserve-chart-insight { padding: 12px 14px; background: rgba(247,147,26,0.06); border-left: 3px solid rgba(247,147,26,0.9); border-radius: 8px; font-size: 12px; color: #e9d0ad; }
-  .reserve-note-list { display: grid; gap: 10px; font-size: 12px; color: var(--muted); margin-top: 14px; }
+  .reserve-chart-insight { padding: 12px 14px; background: rgba(247,147,26,0.06); border-left: 3px solid rgba(247,147,26,0.9); border-radius: 8px; font-size: 12px; color: #e9d0ad; word-break: break-word; overflow-wrap: break-word; }
+  .reserve-note-list { display: grid; gap: 10px; font-size: 12px; color: var(--muted); margin-top: 14px; word-break: break-word; overflow-wrap: break-word; }
   .reserve-note-list strong { color: var(--text); }
-  .reserve-footnote { margin-top: 16px; font-size: 11px; color: var(--muted); border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px; }
+  .reserve-footnote { margin-top: 16px; font-size: 11px; color: var(--muted); border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px; word-break: break-word; overflow-wrap: break-word; }
   @media (max-width: 1100px) { .reserve-summary-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .reserve-layout { grid-template-columns: 1fr; } }
-  @media (max-width: 720px) { .reserve-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .reserve-title { font-size: 18px; } .reserve-showcase { padding: 16px; } .reserve-panel { padding: 14px; } .reserve-table { font-size: 12px; } .reserve-table th:nth-child(4), .reserve-table td:nth-child(4) { display: none; } .reserve-head { align-items: stretch; } .reserve-meta { width: 100%; justify-content: flex-start; gap: 8px; } .reserve-tabs { margin-left: 0; } }
+  @media (max-width: 720px) { .reserve-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .reserve-title { font-size: 18px; } .reserve-showcase { padding: 16px; } .reserve-panel { padding: 14px; } .reserve-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; } .reserve-table { font-size: 12px; min-width: 340px; } .reserve-table th:nth-child(4), .reserve-table td:nth-child(4) { display: none; } .reserve-table th:nth-child(8), .reserve-table td:nth-child(8) { display: none; } .reserve-head { align-items: stretch; } .reserve-meta { width: 100%; justify-content: flex-start; gap: 8px; } .reserve-tabs { margin-left: 0; } }
 
   /* SOURCES TABLE */
   .sources-card {
@@ -971,10 +971,10 @@
     <div class="reserve-layout">
       <div class="reserve-panel">
         <h3>主流 CEX BTC 储备排名</h3>
-        <table class="reserve-table">
+        <div class="reserve-table-wrap"><table class="reserve-table">
           <thead><tr><th>#</th><th>交易所</th><th>BTC 储备</th><th>估值</th><th>24h</th><th>7d</th><th>30d</th><th>趋势</th></tr></thead>
           <tbody id="reserveTableBody"></tbody>
-        </table>
+        </table></div>
       </div>
       <div class="reserve-panel reserve-chart-wrap">
         <div>
