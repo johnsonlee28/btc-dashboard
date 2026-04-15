@@ -1,20 +1,20 @@
 {
-  "timestamp": "2026-04-15T10:00:06.095051+00:00",
-  "timestamp_cn": "2026-04-15 18:00",
+  "timestamp": "2026-04-15T22:00:06.188686+00:00",
+  "timestamp_cn": "2026-04-16 06:00",
   "price": {
-    "price": 74017,
-    "change24h": -0.69
+    "price": 74751,
+    "change24h": 0.71
   },
   "etf": {
-    "sum5d": 641.3,
+    "sum5d": 735.2,
     "days": [
-      -93.9,
       358.1,
       256.7,
       -291.0,
-      411.4
+      411.4,
+      0.0
     ],
-    "latest_date": "14 Apr 2026",
+    "latest_date": "15 Apr 2026",
     "source": "farside_parsed"
   },
   "onchain": {
@@ -23,21 +23,21 @@
   },
   "fed": {
     "fed_direction": "cut1",
-    "reasoning": "Apr 29, 2026 定价：加息/不降息概率 2.00%，变动 0.5bps",
+    "reasoning": "Apr 29, 2026 定价：加息/不降息概率 0.00%，变动 0.0bps",
     "confidence": "high",
     "source": "rateprobability_api"
   },
-  "funding_rate": 0.01,
+  "funding_rate": -0.0068,
   "margin_lending": {
-    "btc_daily_rate": 1.12e-05,
-    "btc_annual_rate": 0.4088,
+    "btc_daily_rate": 1.137e-05,
+    "btc_annual_rate": 0.415,
     "btc_borrow_limit": 60.0,
-    "open_interest": 97608.0,
+    "open_interest": 97232.0,
     "open_interest_usd": null,
     "source": "binance_public"
   },
   "stablecoin": {
-    "total_b": 318.3,
+    "total_b": 318.2,
     "trend": "expand"
   },
   "tips": 1.92
