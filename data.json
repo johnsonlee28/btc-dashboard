@@ -1,9 +1,9 @@
 {
-  "timestamp": "2026-04-17T10:31:01.882537+00:00",
+  "timestamp": "2026-04-17T10:31:55.891260+00:00",
   "timestamp_cn": "2026-04-17 18:31",
   "price": {
-    "price": 75374,
-    "change24h": 1.21
+    "price": 75279,
+    "change24h": 1.09
   },
   "etf": {
     "sum5d": 589.3,
@@ -32,7 +32,7 @@
     "btc_daily_rate": 1.124e-05,
     "btc_annual_rate": 0.4103,
     "btc_borrow_limit": 60.0,
-    "open_interest": 99779.0,
+    "open_interest": 99768.0,
     "open_interest_usd": null,
     "source": "binance_public"
   },
