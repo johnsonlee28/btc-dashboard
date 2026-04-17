@@ -416,6 +416,81 @@
   }
   .monitor-row:last-child { border-bottom: none; }
 
+  /* PRICE ALERT MODULE */
+  .alert-box {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+  }
+  .alert-box h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 12px; }
+  .alert-form-row {
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; margin-bottom: 12px;
+  }
+  .alert-form-row select,
+  .alert-form-row input[type=number],
+  .alert-form-row input[type=text] {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); padding: 6px 10px; font-size: 13px; outline: none;
+  }
+  .alert-form-row select:focus,
+  .alert-form-row input:focus { border-color: var(--accent); }
+  .alert-sym { width: 80px; }
+  .alert-cond { width: 80px; }
+  .alert-price { width: 110px; }
+  .alert-label-inp { flex: 1; min-width: 100px; }
+  .alert-add-btn {
+    background: transparent; border: 1px solid var(--accent); color: var(--accent);
+    border-radius: 6px; padding: 6px 14px; font-size: 13px; cursor: pointer;
+    transition: background 0.2s;
+  }
+  .alert-add-btn:hover { background: rgba(247,147,26,0.12); }
+  .alert-key-row {
+    display: flex; gap: 8px; align-items: center; margin-bottom: 14px;
+  }
+  .alert-key-row input {
+    flex: 1; background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text); padding: 6px 10px; font-size: 12px; outline: none;
+  }
+  .alert-key-row input:focus { border-color: var(--accent); }
+  .alert-key-save {
+    background: transparent; border: 1px solid var(--border); color: var(--muted);
+    border-radius: 6px; padding: 6px 12px; font-size: 12px; cursor: pointer;
+  }
+  .alert-key-save:hover { border-color: var(--accent); color: var(--accent); }
+  .alert-list { margin-top: 4px; }
+  .alert-item {
+    display: flex; align-items: center; gap: 10px; padding: 9px 0;
+    border-bottom: 1px solid var(--border); font-size: 13px;
+  }
+  .alert-item:last-child { border-bottom: none; }
+  .alert-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .alert-dot-active { background: var(--green); }
+  .alert-dot-triggered { background: var(--accent); }
+  .alert-sym-badge {
+    background: var(--bg3); border-radius: 4px; padding: 2px 7px;
+    font-size: 11px; font-weight: 700; color: var(--accent); flex-shrink: 0;
+  }
+  .alert-desc { flex: 1; color: var(--text); }
+  .alert-price-cur { font-size: 11px; color: var(--muted); flex-shrink: 0; }
+  .alert-del {
+    background: none; border: none; color: var(--muted); cursor: pointer;
+    font-size: 15px; padding: 2px 6px; border-radius: 4px;
+  }
+  .alert-del:hover { color: var(--red); background: rgba(255,80,80,0.1); }
+  .alert-reset {
+    background: transparent; border: 1px solid var(--border); color: var(--muted);
+    border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer; margin-left: 4px;
+  }
+  .alert-reset:hover { border-color: var(--green); color: var(--green); }
+  .alert-notify-row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; font-size: 12px; color: var(--muted); }
+  .alert-notif-btn {
+    background: transparent; border: 1px solid var(--border); color: var(--muted);
+    border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer;
+  }
+  .alert-notif-btn.enabled { border-color: var(--green); color: var(--green); }
+
   @media (max-width: 600px) {
     .verdict-box { flex-direction: column; }
     .price-bar { flex-direction: column; gap: 12px; }
@@ -888,6 +963,53 @@
       <div class="veto-dot" id="mon4dot" style="background:var(--muted)"></div>
       <div style="flex:1">ETF 连续10日净流出 > 30亿美元 → 减仓预警</div>
       <div style="color:var(--muted); font-size:12px;" id="mon4val">需手动监控</div>
+    </div>
+  </div>
+
+  <!-- PRICE ALERT MODULE -->
+  <div class="alert-box" id="alertBox">
+    <h3>🔔 价格提醒 · 自定义标的</h3>
+
+    <!-- Server酱 Key 配置 -->
+    <div class="alert-key-row">
+      <span style="font-size:12px;color:var(--muted);flex-shrink:0;">微信推送 Key：</span>
+      <input type="password" id="alertServerKey" placeholder="SCTxxxx（Server酱 SendKey，留空只用浏览器通知）" autocomplete="off">
+      <button class="alert-key-save" onclick="alertSaveKey()">保存</button>
+    </div>
+
+    <!-- 浏览器通知权限 -->
+    <div class="alert-notify-row">
+      <span>浏览器通知：</span>
+      <button class="alert-notif-btn" id="alertNotifBtn" onclick="alertRequestNotif()">点击授权</button>
+      <span id="alertNotifStatus" style="margin-left:4px;"></span>
+    </div>
+
+    <!-- 添加新提醒 -->
+    <div class="alert-form-row">
+      <select id="alertSym" class="alert-sym">
+        <option>BTC</option>
+        <option>ETH</option>
+        <option>BNB</option>
+        <option>SOL</option>
+        <option>XRP</option>
+        <option>ADA</option>
+        <option>DOGE</option>
+        <option>AVAX</option>
+        <option value="__custom__">自定义…</option>
+      </select>
+      <input type="text" id="alertSymCustom" class="alert-sym" placeholder="输入Symbol" style="display:none;">
+      <select id="alertCond" class="alert-cond">
+        <option value="below">📉 跌破</option>
+        <option value="above">📈 突破</option>
+      </select>
+      <input type="number" id="alertTargetPrice" class="alert-price" placeholder="目标价 $" step="any" min="0">
+      <input type="text" id="alertLabelInp" class="alert-label-inp" placeholder="备注（可选）">
+      <button class="alert-add-btn" onclick="alertAdd()">＋ 添加</button>
+    </div>
+
+    <!-- 提醒列表 -->
+    <div class="alert-list" id="alertList">
+      <div style="color:var(--muted);font-size:12px;padding:8px 0;">还没有设置任何提醒</div>
     </div>
   </div>
 
@@ -1955,11 +2077,229 @@ async function loadAll(forceFresh = false) {
 // ============================================================
 // INIT
 // ============================================================
+
+// ============================================================
+// PRICE ALERT MODULE
+// ============================================================
+const ALERT_STORAGE_KEY = 'btc_price_alerts_v2';
+const ALERT_KEY_STORAGE = 'btc_alert_server_key';
+let alertPriceCache = {}; // { BTC: 84000, ETH: 1800, ... }
+
+function alertLoadFromStorage() {
+  try { return JSON.parse(localStorage.getItem(ALERT_STORAGE_KEY) || '[]'); } catch { return []; }
+}
+function alertSaveToStorage(alerts) {
+  localStorage.setItem(ALERT_STORAGE_KEY, JSON.stringify(alerts));
+}
+function alertGetKey() {
+  return localStorage.getItem(ALERT_KEY_STORAGE) || '';
+}
+function alertSaveKey() {
+  const k = document.getElementById('alertServerKey').value.trim();
+  localStorage.setItem(ALERT_KEY_STORAGE, k);
+  document.getElementById('alertServerKey').value = k;
+  showToast('✅ Server酱 Key 已保存');
+}
+
+function alertRequestNotif() {
+  if (!('Notification' in window)) { alertUpdateNotifStatus(); return; }
+  Notification.requestPermission().then(alertUpdateNotifStatus);
+}
+function alertUpdateNotifStatus() {
+  const btn = document.getElementById('alertNotifBtn');
+  const status = document.getElementById('alertNotifStatus');
+  if (!('Notification' in window)) {
+    status.textContent = '不支持'; return;
+  }
+  if (Notification.permission === 'granted') {
+    btn.classList.add('enabled'); btn.textContent = '✅ 已授权';
+    status.textContent = '价格触发时会弹出桌面通知';
+  } else if (Notification.permission === 'denied') {
+    btn.classList.remove('enabled'); btn.textContent = '❌ 已拒绝';
+    status.textContent = '请在浏览器设置中手动开启';
+  } else {
+    btn.classList.remove('enabled'); btn.textContent = '点击授权';
+    status.textContent = '';
+  }
+}
+
+function alertAdd() {
+  const symSel = document.getElementById('alertSym').value;
+  const symCustom = document.getElementById('alertSymCustom').value.trim().toUpperCase();
+  const sym = symSel === '__custom__' ? symCustom : symSel;
+  const cond = document.getElementById('alertCond').value;
+  const targetPrice = parseFloat(document.getElementById('alertTargetPrice').value);
+  const label = document.getElementById('alertLabelInp').value.trim();
+
+  if (!sym) { showToast('⚠️ 请输入标的'); return; }
+  if (isNaN(targetPrice) || targetPrice <= 0) { showToast('⚠️ 请输入有效目标价'); return; }
+
+  const alerts = alertLoadFromStorage();
+  alerts.push({
+    id: Date.now().toString(),
+    symbol: sym,
+    condition: cond,
+    targetPrice,
+    label,
+    triggered: false,
+    createdAt: new Date().toISOString(),
+  });
+  alertSaveToStorage(alerts);
+
+  // 清空输入
+  document.getElementById('alertTargetPrice').value = '';
+  document.getElementById('alertLabelInp').value = '';
+
+  alertRenderList();
+  showToast('✅ 提醒已添加');
+}
+
+function alertDelete(id) {
+  const alerts = alertLoadFromStorage().filter(a => a.id !== id);
+  alertSaveToStorage(alerts);
+  alertRenderList();
+}
+
+function alertReset(id) {
+  const alerts = alertLoadFromStorage().map(a => a.id === id ? { ...a, triggered: false } : a);
+  alertSaveToStorage(alerts);
+  alertRenderList();
+  showToast('🔄 提醒已重置');
+}
+
+function alertRenderList() {
+  const alerts = alertLoadFromStorage();
+  const el = document.getElementById('alertList');
+  if (!el) return;
+  if (!alerts.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px 0;">还没有设置任何提醒</div>';
+    return;
+  }
+  el.innerHTML = alerts.map(a => {
+    const dir = a.condition === 'below' ? '📉 跌破' : '📈 突破';
+    const curPrice = alertPriceCache[a.symbol.toUpperCase()];
+    const curStr = curPrice ? '$' + curPrice.toLocaleString() : '--';
+    const dotClass = a.triggered ? 'alert-dot-triggered' : 'alert-dot-active';
+    const statusStr = a.triggered ? '<span style="color:var(--accent);font-size:11px;">已触发</span>' : '';
+    return `<div class="alert-item">
+      <div class="alert-dot ${dotClass}"></div>
+      <div class="alert-sym-badge">${a.symbol}</div>
+      <div class="alert-desc">${dir} <strong>$${a.targetPrice.toLocaleString()}</strong>${a.label ? ' · ' + a.label : ''} ${statusStr}</div>
+      <div class="alert-price-cur">当前 ${curStr}</div>
+      ${a.triggered ? `<button class="alert-reset" onclick="alertReset('${a.id}')" title="重置提醒">↺</button>` : ''}
+      <button class="alert-del" onclick="alertDelete('${a.id}')" title="删除">✕</button>
+    </div>`;
+  }).join('');
+}
+
+async function alertCheck() {
+  const alerts = alertLoadFromStorage();
+  if (!alerts.length) return;
+
+  // 收集未触发的 symbol
+  const activeAlerts = alerts.filter(a => !a.triggered);
+  if (!activeAlerts.length) return;
+
+  const symbols = [...new Set(activeAlerts.map(a => a.symbol.toUpperCase()))];
+
+  // 拉价格（优先 Binance）
+  await Promise.all(symbols.map(async sym => {
+    try {
+      const r = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${sym}USDT`);
+      if (r.ok) {
+        const d = await r.json();
+        const p = parseFloat(d.price);
+        if (!isNaN(p)) { alertPriceCache[sym] = p; return; }
+      }
+    } catch (_) {}
+    // fallback: 已在 state.price 里有 BTC
+    if (sym === 'BTC' && state.price) alertPriceCache['BTC'] = state.price;
+  }));
+
+  let updated = false;
+  const newAlerts = alerts.map(a => {
+    if (a.triggered) return a;
+    const cur = alertPriceCache[a.symbol.toUpperCase()];
+    if (!cur) return a;
+    const hit = (a.condition === 'below' && cur <= a.targetPrice) ||
+                (a.condition === 'above' && cur >= a.targetPrice);
+    if (!hit) return a;
+
+    // 触发！
+    updated = true;
+    const dir = a.condition === 'below' ? '跌破' : '突破';
+    const msg = `${a.symbol} ${dir} $${a.targetPrice.toLocaleString()}，当前价 $${cur.toLocaleString()}${a.label ? '（' + a.label + '）' : ''}`;
+
+    // 浏览器通知
+    if (Notification.permission === 'granted') {
+      new Notification('🔔 价格提醒触发！', { body: msg, icon: '/favicon.svg' });
+    }
+
+    // 微信推送（通过后端 Edge Function）
+    const key = alertGetKey();
+    fetch('/api/price-alert', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        alerts: [a],
+        serverChanKey: key,
+      }),
+    }).catch(() => {});
+
+    return { ...a, triggered: true };
+  });
+
+  if (updated) {
+    alertSaveToStorage(newAlerts);
+    alertRenderList();
+  } else {
+    alertRenderList(); // 只更新当前价显示
+  }
+}
+
+// Symbol 自定义输入切换
+document.addEventListener('DOMContentLoaded', () => {
+  const sel = document.getElementById('alertSym');
+  const customInp = document.getElementById('alertSymCustom');
+  if (sel) sel.addEventListener('change', () => {
+    if (sel.value === '__custom__') {
+      customInp.style.display = '';
+      customInp.focus();
+    } else {
+      customInp.style.display = 'none';
+    }
+  });
+
+  // 载入保存的 key
+  const savedKey = alertGetKey();
+  const keyInp = document.getElementById('alertServerKey');
+  if (keyInp && savedKey) keyInp.value = savedKey;
+
+  alertUpdateNotifStatus();
+  alertRenderList();
+});
+
+// showToast 工具（如果页面没有则简单 alert）
+function showToast(msg) {
+  const existing = document.getElementById('alertToast');
+  if (existing) existing.remove();
+  const el = document.createElement('div');
+  el.id = 'alertToast';
+  el.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a24;border:1px solid rgba(247,147,26,0.4);color:#e8e8f0;padding:10px 20px;border-radius:8px;font-size:13px;z-index:9999;pointer-events:none;transition:opacity 0.3s;';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 2500);
+}
+
 loadManualFromStorage();
 initReserveModule();
 loadAll();
 // 价格轻量自动刷新：每15秒只刷新价格与24h涨跌，避免整页重拉
 setInterval(fetchRealtimePrice, 15*1000);
+// 价格提醒检查：每30秒检查一次
+setInterval(alertCheck, 30*1000);
+// 首次延迟5秒检查（等价格加载完）
+setTimeout(alertCheck, 5000);
 // 整体数据自动刷新：每5分钟
 setInterval(loadAll, 5*60*1000);
 </script>

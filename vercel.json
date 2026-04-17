@@ -9,5 +9,14 @@
         { "key": "Access-Control-Allow-Origin", "value": "*" }
       ]
     }
-  ]
+  ],
+  "crons": [
+    {
+      "path": "/api/price-alert",
+      "schedule": "*/5 * * * *"
+    }
+  ],
+  "env": {
+    "SERVER_CHAN_KEY": "SCT339144T5tXBi49zR7PS3flaPkJvgCVS"
+  }
 }
