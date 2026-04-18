@@ -976,15 +976,40 @@
       <input type="password" id="alertServerKey" placeholder="SCTxxxx（填入后价格触发时推送微信）" autocomplete="off">
       <button class="alert-key-save" onclick="alertSaveKey()">保存</button>
     </div>
-    <div style="font-size:11px;color:var(--muted);margin-top:5px;line-height:1.7;padding-left:2px;">
-      📲 <strong style="color:var(--text);">如何开启微信提醒？</strong>
-      &nbsp;只需 3 步：<br>
-      &nbsp;&nbsp;① 打开 <a href="https://sct.ftqq.com" target="_blank" rel="noopener"
-           style="color:var(--accent);text-decoration:underline;">sct.ftqq.com</a>
-         &nbsp;→&nbsp; 微信扫码登录<br>
-      &nbsp;&nbsp;② 关注「方糖」服务号（按页面提示操作）<br>
-      &nbsp;&nbsp;③ 复制页面上的 <strong style="color:var(--text);">SendKey</strong>（格式：SCTxxxx），粘贴到上方输入框，点「保存」<br>
-      <span style="color:#666;">完成后价格触发时会直接推送到你的微信，免费使用。</span>
+    <!-- 微信提醒操作引导 -->
+    <div style="margin-top:10px;padding:12px;background:rgba(247,147,26,0.06);border:1px solid rgba(247,147,26,0.18);border-radius:10px;">
+      <div style="font-size:11px;color:var(--accent);font-weight:600;letter-spacing:0.04em;margin-bottom:10px;">
+        📲 如何开启微信提醒？免费 · 3步完成
+      </div>
+      <div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;">
+        <!-- Step 1 -->
+        <div style="flex:1;min-width:140px;background:var(--code-bg,#1a1a1a);border-radius:8px;padding:10px 12px;">
+          <div style="font-size:18px;margin-bottom:4px;">🌐</div>
+          <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:3px;">第 1 步</div>
+          <div style="font-size:11px;color:var(--muted);line-height:1.5;">打开
+            <a href="https://sct.ftqq.com" target="_blank" rel="noopener"
+               style="color:var(--accent);text-decoration:underline;font-weight:600;">sct.ftqq.com</a><br>
+            用微信扫码登录
+          </div>
+        </div>
+        <div style="color:var(--muted);font-size:16px;align-self:center;padding-top:10px;">→</div>
+        <!-- Step 2 -->
+        <div style="flex:1;min-width:140px;background:var(--code-bg,#1a1a1a);border-radius:8px;padding:10px 12px;">
+          <div style="font-size:18px;margin-bottom:4px;">📱</div>
+          <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:3px;">第 2 步</div>
+          <div style="font-size:11px;color:var(--muted);line-height:1.5;">关注<strong style="color:var(--text);">「方糖」</strong>服务号<br>按页面提示操作</div>
+        </div>
+        <div style="color:var(--muted);font-size:16px;align-self:center;padding-top:10px;">→</div>
+        <!-- Step 3 -->
+        <div style="flex:1;min-width:140px;background:var(--code-bg,#1a1a1a);border-radius:8px;padding:10px 12px;">
+          <div style="font-size:18px;margin-bottom:4px;">🔑</div>
+          <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:3px;">第 3 步</div>
+          <div style="font-size:11px;color:var(--muted);line-height:1.5;">复制你的 <strong style="color:var(--text);">SendKey</strong><br>粘贴到上方输入框<br>点「保存」即完成</div>
+        </div>
+      </div>
+      <div style="font-size:10px;color:#555;margin-top:8px;text-align:center;">
+        ✅ 完成后，价格触发时微信直接收到推送 · 完全免费
+      </div>
     </div>
 
     <!-- 浏览器通知权限 -->
