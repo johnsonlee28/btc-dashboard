@@ -1,9 +1,9 @@
 {
-  "timestamp": "2026-04-18T10:00:05.430809+00:00",
-  "timestamp_cn": "2026-04-18 18:00",
+  "timestamp": "2026-04-18T22:00:05.811847+00:00",
+  "timestamp_cn": "2026-04-19 06:00",
   "price": {
-    "price": 76618,
-    "change24h": 1.08
+    "price": 75828,
+    "change24h": -2.15
   },
   "etf": {
     "sum5d": 996.5,
@@ -28,21 +28,21 @@
     "source": "rateprobability_api"
   },
   "funding_rate": {
-    "bn": -0.0056,
-    "okx": 0.0022,
-    "avg": -0.0017
+    "bn": -0.0076,
+    "okx": -0.0061,
+    "avg": -0.0069
   },
   "margin_lending": {
-    "btc_daily_rate": 1.136e-05,
-    "btc_annual_rate": 0.4146,
+    "btc_daily_rate": 1.128e-05,
+    "btc_annual_rate": 0.4117,
     "btc_borrow_limit": 60.0,
-    "open_interest": 104337.0,
+    "open_interest": 98681.0,
     "open_interest_usd": null,
     "source": "binance_public"
   },
   "stablecoin": {
-    "total_b": 319.6,
+    "total_b": 320.5,
     "trend": "expand"
   },
-  "tips": 1.9
+  "tips": 1.93
 }
