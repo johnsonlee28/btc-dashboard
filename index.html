@@ -791,9 +791,14 @@
           <div class="metric-bar-wrap"><div class="metric-bar" id="m2stbl_bar" style="width:0%"></div></div>
         </div>
         <div class="metric-row">
-          <div class="metric-name">资金费率（手动）</div>
-          <div class="metric-value" id="m2fr">--</div>
-          <div class="metric-bar-wrap"><div class="metric-bar" id="m2fr_bar" style="width:0%"></div></div>
+          <div class="metric-name">资金费率 BN <span style="font-size:10px;color:var(--muted)">●自动</span></div>
+          <div class="metric-value loading" id="m2fr_bn">--%</div>
+          <div class="metric-bar-wrap"><div class="metric-bar" id="m2fr_bn_bar" style="width:0%"></div></div>
+        </div>
+        <div class="metric-row">
+          <div class="metric-name">资金费率 OKX <span style="font-size:10px;color:var(--muted)">●自动</span></div>
+          <div class="metric-value loading" id="m2fr_okx">--%</div>
+          <div class="metric-bar-wrap"><div class="metric-bar" id="m2fr_okx_bar" style="width:0%"></div></div>
         </div>
         <div class="metric-row">
           <div class="metric-name">借贷年化利率 <span style="font-size:10px;color:var(--muted)">●自动</span></div>
@@ -1331,7 +1336,7 @@ const state = {
   ma200val: null, dominance: null, fg: null, p30d: null,
   // manual
   mvrv: null, nupl: null, puell: null, lth: null, lthmvrv: null,
-  fed: null, dxy: null, tips: null, etf5d: null, stbl: null, fr: null, ml_rate: null, oi_btc: null,
+  fed: null, dxy: null, tips: null, etf5d: null, stbl: null, fr_bn: null, fr_okx: null, ml_rate: null, oi_btc: null,
 };
 
 // ============================================================
@@ -1545,14 +1550,16 @@ function calcScores() {
     else dom_score = 1;
   }
 
-  // 资金费率 (4pts) — 衍生品市场温度
+  // 资金费率 (4pts) — 衍生品市场温度（取 BN/OKX 均值）
   let fr_score = 2;
-  if (state.fr !== null) {
-    if (state.fr < 0) fr_score = 4;              // 负费率=空头过多=反弹信号
-    else if (state.fr <= 0.01) fr_score = 4;     // 极低=冷静
-    else if (state.fr <= 0.03) fr_score = 3;     // 正常偏低
-    else if (state.fr <= 0.06) fr_score = 1;     // 偏高=多头拥挤
-    else fr_score = 0;                            // 极高=过热
+  const fr_vals = [state.fr_bn, state.fr_okx].filter(v => v !== null);
+  const fr_avg = fr_vals.length ? fr_vals.reduce((a,b)=>a+b,0)/fr_vals.length : null;
+  if (fr_avg !== null) {
+    if (fr_avg < 0) fr_score = 4;              // 负费率=空头过多=反弹信号
+    else if (fr_avg <= 0.01) fr_score = 4;     // 极低=冷静
+    else if (fr_avg <= 0.03) fr_score = 3;     // 正常偏低
+    else if (fr_avg <= 0.06) fr_score = 1;     // 偏高=多头拥挤
+    else fr_score = 0;                          // 极高=过热
   }
 
   // 借贷年化利率 (3pts) — 机构借BTC做空成本，利率突升=做空压力预警
@@ -1779,8 +1786,12 @@ function render() {
   setBar('m2etf_bar', barWidth(sc.etf_score,10), barColor(sc.etf_score,10));
   setText('m2stbl', state.stbl? ({expand:'扩张',flat:'横盘',shrink:'收缩'}[state.stbl]+' ('+sc.stbl_score+'/5)') : '--');
   setBar('m2stbl_bar', barWidth(sc.stbl_score,5), barColor(sc.stbl_score,5));
-  setText('m2fr', state.fr!==null? state.fr+'%/8h ('+sc.fr_score+'/4)' : '--');
-  setBar('m2fr_bar', barWidth(sc.fr_score,4), barColor(sc.fr_score,4));
+  setText('m2fr_bn', state.fr_bn!==null? state.fr_bn+'%/8h' : '--');
+  setBar('m2fr_bn_bar', barWidth(sc.fr_score,4), barColor(sc.fr_score,4));
+  if(state.fr_bn!==null) document.getElementById('m2fr_bn').classList.remove('loading');
+  setText('m2fr_okx', state.fr_okx!==null? state.fr_okx+'%/8h ('+sc.fr_score+'/4)' : '--');
+  setBar('m2fr_okx_bar', barWidth(sc.fr_score,4), barColor(sc.fr_score,4));
+  if(state.fr_okx!==null) document.getElementById('m2fr_okx').classList.remove('loading');
   if(state.ml_rate!==null){
     setText('m2ml', state.ml_rate.toFixed(3)+'%/年 ('+sc.ml_score+'/3)');
     setBar('m2ml_bar', barWidth(sc.ml_score,3), barColor(sc.ml_score,3));
@@ -1963,11 +1974,13 @@ async function fetchDataJson() {
       }
     }
 
-    // 资金费率
-    if (d.funding_rate !== null && d.funding_rate !== undefined) {
-      state.fr = d.funding_rate;
-      const el = document.getElementById('inp_fr');
-      if (el) el.value = state.fr;
+    // 资金费率（BN + OKX）
+    if (d.funding_rate && typeof d.funding_rate === 'object') {
+      if (d.funding_rate.bn !== null && d.funding_rate.bn !== undefined) state.fr_bn = d.funding_rate.bn;
+      if (d.funding_rate.okx !== null && d.funding_rate.okx !== undefined) state.fr_okx = d.funding_rate.okx;
+    } else if (d.funding_rate !== null && d.funding_rate !== undefined) {
+      // 兼容旧格式（单值）
+      state.fr_bn = d.funding_rate;
     }
 
     // 借贷利率 + 未平仓合约
