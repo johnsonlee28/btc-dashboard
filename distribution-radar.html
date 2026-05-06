@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BTC 派发雷达 | 上涨质量与主力派发嫌疑观察 | 算盘</title>
+<meta name="description" content="BTC 派发雷达：用现货成交、合约成交、OI、Funding、上影线、Coinbase 溢价与主动买盘质量观察上涨时是否存在主力派发嫌疑。">
+<link rel="canonical" href="https://btc.zhixingshe.cc/distribution-radar">
+<style>
+  :root {
+    --bg:#0a0a0f; --bg2:#111118; --bg3:#1a1a24; --border:#2a2a3a;
+    --text:#e8e8f0; --muted:#888899; --accent:#f7931a;
+    --green:#00d4aa; --red:#ff4466; --yellow:#ffcc00; --blue:#4488ff; --purple:#aa66ff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:radial-gradient(circle at top right,rgba(247,147,26,.08),transparent 32%),var(--bg);color:var(--text);font-family:-apple-system,'PingFang SC','Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:1.6}
+  a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+  .header{background:rgba(17,17,24,.92);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;backdrop-filter:blur(14px);position:sticky;top:0;z-index:20}
+  .header-left{display:flex;align-items:center;gap:12px;min-width:0}.logo{width:44px;height:44px;border-radius:13px;background:radial-gradient(circle at 30% 25%,rgba(247,147,26,.28),rgba(247,147,26,.06));border:1px solid rgba(247,147,26,.26);display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 0 24px rgba(247,147,26,.10)}
+  .title-block h1{font-size:18px;color:var(--accent)}.title-block p{font-size:12px;color:var(--muted)}
+  .header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.nav-link{font-size:13px;color:var(--muted);padding:7px 12px;border:1px solid var(--border);border-radius:8px}.nav-link:hover{color:var(--text);border-color:var(--accent);text-decoration:none}
+  .refresh-btn{background:var(--accent);color:#050507;border:0;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:800}.refresh-btn:disabled{opacity:.55;cursor:not-allowed}.last-updated{font-size:12px;color:var(--muted);text-align:right}
+  .container{max-width:1120px;margin:0 auto;padding:22px 16px 44px}.hero{display:grid;grid-template-columns:minmax(0,1.2fr) 280px;gap:16px;margin-bottom:18px}.panel{background:rgba(17,17,24,.86);border:1px solid var(--border);border-radius:16px;padding:20px;box-shadow:0 16px 50px rgba(0,0,0,.22)}
+  .score-panel{display:flex;align-items:center;gap:20px}.gauge{width:136px;height:136px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:conic-gradient(var(--yellow) 0deg,rgba(255,255,255,.08) 0deg);position:relative;flex:0 0 auto}.gauge:before{content:'';position:absolute;inset:12px;border-radius:50%;background:var(--bg2);border:1px solid rgba(255,255,255,.06)}.score-num{position:relative;font-size:42px;font-weight:950;line-height:1}.score-num small{font-size:14px;color:var(--muted);font-weight:600}.level{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:800;margin-bottom:8px}.level.good{background:rgba(0,212,170,.12);color:var(--green);border:1px solid rgba(0,212,170,.32)}.level.warn{background:rgba(255,204,0,.12);color:var(--yellow);border:1px solid rgba(255,204,0,.32)}.level.danger{background:rgba(255,68,102,.12);color:var(--red);border:1px solid rgba(255,68,102,.32)}.score-copy h2{font-size:22px;margin-bottom:6px}.score-copy p{color:var(--muted);max-width:620px}
+  .quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.quick{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px}.quick-label{font-size:11px;color:var(--muted);margin-bottom:4px}.quick-value{font-size:19px;font-weight:850}.pos{color:var(--green)}.neg{color:var(--red)}.muted{color:var(--muted)}
+  .band{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}.band-item{border-radius:12px;padding:12px 14px;border:1px solid var(--border);background:rgba(26,26,36,.72)}.band-item strong{display:block;margin-bottom:2px}.band-item span{font-size:12px;color:var(--muted)}
+  .section-title{font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:22px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+  .metrics{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}.metric{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:15px 16px;transition:border-color .2s,transform .2s}.metric:hover{border-color:rgba(247,147,26,.55);transform:translateY(-1px)}.metric-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px}.metric-name{font-weight:850}.metric-value{font-size:12px;color:var(--muted);margin-top:2px}.metric-score{font-size:24px;font-weight:950}.metric-score.good{color:var(--green)}.metric-score.warn{color:var(--yellow)}.metric-score.danger{color:var(--red)}.bar{height:8px;border-radius:999px;background:rgba(255,255,255,.07);overflow:hidden;margin-bottom:10px}.fill{height:100%;width:0%;border-radius:999px;background:var(--yellow)}.metric-detail{font-size:12px;color:var(--muted)}
+  .notes{background:rgba(247,147,26,.06);border:1px solid rgba(247,147,26,.20);border-radius:14px;padding:15px 18px;color:var(--muted);font-size:12px}.notes ul{padding-left:18px}.footer{border-top:1px solid var(--border);padding:20px 24px;text-align:center;font-size:12px;color:var(--muted)}.footer a{color:var(--muted)}.error{border-color:rgba(255,68,102,.45);background:rgba(255,68,102,.08);color:#ffd8df}
+  @media(max-width:760px){.hero{grid-template-columns:1fr}.score-panel{align-items:flex-start}.gauge{width:112px;height:112px}.score-num{font-size:34px}.band{grid-template-columns:1fr}.quick-grid{grid-template-columns:1fr 1fr}.header{position:static}.header-right{width:100%;justify-content:flex-start}.last-updated{text-align:left}.panel{padding:16px}}
+  @media(max-width:460px){.score-panel{flex-direction:column}.quick-grid{grid-template-columns:1fr}.metrics{grid-template-columns:1fr}.container{padding-left:12px;padding-right:12px}}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-left">
+    <div class="logo">📡</div>
+    <div class="title-block">
+      <h1>BTC 派发雷达</h1>
+      <p>上涨质量 · 承接强弱 · 合约推动风险</p>
+    </div>
+  </div>
+  <div class="header-right">
+    <a href="/" class="nav-link">← BTC 评分</a>
+    <a href="/eth" class="nav-link">ETH 观察</a>
+    <div class="last-updated" id="lastUpdated">加载中...</div>
+    <button class="refresh-btn" id="refreshBtn" onclick="loadRadar(true)">🔄 刷新</button>
+  </div>
+</div>
+
+<div class="container">
+  <div id="errorBox" class="panel error" style="display:none;margin-bottom:16px;"></div>
+
+  <div class="hero">
+    <div class="panel score-panel">
+      <div class="gauge" id="gauge"><div class="score-num"><span id="score">--</span><small>/100</small></div></div>
+      <div class="score-copy">
+        <div class="level warn" id="level">计算中</div>
+        <h2 id="headline">正在拉取实时市场结构数据...</h2>
+        <p id="summary">将综合现货成交、合约/OI/Funding、冲高回落、Coinbase 溢价与主动买盘质量，观察上涨是否存在派发嫌疑。</p>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="quick-grid">
+        <div class="quick"><div class="quick-label">BTC 现货价格</div><div class="quick-value" id="price">--</div></div>
+        <div class="quick"><div class="quick-label">24h 涨跌</div><div class="quick-value" id="change24h">--</div></div>
+        <div class="quick"><div class="quick-label">Funding</div><div class="quick-value" id="funding">--</div></div>
+        <div class="quick"><div class="quick-label">Coinbase 溢价</div><div class="quick-value" id="premium">--</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="band">
+    <div class="band-item"><strong style="color:var(--green)">0–34 健康上涨</strong><span>现货承接相对正常，衍生品未明显过热。</span></div>
+    <div class="band-item"><strong style="color:var(--yellow)">35–64 派发苗头</strong><span>上涨质量开始变差，需要观察承接是否恢复。</span></div>
+    <div class="band-item"><strong style="color:var(--red)">65–100 强派发嫌疑</strong><span>价格上涨与现货买盘、主动买盘或美盘溢价明显背离。</span></div>
+  </div>
+
+  <div class="section-title">风险指标</div>
+  <div class="metrics" id="metrics">
+    <div class="metric"><div class="metric-name muted">指标加载中...</div></div>
+  </div>
+
+  <div class="section-title">说明与数据源状态</div>
+  <div class="notes" id="notes">
+    <ul><li>仅作为市场结构观察，不构成投资建议。</li></ul>
+  </div>
+</div>
+
+<div class="footer">
+  <p>📡 BTC 派发雷达 · <a href="/">BTC 评分仪表盘</a> · <a href="/eth">ETH 链上观察</a> · <a href="https://zhixingshe.cc" target="_blank">知行社</a></p>
+  <p style="margin-top:6px">数据来自 Binance / Coinbase 公开只读接口。市场风险高，投资需自行判断。</p>
+</div>
+
+<script>
+function fmtUsd(v, digits = 0) {
+  if (!Number.isFinite(Number(v))) return '--';
+  return '$' + Number(v).toLocaleString('en-US', { maximumFractionDigits: digits });
+}
+function fmtPct(v, digits = 2) {
+  if (!Number.isFinite(Number(v))) return '--';
+  const n = Number(v);
+  return (n >= 0 ? '+' : '') + n.toFixed(digits) + '%';
+}
+function toneClass(status) {
+  if (status === 'risk') return 'danger';
+  if (status === 'healthy') return 'good';
+  return 'warn';
+}
+function setGauge(score, tone) {
+  const color = tone === 'danger' ? 'var(--red)' : tone === 'good' ? 'var(--green)' : 'var(--yellow)';
+  const deg = Math.max(0, Math.min(100, score)) * 3.6;
+  document.getElementById('gauge').style.background = `conic-gradient(${color} ${deg}deg, rgba(255,255,255,.08) ${deg}deg)`;
+}
+function renderMetric(m) {
+  const cls = toneClass(m.status);
+  const width = Math.round((m.score / (m.maxScore || 1)) * 100);
+  const fill = cls === 'danger' ? 'var(--red)' : cls === 'good' ? 'var(--green)' : 'var(--yellow)';
+  return `<div class="metric">
+    <div class="metric-head">
+      <div><div class="metric-name">${m.name}</div><div class="metric-value">${m.value || '--'}</div></div>
+      <div class="metric-score ${cls}">${m.score}<span style="font-size:12px;color:var(--muted)">/${m.maxScore}</span></div>
+    </div>
+    <div class="bar"><div class="fill" style="width:${width}%;background:${fill}"></div></div>
+    <div class="metric-detail">${m.detail || ''}</div>
+  </div>`;
+}
+async function loadRadar(manual = false) {
+  const btn = document.getElementById('refreshBtn');
+  const errorBox = document.getElementById('errorBox');
+  btn.disabled = true;
+  errorBox.style.display = 'none';
+  if (manual) document.getElementById('lastUpdated').textContent = '刷新中...';
+  try {
+    const res = await fetch('/api/distribution-radar', { cache: 'no-store' });
+    if (!res.ok) throw new Error('API HTTP ' + res.status);
+    const data = await res.json();
+    const level = data.level || { label: '未知', tone: 'warn' };
+    document.getElementById('score').textContent = data.score ?? '--';
+    document.getElementById('level').textContent = level.label || '未知';
+    document.getElementById('level').className = 'level ' + (level.tone || 'warn');
+    document.getElementById('headline').textContent = `当前判断：${level.label || '未知'}`;
+    document.getElementById('summary').textContent = data.summary || '暂无摘要';
+    setGauge(Number(data.score || 0), level.tone);
+
+    const raw = data.raw || {};
+    document.getElementById('price').textContent = fmtUsd(raw.price, 2);
+    document.getElementById('change24h').textContent = fmtPct(raw.priceChange24hPct);
+    document.getElementById('change24h').className = 'quick-value ' + (Number(raw.priceChange24hPct) >= 0 ? 'pos' : 'neg');
+    document.getElementById('funding').textContent = Number.isFinite(Number(raw.fundingRatePct)) ? Number(raw.fundingRatePct).toFixed(4) + '%/8h' : '--';
+    document.getElementById('premium').textContent = fmtPct(raw.coinbasePremiumPct, 3);
+    document.getElementById('premium').className = 'quick-value ' + (Number(raw.coinbasePremiumPct) >= 0 ? 'pos' : 'neg');
+
+    document.getElementById('metrics').innerHTML = (data.metrics || []).map(renderMetric).join('') || '<div class="metric muted">暂无指标</div>';
+    document.getElementById('notes').innerHTML = '<ul>' + (data.notes || []).map(n => `<li>${n}</li>`).join('') + '</ul>';
+    document.getElementById('lastUpdated').textContent = data.generatedAt ? new Date(data.generatedAt).toLocaleString('zh-CN') : new Date().toLocaleString('zh-CN');
+  } catch (err) {
+    errorBox.style.display = 'block';
+    errorBox.textContent = '数据加载失败：' + (err.message || err);
+    document.getElementById('lastUpdated').textContent = '加载失败';
+  } finally {
+    btn.disabled = false;
+  }
+}
+loadRadar();
+</script>
+</body>
+</html>

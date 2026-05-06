@@ -1,6 +1,7 @@
 {
   "rewrites": [
-    { "source": "/eth", "destination": "/eth.html" }
+    { "source": "/eth", "destination": "/eth.html" },
+    { "source": "/distribution-radar", "destination": "/distribution-radar.html" }
   ],
   "headers": [
     {
