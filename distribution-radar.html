@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BTC 派发雷达 | 上涨质量与主力派发嫌疑观察 | 算盘</title>
-<meta name="description" content="BTC 派发雷达：用现货成交、合约成交、OI、Funding、上影线、Coinbase 溢价与主动买盘质量观察上涨时是否存在主力派发嫌疑。">
+<meta name="description" content="BTC 派发雷达：用现货成交、合约成交、OI、Funding、上影线、美盘现货溢价与主动买盘质量观察上涨时是否存在主力派发嫌疑。">
 <link rel="canonical" href="https://btc.zhixingshe.cc/distribution-radar">
 <style>
   :root {
@@ -57,7 +57,7 @@
       <div class="score-copy">
         <div class="level warn" id="level">计算中</div>
         <h2 id="headline">正在拉取实时市场结构数据...</h2>
-        <p id="summary">将综合现货成交、合约/OI/Funding、冲高回落、Coinbase 溢价与主动买盘质量，观察上涨是否存在派发嫌疑。</p>
+        <p id="summary">将综合现货成交、合约/OI/Funding、冲高回落、美盘现货溢价与主动买盘质量，观察上涨是否存在派发嫌疑。</p>
       </div>
     </div>
     <div class="panel">
@@ -65,7 +65,7 @@
         <div class="quick"><div class="quick-label">BTC 现货价格</div><div class="quick-value" id="price">--</div></div>
         <div class="quick"><div class="quick-label">24h 涨跌</div><div class="quick-value" id="change24h">--</div></div>
         <div class="quick"><div class="quick-label">Funding</div><div class="quick-value" id="funding">--</div></div>
-        <div class="quick"><div class="quick-label">Coinbase 溢价</div><div class="quick-value" id="premium">--</div></div>
+        <div class="quick"><div class="quick-label">美盘现货溢价</div><div class="quick-value" id="premium">--</div></div>
       </div>
     </div>
   </div>
@@ -89,7 +89,7 @@
 
 <div class="footer">
   <p>📡 BTC 派发雷达 · <a href="/">BTC 评分仪表盘</a> · <a href="/eth">ETH 链上观察</a> · <a href="https://zhixingshe.cc" target="_blank">知行社</a></p>
-  <p style="margin-top:6px">数据来自 Binance / Coinbase 公开只读接口。市场风险高，投资需自行判断。</p>
+  <p style="margin-top:6px">数据来自 Binance / Coinbase / Kraken / Bitstamp / Gemini 公开只读接口。市场风险高，投资需自行判断。</p>
 </div>
 
 <script>
@@ -148,8 +148,9 @@ async function loadRadar(manual = false) {
     document.getElementById('change24h').textContent = fmtPct(raw.priceChange24hPct);
     document.getElementById('change24h').className = 'quick-value ' + (Number(raw.priceChange24hPct) >= 0 ? 'pos' : 'neg');
     document.getElementById('funding').textContent = Number.isFinite(Number(raw.fundingRatePct)) ? Number(raw.fundingRatePct).toFixed(4) + '%/8h' : '--';
-    document.getElementById('premium').textContent = fmtPct(raw.coinbasePremiumPct, 3);
-    document.getElementById('premium').className = 'quick-value ' + (Number(raw.coinbasePremiumPct) >= 0 ? 'pos' : 'neg');
+    const fiatPremium = raw.fiatSpotPremiumPct ?? raw.coinbasePremiumPct;
+    document.getElementById('premium').textContent = fmtPct(fiatPremium, 3) + (raw.fiatSpotSource ? ` (${raw.fiatSpotSource})` : '');
+    document.getElementById('premium').className = 'quick-value ' + (Number(fiatPremium) >= 0 ? 'pos' : 'neg');
 
     document.getElementById('metrics').innerHTML = (data.metrics || []).map(renderMetric).join('') || '<div class="metric muted">暂无指标</div>';
     document.getElementById('notes').innerHTML = '<ul>' + (data.notes || []).map(n => `<li>${n}</li>`).join('') + '</ul>';

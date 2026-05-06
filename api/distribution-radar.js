@@ -21,6 +21,10 @@ const ENDPOINTS = {
   futuresKlines: 'https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=1h&limit=48',
   takerLongShort: 'https://fapi.binance.com/futures/data/takerlongshortRatio?symbol=BTCUSDT&period=1h&limit=24',
   coinbaseTicker: 'https://api.exchange.coinbase.com/products/BTC-USD/ticker',
+  coinbaseAdvancedTicker: 'https://api.coinbase.com/api/v3/brokerage/market/products/BTC-USD/ticker',
+  krakenTicker: 'https://api.kraken.com/0/public/Ticker?pair=XBTUSD',
+  bitstampTicker: 'https://www.bitstamp.net/api/v2/ticker/btcusd/',
+  geminiTicker: 'https://api.gemini.com/v1/pubticker/btcusd',
 };
 
 function num(v, fallback = null) {
@@ -39,6 +43,42 @@ function pct(v) {
 function usd(v, digits = 0) {
   if (!Number.isFinite(v)) return '--';
   return `$${v.toLocaleString('en-US', { maximumFractionDigits: digits })}`;
+}
+
+function parseFiatSpotTicker(data) {
+  const sources = [
+    {
+      key: 'coinbaseTicker',
+      source: 'Coinbase',
+      price: num(data.coinbaseTicker?.price),
+    },
+    {
+      key: 'coinbaseAdvancedTicker',
+      source: 'Coinbase',
+      price: num(data.coinbaseAdvancedTicker?.price) || num(data.coinbaseAdvancedTicker?.trades?.[0]?.price),
+    },
+    {
+      key: 'krakenTicker',
+      source: 'Kraken',
+      price: (() => {
+        const result = data.krakenTicker?.result || {};
+        const firstPair = Object.values(result)[0];
+        return num(firstPair?.c?.[0]);
+      })(),
+    },
+    {
+      key: 'bitstampTicker',
+      source: 'Bitstamp',
+      price: num(data.bitstampTicker?.last),
+    },
+    {
+      key: 'geminiTicker',
+      source: 'Gemini',
+      price: num(data.geminiTicker?.last),
+    },
+  ];
+
+  return sources.find(s => Number.isFinite(s.price) && s.price > 0) || { key: null, source: null, price: null };
 }
 
 async function safeFetchJson(key, url, timeout = 6500) {
@@ -146,8 +186,13 @@ export default async function handler(req) {
   const oiNotional = oiBtc && markPrice ? oiBtc * markPrice : null;
   const futuresSpotRatio = spotQuoteVolume && futuresQuoteVolume ? futuresQuoteVolume / spotQuoteVolume : null;
   const oiToFuturesVolume = oiNotional && futuresQuoteVolume ? oiNotional / futuresQuoteVolume : null;
-  const coinbasePrice = num(data.coinbaseTicker?.price);
-  const coinbasePremiumPct = coinbasePrice && spotPrice ? (coinbasePrice / spotPrice - 1) * 100 : null;
+  const fiatSpot = parseFiatSpotTicker(data);
+  const fiatSpotPrice = fiatSpot.price;
+  const fiatSpotSource = fiatSpot.source;
+  const fiatSpotPremiumPct = fiatSpotPrice && spotPrice ? (fiatSpotPrice / spotPrice - 1) * 100 : null;
+  // Backward-compatible aliases for older frontends/consumers.
+  const coinbasePrice = fiatSpotPrice;
+  const coinbasePremiumPct = fiatSpotPremiumPct;
 
   const takerRows = Array.isArray(data.takerLongShort) ? data.takerLongShort : [];
   const recentTaker = takerRows.map(r => num(r.buySellRatio)).filter(Number.isFinite);
@@ -235,20 +280,20 @@ export default async function handler(req) {
     addMetric(metrics, { id: 'upper_wick_pullback', name: '上影线 / 冲高回落', maxScore: 14, score: 6, status: 'neutral', value: '待接入', detail: 'K线获取失败，按中性处理。' });
   }
 
-  // 6) Coinbase 溢价（权重 12）
+  // 6) 美盘/法币现货溢价（权重 12）
   let cbScore = 5;
-  if (Number.isFinite(coinbasePremiumPct)) {
-    cbScore = coinbasePremiumPct < -0.08 ? 12 : coinbasePremiumPct < 0 ? 9 : coinbasePremiumPct < 0.04 ? 6 : 2;
-    if ((price24hPct ?? price48hPct ?? 0) > 1 && coinbasePremiumPct < 0.02) cbScore = Math.min(12, cbScore + 2);
+  if (Number.isFinite(fiatSpotPremiumPct)) {
+    cbScore = fiatSpotPremiumPct < -0.08 ? 12 : fiatSpotPremiumPct < 0 ? 9 : fiatSpotPremiumPct < 0.04 ? 6 : 2;
+    if ((price24hPct ?? price48hPct ?? 0) > 1 && fiatSpotPremiumPct < 0.02) cbScore = Math.min(12, cbScore + 2);
     addMetric(metrics, {
-      id: 'coinbase_premium', name: 'Coinbase 溢价 / 美盘现货配合', maxScore: 12, score: cbScore,
+      id: 'coinbase_premium', name: '美盘/法币现货溢价', maxScore: 12, score: cbScore,
       status: cbScore >= 9 ? 'risk' : cbScore <= 3 ? 'healthy' : 'neutral',
-      value: `${coinbasePremiumPct >= 0 ? '+' : ''}${coinbasePremiumPct.toFixed(3)}%`,
-      detail: `Coinbase BTC-USD ${usd(coinbasePrice, 2)} vs Binance BTCUSDT ${usd(spotPrice, 2)}。溢价弱代表美盘现货买盘不积极。`,
+      value: `${fiatSpotPremiumPct >= 0 ? '+' : ''}${fiatSpotPremiumPct.toFixed(3)}% (${fiatSpotSource})`,
+      detail: `${fiatSpotSource} BTC/USD ${usd(fiatSpotPrice, 2)} vs Binance BTCUSDT ${usd(spotPrice, 2)}。使用 Coinbase/Kraken/Bitstamp/Gemini fallback；溢价弱代表美盘/法币现货买盘不积极。`,
     });
   } else {
-    notes.push('coinbase premium unavailable; metric set neutral');
-    addMetric(metrics, { id: 'coinbase_premium', name: 'Coinbase 溢价 / 美盘现货配合', maxScore: 12, score: 5, status: 'neutral', value: '待接入', detail: 'Coinbase ticker 获取失败，按中性处理。' });
+    notes.push('fiat spot premium unavailable; all Coinbase/Kraken/Bitstamp/Gemini fallback sources failed; metric set neutral');
+    addMetric(metrics, { id: 'coinbase_premium', name: '美盘/法币现货溢价', maxScore: 12, score: 5, status: 'neutral', value: '待接入', detail: 'Coinbase/Kraken/Bitstamp/Gemini ticker 均不可用，按中性处理。' });
   }
 
   // 7) 主动买盘质量（权重 10）
@@ -290,6 +335,9 @@ export default async function handler(req) {
       openInterestBtc: oiBtc,
       openInterestNotionalUsd: oiNotional,
       fundingRatePct,
+      fiatSpotPrice,
+      fiatSpotSource,
+      fiatSpotPremiumPct,
       coinbasePrice,
       coinbasePremiumPct,
       takerBuySellRatio,
