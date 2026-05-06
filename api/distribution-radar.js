@@ -15,6 +15,11 @@ const JSON_HEADERS = {
 const ENDPOINTS = {
   spotTicker: 'https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT',
   futuresTicker: 'https://fapi.binance.com/fapi/v1/ticker/24hr?symbol=BTCUSDT',
+  okxFuturesTicker: 'https://www.okx.com/api/v5/market/ticker?instId=BTC-USDT-SWAP',
+  bybitFuturesTicker: 'https://api.bybit.com/v5/market/tickers?category=linear&symbol=BTCUSDT',
+  deribitFuturesTicker: 'https://www.deribit.com/api/v2/public/ticker?instrument_name=BTC-PERPETUAL',
+  okxSpotTicker: 'https://www.okx.com/api/v5/market/ticker?instId=BTC-USDT',
+  bybitSpotTicker: 'https://api.bybit.com/v5/market/tickers?category=spot&symbol=BTCUSDT',
   premium: 'https://fapi.binance.com/fapi/v1/premiumIndex?symbol=BTCUSDT',
   openInterest: 'https://fapi.binance.com/fapi/v1/openInterest?symbol=BTCUSDT',
   spotKlines: 'https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1h&limit=48',
@@ -79,6 +84,89 @@ function parseFiatSpotTicker(data) {
   ];
 
   return sources.find(s => Number.isFinite(s.price) && s.price > 0) || { key: null, source: null, price: null };
+}
+
+function positiveNum(v) {
+  const n = num(v);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function okxVolumeToUsd(ticker, fallbackPrice) {
+  const last = positiveNum(ticker?.last) || positiveNum(fallbackPrice);
+  const volCcy24h = positiveNum(ticker?.volCcy24h);
+  if (volCcy24h) {
+    // OKX volCcy24h unit is not uniformly documented across spot/swap.
+    // Large values are treated as quote notional; BTC-sized values are converted by last.
+    if (volCcy24h > 10_000_000) return { quoteVolume: volCcy24h, note: 'OKX volCcy24h parsed as quote/USDT notional.' };
+    if (last) return { quoteVolume: volCcy24h * last, note: 'OKX volCcy24h parsed as BTC/base volume × last; approximate USD notional.' };
+  }
+  const vol24h = positiveNum(ticker?.vol24h);
+  if (vol24h && last) return { quoteVolume: vol24h * last, note: 'OKX vol24h fallback × last; contract/base unit may be approximate.' };
+  return { quoteVolume: null, note: 'OKX volume fields unavailable or unit could not be converted.' };
+}
+
+function venue(venueName, quoteVolume, ok = true, note = undefined) {
+  const qv = positiveNum(quoteVolume);
+  return { venue: venueName, quoteVolume: qv, ok: Boolean(ok && qv), ...(note ? { note } : {}) };
+}
+
+function venueFailed(venueName, note) {
+  return { venue: venueName, quoteVolume: null, ok: false, note };
+}
+
+function bybitTicker(data, expectedSymbol = 'BTCUSDT') {
+  const list = data?.result?.list;
+  if (!Array.isArray(list)) return null;
+  return list.find(item => item?.symbol === expectedSymbol) || list[0] || null;
+}
+
+function buildVolumeAggregation(data, spotPrice, futuresQuoteVolume, spotQuoteVolume) {
+  const futuresVenues = [];
+  const spotVenues = [];
+
+  futuresVenues.push(venue('Binance BTCUSDT perpetual', futuresQuoteVolume));
+
+  const okxFutures = data.okxFuturesTicker?.data?.[0];
+  if (okxFutures) {
+    const parsed = okxVolumeToUsd(okxFutures, spotPrice);
+    futuresVenues.push(venue('OKX BTC-USDT-SWAP', parsed.quoteVolume, true, parsed.note));
+  } else {
+    futuresVenues.push(venueFailed('OKX BTC-USDT-SWAP', 'ticker unavailable'));
+  }
+
+  const bybitFutures = bybitTicker(data.bybitFuturesTicker);
+  futuresVenues.push(bybitFutures
+    ? venue('Bybit linear BTCUSDT', positiveNum(bybitFutures.turnover24h), true, 'Bybit turnover24h parsed as quote/USDT notional.')
+    : venueFailed('Bybit linear BTCUSDT', 'ticker unavailable'));
+
+  const deribit = data.deribitFuturesTicker?.result;
+  const deribitPrice = positiveNum(deribit?.last_price) || positiveNum(spotPrice);
+  const deribitVolumeUsd = positiveNum(deribit?.stats?.volume_usd)
+    || (positiveNum(deribit?.stats?.volume) && deribitPrice ? positiveNum(deribit.stats.volume) * deribitPrice : null);
+  futuresVenues.push(deribit
+    ? venue('Deribit BTC-PERPETUAL', deribitVolumeUsd, true, deribit?.stats?.volume_usd ? 'Deribit stats.volume_usd parsed as USD notional.' : 'Deribit volume fallback × price; approximate USD notional.')
+    : venueFailed('Deribit BTC-PERPETUAL', 'ticker unavailable'));
+
+  spotVenues.push(venue('Binance BTCUSDT spot', spotQuoteVolume));
+
+  const okxSpot = data.okxSpotTicker?.data?.[0];
+  if (okxSpot) {
+    const parsed = okxVolumeToUsd(okxSpot, spotPrice);
+    spotVenues.push(venue('OKX BTC-USDT spot', parsed.quoteVolume, true, parsed.note));
+  } else {
+    spotVenues.push(venueFailed('OKX BTC-USDT spot', 'ticker unavailable'));
+  }
+
+  const bybitSpot = bybitTicker(data.bybitSpotTicker);
+  spotVenues.push(bybitSpot
+    ? venue('Bybit spot BTCUSDT', positiveNum(bybitSpot.turnover24h), true, 'Bybit turnover24h parsed as quote/USDT notional.')
+    : venueFailed('Bybit spot BTCUSDT', 'ticker unavailable'));
+
+  const globalFuturesQuoteVolume = futuresVenues.reduce((sum, v) => sum + (v.ok && Number.isFinite(v.quoteVolume) ? v.quoteVolume : 0), 0) || null;
+  const globalSpotQuoteVolume = spotVenues.reduce((sum, v) => sum + (v.ok && Number.isFinite(v.quoteVolume) ? v.quoteVolume : 0), 0) || null;
+  const globalFuturesSpotRatio = globalFuturesQuoteVolume && globalSpotQuoteVolume ? globalFuturesQuoteVolume / globalSpotQuoteVolume : null;
+
+  return { futuresVenues, spotVenues, globalFuturesQuoteVolume, globalSpotQuoteVolume, globalFuturesSpotRatio };
 }
 
 async function safeFetchJson(key, url, timeout = 6500) {
@@ -185,6 +273,15 @@ export default async function handler(req) {
   const oiBtc = num(openInterest.openInterest);
   const oiNotional = oiBtc && markPrice ? oiBtc * markPrice : null;
   const futuresSpotRatio = spotQuoteVolume && futuresQuoteVolume ? futuresQuoteVolume / spotQuoteVolume : null;
+  const {
+    futuresVenues,
+    spotVenues,
+    globalFuturesQuoteVolume,
+    globalSpotQuoteVolume,
+    globalFuturesSpotRatio,
+  } = buildVolumeAggregation(data, spotPrice, futuresQuoteVolume, spotQuoteVolume);
+  const ratioForMetric = Number.isFinite(globalFuturesSpotRatio) ? globalFuturesSpotRatio : futuresSpotRatio;
+  const usingGlobalRatio = Number.isFinite(globalFuturesSpotRatio);
   const oiToFuturesVolume = oiNotional && futuresQuoteVolume ? oiNotional / futuresQuoteVolume : null;
   const fiatSpot = parseFiatSpotTicker(data);
   const fiatSpotPrice = fiatSpot.price;
@@ -219,18 +316,22 @@ export default async function handler(req) {
     addMetric(metrics, { id: 'spot_volume_divergence', name: '价格趋势与现货成交量背离', maxScore: 18, score: 7, status: 'neutral', value: '待接入', detail: '现货K线获取失败，按中性处理。' });
   }
 
-  // 2) 合约/现货成交比（权重 16）
+  // 2) 全市场合约/现货成交比（权重 16）
   let ratioScore = 7;
-  if (Number.isFinite(futuresSpotRatio)) {
-    ratioScore = futuresSpotRatio > 5 ? 16 : futuresSpotRatio > 3 ? 12 : futuresSpotRatio > 2 ? 8 : 4;
+  if (Number.isFinite(ratioForMetric)) {
+    ratioScore = ratioForMetric > 5 ? 16 : ratioForMetric > 3 ? 12 : ratioForMetric > 2 ? 8 : 4;
+    const futuresVenueNames = futuresVenues.filter(v => v.ok).map(v => v.venue).join('、') || '无';
+    const spotVenueNames = spotVenues.filter(v => v.ok).map(v => v.venue).join('、') || '无';
     addMetric(metrics, {
-      id: 'futures_spot_volume_ratio', name: '合约 / 现货成交比', maxScore: 16, score: ratioScore,
+      id: 'futures_spot_volume_ratio', name: '全市场合约 / 现货成交比', maxScore: 16, score: ratioScore,
       status: ratioScore >= 12 ? 'risk' : ratioScore <= 5 ? 'healthy' : 'neutral',
-      value: `${futuresSpotRatio.toFixed(2)}x`,
-      detail: `Binance 24h 成交额：合约 ${usd(futuresQuoteVolume)}，现货 ${usd(spotQuoteVolume)}。比值越高，越像合约推着价格走。`,
+      value: `${ratioForMetric.toFixed(2)}x${usingGlobalRatio ? '' : ' (Binance fallback)'}`,
+      detail: usingGlobalRatio
+        ? `聚合 24h 成交额：合约 ${usd(globalFuturesQuoteVolume)}（${futuresVenueNames}），现货 ${usd(globalSpotQuoteVolume)}（${spotVenueNames}）。Deribit 只作为合约侧参考、不是现货；法币现货价格用于溢价，成交量聚合暂以 Binance/OKX/Bybit 为主。比值越高，越像合约推着价格走。`
+        : `全市场聚合失败，fallback 到 Binance 单点 24h 成交额：合约 ${usd(futuresQuoteVolume)}，现货 ${usd(spotQuoteVolume)}。Deribit 只作为合约侧参考、不是现货。`,
     });
   } else {
-    addMetric(metrics, { id: 'futures_spot_volume_ratio', name: '合约 / 现货成交比', maxScore: 16, score: 7, status: 'neutral', value: '待接入', detail: '现货或合约 24h ticker 不完整，按中性处理。' });
+    addMetric(metrics, { id: 'futures_spot_volume_ratio', name: '全市场合约 / 现货成交比', maxScore: 16, score: 7, status: 'neutral', value: '待接入', detail: '全市场现货或合约 24h ticker 不完整，按中性处理；Deribit 只作为合约侧参考、不是现货。' });
   }
 
   // 3) OI 杠杆压力（权重 16）
@@ -332,6 +433,11 @@ export default async function handler(req) {
       spotQuoteVolume,
       futuresQuoteVolume,
       futuresSpotRatio,
+      globalFuturesQuoteVolume,
+      globalSpotQuoteVolume,
+      globalFuturesSpotRatio,
+      futuresVenues,
+      spotVenues,
       openInterestBtc: oiBtc,
       openInterestNotionalUsd: oiNotional,
       fundingRatePct,
@@ -345,6 +451,8 @@ export default async function handler(req) {
     },
     notes: [
       '仅作为市场结构观察，不构成投资建议。',
+      '全市场合约成交量聚合 Binance / OKX / Bybit / Deribit；现货成交量聚合 Binance / OKX / Bybit。Deribit 只作为合约侧参考、不是现货。',
+      'Coinbase/Kraken/Bitstamp/Gemini 法币现货价格用于溢价，成交量聚合暂以 Binance/OKX/Bybit 为主。',
       '单一数据源失败不会中断整体评分，失败项按中性或待接入处理。',
       ...notes,
     ],
