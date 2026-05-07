@@ -1,0 +1,970 @@
+{
+  "meta": {
+    "version": "1.0",
+    "last_updated": "2026-05-07",
+    "total_count": 95,
+    "market_cap_source": "approximate, as of 2026-Q1",
+    "categories": [
+      "AI-Chip-Compute",
+      "AI-Infra-Datacenter",
+      "AI-Power-Nuclear",
+      "AI-Grid-Equipment",
+      "AI-Software-Application",
+      "AI-Robotics-Autonomous",
+      "AI-China-ADR"
+    ],
+    "notes": "market_cap_usd_b 为约数，单位十亿美元；in_sp500/in_nasdaq100 为截至更新日期的成分股状态，需定期校对"
+  },
+  "tickers": [
+    {
+      "ticker": "NVDA",
+      "name_en": "NVIDIA Corporation",
+      "name_zh": "英伟达",
+      "category": "AI-Chip-Compute",
+      "ai_relevance": "AI 训练/推理 GPU 绝对龙头，CUDA 生态护城河",
+      "market_cap_usd_b": 3400,
+      "in_sp500": true,
+      "in_nasdaq100": true
+    },
+    {
+      "ticker": "AMD",
+      "name_en": "Advanced Micro Devices",
+      "name_zh": "超威半导体",
+      "category": "AI-Chip-Compute",
+      "ai_relevance": "MI300/MI350 系列 AI 加速卡，英伟达最大挑战者",
+      "market_cap_usd_b": 260,
+      "in_sp500": true,
+      "in_nasdaq100": true
+    },
+    {
+      "ticker": "AVGO",
+      "name_en": "Broadcom Inc",
+      "name_zh": "博通",
+      "category": "AI-Chip-Compute",
+      "ai_relevance": "定制 ASIC（谷歌 TPU/Meta MTIA）+ AI 网络交换芯片",
+      "market_cap_usd_b": 1100,
+      "in_sp500": true,
+      "in_nasdaq100": true
+    },
+    {
+      "ticker": "TSM",
+      "name_en": "Taiwan Semiconductor Manufacturing",
+      "name_zh": "台积电",
+      "category": "AI-Chip-Compute",
+      "ai_relevance": "全球最先进制程代工厂，几乎所有 AI 芯片的生产基地",
+      "market_cap_usd_b": 950,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "INTC",
+      "name_en": "Intel Corporation",
+      "name_zh": "英特尔",
+      "category": "AI-Chip-Compute",
+      "ai_relevance": "Gaudi AI 加速器 + 18A 代工押注 AI 产能",
+      "market_cap_usd_b": 120,
+      "in_sp500": true,
+      "in_nasdaq100": true
+    },
+    {
+      "ticker": "MU",
+      "name_en": "Micron Technology",
+      "name_zh": "美光科技",
+      "category": "AI-Chip-Compute",
+      "ai_relevance": "HBM3E/HBM4 高带宽内存，AI 服务器刚需",
+      "market_cap_usd_b": 140,
+      "in_sp500": true,
+      "in_nasdaq100": true
+    },
+    {
+      "ticker": "ARM",
+      "name_en": "Arm Holdings",
+      "name_zh": "安谋",
+      "category": "AI-Chip-Compute",
+      "ai_relevance": "AI PC/手机端侧推理架构授权，Neoverse 进数据中心",
+      "market_cap_usd_b": 150,
+      "in_sp500": false,
+      "in_nasdaq100": true
+    },
+    {
+      "ticker": "MRVL",
+      "name_en": "Marvell Technology",
+      "name_zh": "美满电子",
+      "category": "AI-Chip-Compute",
+      "ai_relevance": "定制 AI ASIC + 光互联 DSP 芯片",
+      "market_cap_usd_b": 65,
+      "in_sp500": true,
+      "in_nasdaq100": true
+    },
+    {
+      "ticker": "SMCI",
+      "name_en": "Super Micro Computer",
+      "name_zh": "超微电脑",
+      "category": "AI-Chip-Compute",
+      "ai_relevance": "AI 服务器整机（液冷/GPU 机架）最大 ODM 之一",
+      "market_cap_usd_b": 30,
+      "in_sp500": true,
+      "in_nasdaq100": true
+    },
+    {
+      "ticker": "CRDO",
+      "name_en": "Credo Technology Group",
+      "name_zh": "默升科技",
+      "category": "AI-Chip-Compute",
+      "ai_relevance": "AEC 有源电缆/SerDes，AI 数据中心高速互联受益股",
+      "market_cap_usd_b": 12,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "ALAB",
+      "name_en": "Astera Labs",
+      "name_zh": "阿斯特拉实验室",
+      "category": "AI-Chip-Compute",
+      "ai_relevance": "PCIe/CXL retimer + Scorpio 交换芯片，GPU scale-up 关键",
+      "market_cap_usd_b": 15,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "QCOM",
+      "name_en": "Qualcomm Incorporated",
+      "name_zh": "高通",
+      "category": "AI-Chip-Compute",
+      "ai_relevance": "端侧 AI（手机/PC/汽车）NPU 领军，AI200/AI250 进军数据中心",
+      "market_cap_usd_b": 180,
+      "in_sp500": true,
+      "in_nasdaq100": true
+    },
+    {
+      "ticker": "LRCX",
+      "name_en": "Lam Research",
+      "name_zh": "泛林集团",
+      "category": "AI-Chip-Compute",
+      "ai_relevance": "HBM 刻蚀/沉积设备龙头，AI 存储扩产核心受益",
+      "market_cap_usd_b": 110,
+      "in_sp500": true,
+      "in_nasdaq100": true
+    },
+    {
+      "ticker": "AMAT",
+      "name_en": "Applied Materials",
+      "name_zh": "应用材料",
+      "category": "AI-Chip-Compute",
+      "ai_relevance": "先进制程设备，AI 芯片产能扩张受益",
+      "market_cap_usd_b": 140,
+      "in_sp500": true,
+      "in_nasdaq100": true
+    },
+    {
+      "ticker": "KLAC",
+      "name_en": "KLA Corporation",
+      "name_zh": "科磊",
+      "category": "AI-Chip-Compute",
+      "ai_relevance": "晶圆量测/缺陷检测，先进制程良率刚需",
+      "market_cap_usd_b": 95,
+      "in_sp500": true,
+      "in_nasdaq100": true
+    },
+    {
+      "ticker": "ASML",
+      "name_en": "ASML Holding",
+      "name_zh": "阿斯麦",
+      "category": "AI-Chip-Compute",
+      "ai_relevance": "EUV 光刻机独家供应商，先进制程命门",
+      "market_cap_usd_b": 280,
+      "in_sp500": false,
+      "in_nasdaq100": true
+    },
+    {
+      "ticker": "COHR",
+      "name_en": "Coherent Corp",
+      "name_zh": "相干公司",
+      "category": "AI-Chip-Compute",
+      "ai_relevance": "800G/1.6T 光模块 + VCSEL 激光器，AI 网络受益",
+      "market_cap_usd_b": 17,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "LITE",
+      "name_en": "Lumentum Holdings",
+      "name_zh": "鲁门特",
+      "category": "AI-Chip-Compute",
+      "ai_relevance": "数据中心光通信芯片/激光器",
+      "market_cap_usd_b": 6,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "CRWV",
+      "name_en": "CoreWeave Inc",
+      "name_zh": "CoreWeave",
+      "category": "AI-Infra-Datacenter",
+      "ai_relevance": "AI 原生 GPU 云（neocloud 龙头），微软/OpenAI 主力供应商",
+      "market_cap_usd_b": 55,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "NBIS",
+      "name_en": "Nebius Group",
+      "name_zh": "Nebius 集团",
+      "category": "AI-Infra-Datacenter",
+      "ai_relevance": "欧洲 AI 云基础设施，Yandex 剥离后专注 GPU 云服务",
+      "market_cap_usd_b": 14,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "ANET",
+      "name_en": "Arista Networks",
+      "name_zh": "Arista 网络",
+      "category": "AI-Infra-Datacenter",
+      "ai_relevance": "数据中心高速交换机龙头，Meta/微软 AI 网络主供",
+      "market_cap_usd_b": 150,
+      "in_sp500": true,
+      "in_nasdaq100": true
+    },
+    {
+      "ticker": "DLR",
+      "name_en": "Digital Realty Trust",
+      "name_zh": "Digital Realty",
+      "category": "AI-Infra-Datacenter",
+      "ai_relevance": "全球数据中心 REIT 龙头，AI 算力地产",
+      "market_cap_usd_b": 55,
+      "in_sp500": true,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "EQIX",
+      "name_en": "Equinix Inc",
+      "name_zh": "Equinix",
+      "category": "AI-Infra-Datacenter",
+      "ai_relevance": "互联型数据中心 REIT 龙头，AI 推理边缘节点",
+      "market_cap_usd_b": 85,
+      "in_sp500": true,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "VRT",
+      "name_en": "Vertiv Holdings",
+      "name_zh": "Vertiv",
+      "category": "AI-Infra-Datacenter",
+      "ai_relevance": "数据中心液冷/供配电龙头，AI 机架热管理刚需",
+      "market_cap_usd_b": 55,
+      "in_sp500": true,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "APLD",
+      "name_en": "Applied Digital",
+      "name_zh": "Applied Digital",
+      "category": "AI-Infra-Datacenter",
+      "ai_relevance": "HPC/AI 数据中心运营（北达科他州），Macquarie 投资",
+      "market_cap_usd_b": 5,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "IREN",
+      "name_en": "IREN Limited",
+      "name_zh": "Iris Energy",
+      "category": "AI-Infra-Datacenter",
+      "ai_relevance": "BTC 矿场转型 AI 云，可再生能源供电",
+      "market_cap_usd_b": 8,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "CIFR",
+      "name_en": "Cipher Mining",
+      "name_zh": "Cipher Mining",
+      "category": "AI-Infra-Datacenter",
+      "ai_relevance": "BTC 矿场转型 HPC/AI 托管",
+      "market_cap_usd_b": 4,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "WULF",
+      "name_en": "TeraWulf Inc",
+      "name_zh": "TeraWulf",
+      "category": "AI-Infra-Datacenter",
+      "ai_relevance": "核电供电矿场转型 AI HPC，Lake Mariner 园区",
+      "market_cap_usd_b": 5,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "CORZ",
+      "name_en": "Core Scientific",
+      "name_zh": "Core Scientific",
+      "category": "AI-Infra-Datacenter",
+      "ai_relevance": "与 CoreWeave 签 12 年 HPC 托管大单，AI 基建转型标杆",
+      "market_cap_usd_b": 4,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "HUT",
+      "name_en": "Hut 8 Corp",
+      "name_zh": "Hut 8",
+      "category": "AI-Infra-Datacenter",
+      "ai_relevance": "BTC+AI 双主业，HPC 托管业务扩张中",
+      "market_cap_usd_b": 3,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "CLSK",
+      "name_en": "CleanSpark Inc",
+      "name_zh": "CleanSpark",
+      "category": "AI-Infra-Datacenter",
+      "ai_relevance": "矿企探索 AI HPC 业务转型",
+      "market_cap_usd_b": 3,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "CIEN",
+      "name_en": "Ciena Corporation",
+      "name_zh": "Ciena",
+      "category": "AI-Infra-Datacenter",
+      "ai_relevance": "数据中心互联 DCI 光传输设备，AI 集群长距互联",
+      "market_cap_usd_b": 12,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "JNPR",
+      "name_en": "Juniper Networks",
+      "name_zh": "瞻博网络",
+      "category": "AI-Infra-Datacenter",
+      "ai_relevance": "数据中心网络设备 + Mist AI 运维，被 HPE 收购",
+      "market_cap_usd_b": 12,
+      "in_sp500": true,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "DELL",
+      "name_en": "Dell Technologies",
+      "name_zh": "戴尔科技",
+      "category": "AI-Infra-Datacenter",
+      "ai_relevance": "AI 服务器（PowerEdge XE）放量，xAI 大单供应商",
+      "market_cap_usd_b": 85,
+      "in_sp500": true,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "HPE",
+      "name_en": "Hewlett Packard Enterprise",
+      "name_zh": "慧与",
+      "category": "AI-Infra-Datacenter",
+      "ai_relevance": "AI 服务器+超算（Cray），收购 Juniper 补网络短板",
+      "market_cap_usd_b": 28,
+      "in_sp500": true,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "NTAP",
+      "name_en": "NetApp Inc",
+      "name_zh": "NetApp",
+      "category": "AI-Infra-Datacenter",
+      "ai_relevance": "AI 数据存储解决方案",
+      "market_cap_usd_b": 24,
+      "in_sp500": true,
+      "in_nasdaq100": true
+    },
+    {
+      "ticker": "PSTG",
+      "name_en": "Pure Storage",
+      "name_zh": "Pure Storage",
+      "category": "AI-Infra-Datacenter",
+      "ai_relevance": "全闪存存储，Meta AI 集群供应商",
+      "market_cap_usd_b": 18,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "OKLO",
+      "name_en": "Oklo Inc",
+      "name_zh": "Oklo",
+      "category": "AI-Power-Nuclear",
+      "ai_relevance": "小型核反应堆 SMR，专供 AI 数据中心电力，Sam Altman 背书",
+      "market_cap_usd_b": 14,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "NNE",
+      "name_en": "Nano Nuclear Energy",
+      "name_zh": "Nano Nuclear",
+      "category": "AI-Power-Nuclear",
+      "ai_relevance": "微型核反应堆初创，对标 Oklo 的小型模块化路线",
+      "market_cap_usd_b": 2,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "SMR",
+      "name_en": "NuScale Power",
+      "name_zh": "NuScale Power",
+      "category": "AI-Power-Nuclear",
+      "ai_relevance": "SMR 商业化先行者，NRC 首个获批设计",
+      "market_cap_usd_b": 10,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "CEG",
+      "name_en": "Constellation Energy",
+      "name_zh": "星座能源",
+      "category": "AI-Power-Nuclear",
+      "ai_relevance": "美国最大核电运营商，与微软签 20 年 AI 供电协议（重启三里岛）",
+      "market_cap_usd_b": 95,
+      "in_sp500": true,
+      "in_nasdaq100": true
+    },
+    {
+      "ticker": "VST",
+      "name_en": "Vistra Corp",
+      "name_zh": "Vistra",
+      "category": "AI-Power-Nuclear",
+      "ai_relevance": "核电+燃气电，AI 数据中心供电主流玩家",
+      "market_cap_usd_b": 60,
+      "in_sp500": true,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "TLN",
+      "name_en": "Talen Energy",
+      "name_zh": "Talen Energy",
+      "category": "AI-Power-Nuclear",
+      "ai_relevance": "Susquehanna 核电站直供 AWS 数据中心",
+      "market_cap_usd_b": 12,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "GEV",
+      "name_en": "GE Vernova",
+      "name_zh": "GE Vernova",
+      "category": "AI-Power-Nuclear",
+      "ai_relevance": "燃气轮机+核电 BWRX-300 SMR 技术，AI 发电设备首选",
+      "market_cap_usd_b": 120,
+      "in_sp500": true,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "BWXT",
+      "name_en": "BWX Technologies",
+      "name_zh": "BWX Technologies",
+      "category": "AI-Power-Nuclear",
+      "ai_relevance": "核反应堆组件制造，SMR 供应链核心",
+      "market_cap_usd_b": 13,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "LEU",
+      "name_en": "Centrus Energy",
+      "name_zh": "Centrus Energy",
+      "category": "AI-Power-Nuclear",
+      "ai_relevance": "HALEU 高丰度低浓铀，SMR 唯一美国本土供应",
+      "market_cap_usd_b": 3,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "UEC",
+      "name_en": "Uranium Energy Corp",
+      "name_zh": "Uranium Energy",
+      "category": "AI-Power-Nuclear",
+      "ai_relevance": "美国本土铀矿，核燃料上游受益",
+      "market_cap_usd_b": 3,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "UUUU",
+      "name_en": "Energy Fuels Inc",
+      "name_zh": "Energy Fuels",
+      "category": "AI-Power-Nuclear",
+      "ai_relevance": "美国最大铀生产商之一，核燃料供应链",
+      "market_cap_usd_b": 2,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "CCJ",
+      "name_en": "Cameco Corporation",
+      "name_zh": "卡梅科",
+      "category": "AI-Power-Nuclear",
+      "ai_relevance": "全球最大铀矿商，持有西屋电气 49% 股权",
+      "market_cap_usd_b": 30,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "NRG",
+      "name_en": "NRG Energy",
+      "name_zh": "NRG Energy",
+      "category": "AI-Power-Nuclear",
+      "ai_relevance": "独立发电商，布局 AI 数据中心供电合约",
+      "market_cap_usd_b": 22,
+      "in_sp500": true,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "ETN",
+      "name_en": "Eaton Corporation",
+      "name_zh": "伊顿电气",
+      "category": "AI-Grid-Equipment",
+      "ai_relevance": "数据中心配电/UPS 电力管理龙头",
+      "market_cap_usd_b": 120,
+      "in_sp500": true,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "GE",
+      "name_en": "GE Aerospace",
+      "name_zh": "GE 航空航天",
+      "category": "AI-Grid-Equipment",
+      "ai_relevance": "航空发动机主业，但品牌与能源转型遗产仍受关注",
+      "market_cap_usd_b": 220,
+      "in_sp500": true,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "POWL",
+      "name_en": "Powell Industries",
+      "name_zh": "Powell 工业",
+      "category": "AI-Grid-Equipment",
+      "ai_relevance": "中压开关柜/配电系统，数据中心供电小盘黑马",
+      "market_cap_usd_b": 4,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "HUBB",
+      "name_en": "Hubbell Incorporated",
+      "name_zh": "Hubbell",
+      "category": "AI-Grid-Equipment",
+      "ai_relevance": "电网配电/变压器，AI 电力扩容受益",
+      "market_cap_usd_b": 24,
+      "in_sp500": true,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "NEE",
+      "name_en": "NextEra Energy",
+      "name_zh": "NextEra 能源",
+      "category": "AI-Grid-Equipment",
+      "ai_relevance": "最大可再生能源公用事业，AI PPA 大客户",
+      "market_cap_usd_b": 155,
+      "in_sp500": true,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "SO",
+      "name_en": "Southern Company",
+      "name_zh": "南方电力",
+      "category": "AI-Grid-Equipment",
+      "ai_relevance": "东南部电力公司，佐治亚 AI 数据中心负荷激增受益",
+      "market_cap_usd_b": 100,
+      "in_sp500": true,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "AEE",
+      "name_en": "Ameren Corporation",
+      "name_zh": "Ameren",
+      "category": "AI-Grid-Equipment",
+      "ai_relevance": "中西部公用事业，数据中心扩容受益",
+      "market_cap_usd_b": 28,
+      "in_sp500": true,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "DUK",
+      "name_en": "Duke Energy",
+      "name_zh": "杜克能源",
+      "category": "AI-Grid-Equipment",
+      "ai_relevance": "东南部最大电力，AI 数据中心供电扩容",
+      "market_cap_usd_b": 95,
+      "in_sp500": true,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "AES",
+      "name_en": "AES Corporation",
+      "name_zh": "AES 公司",
+      "category": "AI-Grid-Equipment",
+      "ai_relevance": "可再生能源+谷歌 AI 数据中心 PPA",
+      "market_cap_usd_b": 10,
+      "in_sp500": true,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "GEHC",
+      "name_en": "GE HealthCare",
+      "name_zh": "GE 医疗",
+      "category": "AI-Grid-Equipment",
+      "ai_relevance": "AI 医疗影像设备（非电网，但属 GE 系 AI 应用）",
+      "market_cap_usd_b": 35,
+      "in_sp500": true,
+      "in_nasdaq100": true
+    },
+    {
+      "ticker": "QBTS",
+      "name_en": "D-Wave Quantum",
+      "name_zh": "D-Wave Quantum",
+      "category": "AI-Grid-Equipment",
+      "ai_relevance": "量子计算+AI 混合优化（归入前沿算力基建）",
+      "market_cap_usd_b": 5,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "MSFT",
+      "name_en": "Microsoft Corporation",
+      "name_zh": "微软",
+      "category": "AI-Software-Application",
+      "ai_relevance": "OpenAI 最大股东+Azure AI 云+Copilot 企业 AI",
+      "market_cap_usd_b": 3600,
+      "in_sp500": true,
+      "in_nasdaq100": true
+    },
+    {
+      "ticker": "GOOGL",
+      "name_en": "Alphabet Inc",
+      "name_zh": "谷歌母公司 Alphabet",
+      "category": "AI-Software-Application",
+      "ai_relevance": "Gemini 大模型 + TPU 自研芯片 + DeepMind + Waymo",
+      "market_cap_usd_b": 2400,
+      "in_sp500": true,
+      "in_nasdaq100": true
+    },
+    {
+      "ticker": "META",
+      "name_en": "Meta Platforms",
+      "name_zh": "Meta",
+      "category": "AI-Software-Application",
+      "ai_relevance": "Llama 开源大模型 + AI 推荐引擎 + Reality Labs",
+      "market_cap_usd_b": 1500,
+      "in_sp500": true,
+      "in_nasdaq100": true
+    },
+    {
+      "ticker": "AAPL",
+      "name_en": "Apple Inc",
+      "name_zh": "苹果",
+      "category": "AI-Software-Application",
+      "ai_relevance": "Apple Intelligence 端侧 AI，终端分发+隐私计算",
+      "market_cap_usd_b": 3500,
+      "in_sp500": true,
+      "in_nasdaq100": true
+    },
+    {
+      "ticker": "AMZN",
+      "name_en": "Amazon.com Inc",
+      "name_zh": "亚马逊",
+      "category": "AI-Software-Application",
+      "ai_relevance": "AWS+Bedrock+Trainium 自研芯片+Anthropic 投资方",
+      "market_cap_usd_b": 2200,
+      "in_sp500": true,
+      "in_nasdaq100": true
+    },
+    {
+      "ticker": "ORCL",
+      "name_en": "Oracle Corporation",
+      "name_zh": "甲骨文",
+      "category": "AI-Software-Application",
+      "ai_relevance": "OCI AI 云+Stargate 参与方+OpenAI 3000 亿美元大单",
+      "market_cap_usd_b": 550,
+      "in_sp500": true,
+      "in_nasdaq100": true
+    },
+    {
+      "ticker": "CRM",
+      "name_en": "Salesforce Inc",
+      "name_zh": "Salesforce",
+      "category": "AI-Software-Application",
+      "ai_relevance": "Agentforce 企业 AI Agent 平台",
+      "market_cap_usd_b": 280,
+      "in_sp500": true,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "PLTR",
+      "name_en": "Palantir Technologies",
+      "name_zh": "Palantir",
+      "category": "AI-Software-Application",
+      "ai_relevance": "AIP 平台，政府+企业 AI 决策系统龙头",
+      "market_cap_usd_b": 400,
+      "in_sp500": true,
+      "in_nasdaq100": true
+    },
+    {
+      "ticker": "SNOW",
+      "name_en": "Snowflake Inc",
+      "name_zh": "Snowflake",
+      "category": "AI-Software-Application",
+      "ai_relevance": "数据云 + Cortex AI，企业数据 AI 化",
+      "market_cap_usd_b": 65,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "NOW",
+      "name_en": "ServiceNow Inc",
+      "name_zh": "ServiceNow",
+      "category": "AI-Software-Application",
+      "ai_relevance": "企业工作流 AI（Now Assist），IT 自动化龙头",
+      "market_cap_usd_b": 180,
+      "in_sp500": true,
+      "in_nasdaq100": true
+    },
+    {
+      "ticker": "MDB",
+      "name_en": "MongoDB Inc",
+      "name_zh": "MongoDB",
+      "category": "AI-Software-Application",
+      "ai_relevance": "向量数据库原生支持，AI 应用后端",
+      "market_cap_usd_b": 18,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "DDOG",
+      "name_en": "Datadog Inc",
+      "name_zh": "Datadog",
+      "category": "AI-Software-Application",
+      "ai_relevance": "AI 应用可观测性+LLM 监控",
+      "market_cap_usd_b": 48,
+      "in_sp500": true,
+      "in_nasdaq100": true
+    },
+    {
+      "ticker": "ADBE",
+      "name_en": "Adobe Inc",
+      "name_zh": "Adobe",
+      "category": "AI-Software-Application",
+      "ai_relevance": "Firefly 生成式 AI+Creative Cloud AI 功能",
+      "market_cap_usd_b": 180,
+      "in_sp500": true,
+      "in_nasdaq100": true
+    },
+    {
+      "ticker": "SHOP",
+      "name_en": "Shopify Inc",
+      "name_zh": "Shopify",
+      "category": "AI-Software-Application",
+      "ai_relevance": "Sidekick AI 商家助手",
+      "market_cap_usd_b": 140,
+      "in_sp500": true,
+      "in_nasdaq100": true
+    },
+    {
+      "ticker": "DUOL",
+      "name_en": "Duolingo Inc",
+      "name_zh": "Duolingo",
+      "category": "AI-Software-Application",
+      "ai_relevance": "AI 驱动语言学习+Max 订阅",
+      "market_cap_usd_b": 18,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "APP",
+      "name_en": "AppLovin Corporation",
+      "name_zh": "AppLovin",
+      "category": "AI-Software-Application",
+      "ai_relevance": "Axon AI 广告引擎，效果广告 AI 标杆",
+      "market_cap_usd_b": 180,
+      "in_sp500": true,
+      "in_nasdaq100": true
+    },
+    {
+      "ticker": "IBM",
+      "name_en": "IBM Corporation",
+      "name_zh": "IBM",
+      "category": "AI-Software-Application",
+      "ai_relevance": "watsonx 企业 AI 平台+咨询业务 AI 转型",
+      "market_cap_usd_b": 210,
+      "in_sp500": true,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "CRWD",
+      "name_en": "CrowdStrike Holdings",
+      "name_zh": "CrowdStrike",
+      "category": "AI-Software-Application",
+      "ai_relevance": "Charlotte AI 安全运营+AI 端点检测",
+      "market_cap_usd_b": 90,
+      "in_sp500": true,
+      "in_nasdaq100": true
+    },
+    {
+      "ticker": "PANW",
+      "name_en": "Palo Alto Networks",
+      "name_zh": "Palo Alto Networks",
+      "category": "AI-Software-Application",
+      "ai_relevance": "Precision AI 安全运营",
+      "market_cap_usd_b": 130,
+      "in_sp500": true,
+      "in_nasdaq100": true
+    },
+    {
+      "ticker": "RBLX",
+      "name_en": "Roblox Corporation",
+      "name_zh": "Roblox",
+      "category": "AI-Software-Application",
+      "ai_relevance": "生成式 AI UGC 工具，3D 创作加速",
+      "market_cap_usd_b": 40,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "TSLA",
+      "name_en": "Tesla Inc",
+      "name_zh": "特斯拉",
+      "category": "AI-Robotics-Autonomous",
+      "ai_relevance": "FSD 自动驾驶 + Optimus 人形机器人 + Dojo 训练芯片",
+      "market_cap_usd_b": 1200,
+      "in_sp500": true,
+      "in_nasdaq100": true
+    },
+    {
+      "ticker": "SYM",
+      "name_en": "Symbotic Inc",
+      "name_zh": "Symbotic",
+      "category": "AI-Robotics-Autonomous",
+      "ai_relevance": "AI 仓储机器人，沃尔玛主力供应商",
+      "market_cap_usd_b": 15,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "RXRX",
+      "name_en": "Recursion Pharmaceuticals",
+      "name_zh": "Recursion 制药",
+      "category": "AI-Robotics-Autonomous",
+      "ai_relevance": "AI 药物发现平台，NVIDIA 投资",
+      "market_cap_usd_b": 2,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "TER",
+      "name_en": "Teradyne Inc",
+      "name_zh": "泰瑞达",
+      "category": "AI-Robotics-Autonomous",
+      "ai_relevance": "半导体测试+UR 协作机器人+MiR 移动机器人",
+      "market_cap_usd_b": 20,
+      "in_sp500": true,
+      "in_nasdaq100": true
+    },
+    {
+      "ticker": "ISRG",
+      "name_en": "Intuitive Surgical",
+      "name_zh": "直觉外科",
+      "category": "AI-Robotics-Autonomous",
+      "ai_relevance": "达芬奇手术机器人+AI 辅助决策",
+      "market_cap_usd_b": 180,
+      "in_sp500": true,
+      "in_nasdaq100": true
+    },
+    {
+      "ticker": "PATH",
+      "name_en": "UiPath Inc",
+      "name_zh": "UiPath",
+      "category": "AI-Robotics-Autonomous",
+      "ai_relevance": "RPA+AI Agent 流程自动化龙头",
+      "market_cap_usd_b": 7,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "AUR",
+      "name_en": "Aurora Innovation",
+      "name_zh": "Aurora 创新",
+      "category": "AI-Robotics-Autonomous",
+      "ai_relevance": "L4 自动驾驶卡车（Aurora Driver）",
+      "market_cap_usd_b": 12,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "MBLY",
+      "name_en": "Mobileye Global",
+      "name_zh": "Mobileye",
+      "category": "AI-Robotics-Autonomous",
+      "ai_relevance": "ADAS+自动驾驶视觉芯片",
+      "market_cap_usd_b": 14,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "KTOS",
+      "name_en": "Kratos Defense",
+      "name_zh": "Kratos 国防",
+      "category": "AI-Robotics-Autonomous",
+      "ai_relevance": "无人机+AI 国防系统",
+      "market_cap_usd_b": 6,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "AVAV",
+      "name_en": "AeroVironment",
+      "name_zh": "AeroVironment",
+      "category": "AI-Robotics-Autonomous",
+      "ai_relevance": "战术无人机+AI 自主导航（收购 BlueHalo）",
+      "market_cap_usd_b": 8,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "BABA",
+      "name_en": "Alibaba Group",
+      "name_zh": "阿里巴巴",
+      "category": "AI-China-ADR",
+      "ai_relevance": "通义千问大模型+阿里云 AI 资本开支重仓",
+      "market_cap_usd_b": 260,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "BIDU",
+      "name_en": "Baidu Inc",
+      "name_zh": "百度",
+      "category": "AI-China-ADR",
+      "ai_relevance": "文心大模型+萝卜快跑 Robotaxi",
+      "market_cap_usd_b": 32,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    },
+    {
+      "ticker": "PDD",
+      "name_en": "PDD Holdings",
+      "name_zh": "拼多多",
+      "category": "AI-China-ADR",
+      "ai_relevance": "Temu AI 推荐引擎+跨境电商 AI 运营",
+      "market_cap_usd_b": 160,
+      "in_sp500": false,
+      "in_nasdaq100": true
+    },
+    {
+      "ticker": "JD",
+      "name_en": "JD.com Inc",
+      "name_zh": "京东",
+      "category": "AI-China-ADR",
+      "ai_relevance": "言犀大模型+物流 AI 自动化",
+      "market_cap_usd_b": 45,
+      "in_sp500": false,
+      "in_nasdaq100": false
+    }
+  ]
+}

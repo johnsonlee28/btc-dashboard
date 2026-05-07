@@ -1,7 +1,13 @@
 {
   "rewrites": [
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "stock.zhixingshe.cc" }],
+      "destination": "/stock.html"
+    },
     { "source": "/eth", "destination": "/eth.html" },
-    { "source": "/distribution-radar", "destination": "/distribution-radar.html" }
+    { "source": "/distribution-radar", "destination": "/distribution-radar.html" },
+    { "source": "/stock", "destination": "/stock.html" }
   ],
   "headers": [
     {
