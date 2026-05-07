@@ -58,13 +58,13 @@
       "manualNote": "自动快照失效时手工兜底：填写样本AI/Mag7股票最新FTD名义金额、活跃股票数、异常股票数。注意FTD是交割失败余额，不是裸卖空或机构派发证据。"
     },
     "aaii_bull_bear": {
-      "enabled": true,
+      "enabled": false,
       "value": "Apr 29 Bull 38.1% · Bear 39.7% · Spread -1.6%",
       "status": "neutral",
       "updatedAt": "2026-04-29",
       "dataStatus": "Manual",
       "sourceUrl": "https://www.aaii.com/sentimentsurvey/sent_results",
-      "manualNote": "AAII 官方历史数据：Apr 29 bullish 38.1%、bearish 39.7%，bull-bear spread = -1.6%。未达到 >+30% 过热或 <-20% 恐慌阈值，按中性录入。"
+      "manualNote": "已由 data/snapshots/market-breadth-latest.json 的 macroIndicators.aaii_bull_bear 自动快照接管；保留本项作为官方源失败时的手工兜底。"
     },
     "cboe_equity_pc": {
       "enabled": false,
