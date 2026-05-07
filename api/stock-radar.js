@@ -25,6 +25,16 @@ const JSON_HEADERS = {
 const YF_CHART = (symbol, range = '3mo', interval = '1d') =>
   `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=${range}&interval=${interval}`;
 
+// V2 第二刀：真实宽度先从“AI 主题核心样本”做起。
+// 选择标准：data/ai-stock-pool.json 中按近似市值排序的前 24 只，覆盖 Mag7、芯片、云、软件、AI 电力/基础设施。
+// 不直接 Edge 拉 95 只，避免 Yahoo 限流和 Vercel 超时；后续可迁移到 GitHub Actions 日更快照。
+const AI_BREADTH_TICKERS = [
+  'MSFT', 'AAPL', 'NVDA', 'GOOGL', 'AMZN', 'META', 'TSLA', 'AVGO',
+  'TSM', 'ORCL', 'PLTR', 'ASML', 'CRM', 'AMD', 'BABA', 'GE',
+  'IBM', 'QCOM', 'NOW', 'ADBE', 'APP', 'ISRG', 'PDD', 'NEE',
+];
+const MAG7_TICKERS = ['AAPL', 'MSFT', 'NVDA', 'AMZN', 'GOOGL', 'META', 'TSLA'];
+
 function num(v, fallback = null) {
   const n = Number(v);
   return Number.isFinite(n) ? n : fallback;
@@ -262,6 +272,84 @@ function computeSectorRotation(sectorBars, spyBars) {
   return { ranking, defensiveAvg, growthAvg, spread };
 }
 
+function analyzeBreadthSample(symbolBars, tickers) {
+  const rows = [];
+  for (const symbol of tickers) {
+    const bars = symbolBars[symbol] || [];
+    if (!Array.isArray(bars) || bars.length < 210) continue;
+    const last = bars[bars.length - 1];
+    const ma20 = movingAverage(bars, 20);
+    const ma50 = movingAverage(bars, 50);
+    const ma200 = movingAverage(bars, 200);
+    const highs = bars.map(b => Number.isFinite(b.high) ? b.high : b.close).filter(Number.isFinite);
+    const lows = bars.map(b => Number.isFinite(b.low) ? b.low : b.close).filter(Number.isFinite);
+    const high52w = highs.length ? Math.max(...highs) : null;
+    const low52w = lows.length ? Math.min(...lows) : null;
+    if (!Number.isFinite(last?.close) || !Number.isFinite(ma50) || !Number.isFinite(ma200)) continue;
+    rows.push({
+      symbol,
+      close: last.close,
+      above20: Number.isFinite(ma20) ? last.close >= ma20 : null,
+      above50: last.close >= ma50,
+      above200: last.close >= ma200,
+      nearHigh: high52w ? last.close >= high52w * 0.95 : null,
+      nearLow: low52w ? last.close <= low52w * 1.10 : null,
+      updatedAt: new Date(last.t * 1000).toISOString(),
+    });
+  }
+  if (!rows.length) return null;
+  const pct = (key) => Number(((rows.filter(r => r[key]).length / rows.length) * 100).toFixed(1));
+  const above50 = pct('above50');
+  const above200 = pct('above200');
+  const nearHigh = pct('nearHigh');
+  const nearLow = pct('nearLow');
+  const leaders = rows.filter(r => r.above50 && r.nearHigh).map(r => r.symbol).slice(0, 8);
+  const laggards = rows.filter(r => !r.above50 || r.nearLow).map(r => r.symbol).slice(0, 8);
+  const updatedAt = rows.map(r => r.updatedAt).sort().slice(-1)[0] || null;
+  return {
+    sampleSize: rows.length,
+    requested: tickers.length,
+    coveragePct: Number((rows.length / tickers.length * 100).toFixed(1)),
+    above20Pct: pct('above20'),
+    above50Pct: above50,
+    above200Pct: above200,
+    nearHighPct: nearHigh,
+    nearLowPct: nearLow,
+    leaders,
+    laggards,
+    updatedAt,
+    rows,
+  };
+}
+
+function breadthStatus(breadth) {
+  if (!breadth || breadth.coveragePct < 70) return 'pending';
+  if (breadth.above50Pct < 45 || breadth.above200Pct < 50 || breadth.nearLowPct >= 25) return 'distribution';
+  if (breadth.above50Pct >= 70 && breadth.above200Pct >= 70 && breadth.nearHighPct >= 35) return 'accumulation';
+  return 'neutral';
+}
+
+function breadthValue(breadth) {
+  if (!breadth) return null;
+  return `MA50上方 ${breadth.above50Pct}% · MA200上方 ${breadth.above200Pct}% · 近52周高 ${breadth.nearHighPct}%`;
+}
+
+function breadthExtras(breadth) {
+  if (!breadth) return null;
+  return {
+    sampleSize: breadth.sampleSize,
+    requested: breadth.requested,
+    coveragePct: breadth.coveragePct,
+    above20Pct: breadth.above20Pct,
+    above50Pct: breadth.above50Pct,
+    above200Pct: breadth.above200Pct,
+    nearHighPct: breadth.nearHighPct,
+    nearLowPct: breadth.nearLowPct,
+    leaders: breadth.leaders,
+    laggards: breadth.laggards,
+  };
+}
+
 function statusFromScore(score) {
   if (score >= 70) return 'distribution';
   if (score >= 50) return 'watch';
@@ -355,7 +443,7 @@ function analyzeStockBars(symbol, bars, meta = {}) {
         name: 'MA20 / MA50 结构',
         value: maStructure,
         status: maScore >= 16 ? 'distribution' : maScore >= 10 ? 'watch' : maScore <= 3 ? 'healthy' : 'neutral',
-        logic: '价格跌破短中期均线、MA20 下行或跌破 MA50，通常意味着承接变弱；均线健康只能说明量价趋势尚可，不能定义机构建仓。',
+        logic: '价格跌破短中期均线、MA20 下行或跌破 MA50，通常意味着承接变弱；均线健康只能说明量价趋势尚可，不能定义机构增持。',
         threshold: '价格 < MA50 且 MA20 < MA50 为趋势破位',
       },
       {
@@ -363,7 +451,7 @@ function analyzeStockBars(symbol, bars, meta = {}) {
         name: '距52周高点回撤',
         value: drawdownFrom52wHigh != null ? `${(drawdownFrom52wHigh * 100).toFixed(1)}%` : '无数据',
         status: drawdownFrom52wHigh >= 0.15 ? 'distribution' : drawdownFrom52wHigh >= 0.08 ? 'watch' : drawdownFrom52wHigh < 0.03 ? 'healthy' : 'neutral',
-        logic: '强势龙头通常贴近新高；从高位回撤扩大且伴随放量下跌，更像派发完成后的结果。贴近新高只代表强势，不代表机构建仓。',
+        logic: '强势龙头通常贴近新高；从高位回撤扩大且伴随放量下跌，更像派发完成后的结果。贴近新高只代表强势，不代表机构增持。',
         threshold: '≥15% 深度回撤；8-15% 警示；<3% 强势/低派发风险',
       },
     ],
@@ -377,8 +465,8 @@ function analyzeStockBars(symbol, bars, meta = {}) {
     },
     notes: [
       '这是免费行情可做的量价派发判断，不含 Form 4、13F、暗池、期权大单。',
-      '低分只代表“量价派发风险低/趋势承接尚可”，不能定义为机构建仓。',
-      '若要判断机构建仓或机构派发，必须继续接入 13F、Form 4、OpenInsider cluster buy/sell、期权/暗池等证据。',
+      '低分只代表“量价派发风险低/趋势承接尚可”，不能定义为机构增持。',
+      '若要判断机构增持或机构派发，必须继续接入 13F、Form 4、OpenInsider cluster buy/sell、期权/暗池等证据。',
     ],
   };
 }
@@ -495,6 +583,9 @@ export default async function handler(req) {
     xlre: YF_CHART('XLRE', '6mo', '1d'),
     xlc: YF_CHART('XLC', '6mo', '1d'),
   };
+  for (const symbol of AI_BREADTH_TICKERS) {
+    endpoints[`ai_${symbol}`] = YF_CHART(symbol, '1y', '1d');
+  }
 
   const notes = [];
   const [jsonResults] = await Promise.all([
@@ -522,6 +613,7 @@ export default async function handler(req) {
   const vix3mBars = extractCloses(data.vix3m || {});
   const skewBars = extractCloses(data.skew || {});
   const sectorBars = Object.fromEntries(['xlk','xlf','xle','xlv','xly','xlp','xli','xlb','xlu','xlre','xlc'].map(k => [k, extractCloses(data[k] || {})]));
+  const aiSymbolBars = Object.fromEntries(AI_BREADTH_TICKERS.map(symbol => [symbol, extractCloses(data[`ai_${symbol}`] || {})]));
   const cboePc = cboePcResult.ok ? parseCboePutCallCsv(cboePcResult.text) : null;
 
   const spyMeta = latestMeta(data.spy || {});
@@ -828,6 +920,49 @@ export default async function handler(req) {
     }));
   }
 
+  // 12) V2 第二刀：AI 主题核心样本真实宽度（MA50 / MA200 / 52周高低）。
+  {
+    const aiBreadth = analyzeBreadthSample(aiSymbolBars, AI_BREADTH_TICKERS);
+    metrics.push(metric({
+      id: 'ai_core_breadth_ma',
+      name: 'AI核心样本宽度：MA50 / MA200',
+      purpose: '观察 AI 主题内部是否只有少数龙头撑住，还是大部分核心票仍在趋势线上方',
+      value: breadthValue(aiBreadth),
+      status: breadthStatus(aiBreadth),
+      threshold: '样本覆盖 ≥70% 才参与判断；MA50上方 <45% 或 MA200上方 <50% 偏派发；二者 ≥70% 且近52周高 ≥35% 承接扩散',
+      sourceName: 'Yahoo Finance 24只AI核心样本自算',
+      sourceUrl: 'https://finance.yahoo.com/lookup',
+      frequency: '日更（美股交易日；Edge 实时抓取，失败则降级）',
+      updatedAt: aiBreadth?.updatedAt || null,
+      dataStatus: aiBreadth && aiBreadth.coveragePct >= 70 ? 'Live' : 'data_unavailable',
+      logic: '真正的主题强势不能只看 NVDA/少数龙头。若 AI 核心样本多数跌破 MA50/MA200，说明主题内部宽度恶化；若多数站上均线并贴近52周高，说明承接扩散。',
+      caseStudy: '2021 年成长股见顶前，指数和少数龙头仍强，但主题内部大量个股先跌破 MA50/MA200。',
+      limitations: '这是 24 只 AI 核心样本，不是全市场或完整 S&P500/Nasdaq100 宽度；Yahoo 单源可能限流，后续应迁移到 GitHub Actions 日更快照。',
+      extras: breadthExtras(aiBreadth),
+    }));
+  }
+
+  {
+    const mag7Breadth = analyzeBreadthSample(aiSymbolBars, MAG7_TICKERS);
+    metrics.push(metric({
+      id: 'mag7_breadth_ma',
+      name: 'Mag7 宽度：龙头是否共振',
+      purpose: '观察七大权重股是否同步站在趋势线上方，避免指数被一两只股票硬撑',
+      value: breadthValue(mag7Breadth),
+      status: breadthStatus(mag7Breadth),
+      threshold: 'MA50上方 <4/7 或 MA200上方 <4/7 偏风险；多数站上 MA50/MA200 且贴近高点，说明龙头承接尚可',
+      sourceName: 'Yahoo Finance Mag7 自算',
+      sourceUrl: 'https://finance.yahoo.com/lookup',
+      frequency: '日更（美股交易日）',
+      updatedAt: mag7Breadth?.updatedAt || null,
+      dataStatus: mag7Breadth && mag7Breadth.coveragePct >= 70 ? 'Live' : 'data_unavailable',
+      logic: '如果 SPY/QQQ 仍强，但 Mag7 内部开始多数跌破均线，说明权重支撑也在松动；若 Mag7 多数健康，只能说明龙头承接尚可，不代表机构正在增持。',
+      caseStudy: '权重股集中行情里，Mag7 内部分化通常先于指数波动扩大。',
+      limitations: 'Mag7 是极窄样本，容易被单票财报影响；必须结合 RSP/SPY、IWM/SPY 与 AI 样本宽度一起看。',
+      extras: breadthExtras(mag7Breadth),
+    }));
+  }
+
   // 综合评分
   const agg = aggregate(metrics);
 
@@ -877,7 +1012,7 @@ export default async function handler(req) {
     notes: [
       '仅作研究参考，不构成投资建议。',
       'Live 指标通过 Yahoo Finance 免费公开行情获取；失败时单项降级为 data_unavailable/Pending，不影响整体返回。',
-      'V2 第一阶段已接入小盘 IWM/SPY、等权 RSP/SPY、信用 HYG/SPY、板块轮动；CBOE Put/Call 已确认旧 CSV 服务器侧 403，等待可靠缓存源，不伪造数值。',
+      'V2 第一阶段已接入小盘 IWM/SPY、等权 RSP/SPY、信用 HYG/SPY、板块轮动；V2 第二刀新增 AI 核心样本与 Mag7 真实宽度。CBOE Put/Call 已确认旧 CSV 服务器侧 403，等待可靠缓存源，不伪造数值。',
       'BofA FMS / FINRA Margin Debt / AAII 仍为 Manual；NYSE A/D Line 与 New High/New Low 真实宽度指标暂为 Pending，不伪造实时值。',
       'Distribution Days 自算方法：当日收跌且成交量 > 前一交易日 → 派发日，近 25 交易日统计。',
       ...notes,
