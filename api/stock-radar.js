@@ -368,6 +368,51 @@ function breadthExtras(breadth) {
   };
 }
 
+function cachedBreadthExtras(snapshot, universe) {
+  if (!universe) return null;
+  return {
+    snapshotGeneratedAt: snapshot?.generatedAt || null,
+    sourceUpdatedAt: universe.sourceUpdatedAt || null,
+    requested: universe.requested,
+    sampleSize: universe.sampleSize,
+    coveragePct: universe.coveragePct,
+    above20Pct: universe.above20Pct,
+    above50Pct: universe.above50Pct,
+    above200Pct: universe.above200Pct,
+    nearHighPct: universe.nearHighPct,
+    newHighPct: universe.newHighPct,
+    nearLowPct: universe.nearLowPct,
+    newLowPct: universe.newLowPct,
+    advancePct: universe.advancePct,
+    declinePct: universe.declinePct,
+    counts: universe.counts,
+    leaders: universe.leaders,
+    laggards: universe.laggards,
+  };
+}
+
+function cachedBreadthMetric(snapshot, key, id, name, purpose) {
+  const universe = snapshot?.universes?.[key];
+  const usable = universe && universe.coveragePct >= 70;
+  return metric({
+    id,
+    name,
+    purpose,
+    value: usable ? universe.value : null,
+    status: usable ? universe.status : 'pending',
+    threshold: '覆盖率 ≥70% 才参与判断；MA50上方 <45% 或 MA200上方 <50% 或新低占比 ≥10% 偏派发；MA50/MA200均 ≥70% 且新高占比 ≥8% 偏承接扩散',
+    sourceName: 'GitHub Actions 日更宽度快照',
+    sourceUrl: universe?.source || '/data/snapshots/market-breadth-latest.json',
+    frequency: '日更（GitHub Actions，美股收盘后；API 读取静态 JSON）',
+    updatedAt: universe?.updatedAt || snapshot?.generatedAt || null,
+    dataStatus: usable ? 'Cached' : 'data_unavailable',
+    logic: '用成分股日线自算站上 MA20/MA50/MA200、52周新高/新低、上涨/下跌家数。宽度恶化说明上涨集中或底层股票撤退；宽度扩散说明承接改善，但不能单独证明机构真实交易。',
+    caseStudy: '2000、2007、2021 多次顶部前，指数仍强但成分股宽度先走弱；反弹初期则常见 MA50/MA200 上方比例逐步扩散。',
+    limitations: snapshot?.limitations || '免费数据源可能限流；Nasdaq-100 用 QQQ 持仓作为实战代理；宽度指标是市场结构证据，不是 13F/Form 4/期权流等机构证据。',
+    extras: cachedBreadthExtras(snapshot, universe),
+  });
+}
+
 function statusFromScore(score) {
   if (score >= 70) return 'distribution';
   if (score >= 50) return 'watch';
@@ -642,10 +687,12 @@ export default async function handler(req) {
 
   const notes = [];
   const manualConfigUrl = new URL('/data/manual-stock-indicators.json', url.origin).toString();
+  const breadthSnapshotUrl = new URL('/data/snapshots/market-breadth-latest.json', url.origin).toString();
   const cboeDailyStatsUrl = 'https://www.cboe.com/markets/us/options/market-statistics/daily/';
-  const [jsonResults, manualConfigResult, cboePcResult] = await Promise.all([
+  const [jsonResults, manualConfigResult, breadthSnapshotResult, cboePcResult] = await Promise.all([
     Promise.all(Object.entries(endpoints).map(([k, u]) => safeFetchJson(k, u, 5000))),
     safeFetchJson('manual_indicators', manualConfigUrl, 2500),
+    safeFetchJson('market_breadth_snapshot', breadthSnapshotUrl, 2500),
     safeFetchText('cboe_pc', cboeDailyStatsUrl, 5000),
   ]);
   const data = {};
@@ -656,6 +703,8 @@ export default async function handler(req) {
   if (!cboePcResult.ok) notes.push(`cboe_pc unavailable: ${cboePcResult.error}`);
   const manualConfig = manualConfigResult.ok ? manualConfigResult.data : null;
   if (!manualConfigResult.ok) notes.push(`manual_indicators unavailable: ${manualConfigResult.error}`);
+  const breadthSnapshot = breadthSnapshotResult.ok ? breadthSnapshotResult.data : null;
+  if (!breadthSnapshotResult.ok) notes.push(`market_breadth_snapshot unavailable: ${breadthSnapshotResult.error}`);
 
   const spyBars = extractCloses(data.spy || {});
   const qqqBars = extractCloses(data.qqq || {});
@@ -850,7 +899,23 @@ export default async function handler(req) {
     limitations: '免费接口不稳定，MVP 第二期接 WSJ / StockCharts 爬虫或 FINRA 统计。',
   }));
 
-  // 9) V2 市场宽度代理：小盘/等权/信用相对 SPY。免费自动化，用来观察“指数强但底层股票先弱”。
+  // 9) V2 第三刀：日更静态快照，全量 S&P500 / Nasdaq-100 宽度（API 优先读缓存 JSON，不在 Edge 实时拉 600 只）。
+  metrics.push(cachedBreadthMetric(
+    breadthSnapshot,
+    'sp500',
+    'sp500_breadth_snapshot',
+    'S&P500 成分股真实宽度快照',
+    '用 S&P500 成分股日线自算 MA50/MA200、52周新高/新低、上涨/下跌家数，替代只看 SPY/RSP 的代理判断'
+  ));
+  metrics.push(cachedBreadthMetric(
+    breadthSnapshot,
+    'nasdaq100',
+    'nasdaq100_breadth_snapshot',
+    'Nasdaq-100 / QQQ 持仓真实宽度快照',
+    '用 QQQ 持仓作为 Nasdaq-100 实战代理，自算科技权重内部宽度，观察龙头行情是否扩散或恶化'
+  ));
+
+  // 10) V2 市场宽度代理：小盘/等权/信用相对 SPY。免费自动化，用来观察“指数强但底层股票先弱”。
   {
     const iwmRs = computeRelativeStrength(iwmBars, spyBars, 60);
     metrics.push(metric({
@@ -1026,7 +1091,7 @@ export default async function handler(req) {
   // 股池元数据（前端直接读 /data/ai-stock-pool.json；这里也一并返回 summary）
   const stockPool = {
     path: '/data/ai-stock-pool.json',
-    note: 'MVP 第一期筛选范围：AI 主题股池 + 股池内已标记 in_sp500 / in_nasdaq100 子集。全量 S&P500/Nasdaq100 成分股将在第二期接入。',
+    note: 'MVP 第一期筛选范围：AI 主题股池 + 股池内已标记 in_sp500 / in_nasdaq100 子集。全量 S&P500/Nasdaq-100 宽度已通过 /data/snapshots/market-breadth-latest.json 日更快照接入。',
     categories: [
       'AI-Chip-Compute',
       'AI-Infra-Datacenter',
@@ -1069,7 +1134,7 @@ export default async function handler(req) {
     notes: [
       '仅作研究参考，不构成投资建议。',
       'Live 指标通过 Yahoo Finance 免费公开行情获取；失败时单项降级为 data_unavailable/Pending，不影响整体返回。',
-      'V2 第一阶段已接入小盘 IWM/SPY、等权 RSP/SPY、信用 HYG/SPY、板块轮动；V2 第二刀新增 AI 核心样本与 Mag7 真实宽度。CBOE Put/Call 现在从 CBOE Daily Market Statistics 官网 HTML 自动解析，页面结构变化时单项降级。',
+      'V2 第一阶段已接入小盘 IWM/SPY、等权 RSP/SPY、信用 HYG/SPY、板块轮动；V2 第二刀新增 AI 核心样本与 Mag7 真实宽度；V2 第三刀新增 GitHub Actions 日更静态快照，覆盖全量 S&P500 与 QQQ/Nasdaq-100 持仓宽度。CBOE Put/Call 现在从 CBOE Daily Market Statistics 官网 HTML 自动解析，页面结构变化时单项降级。',
       'BofA FMS / FINRA Margin Debt / AAII 仍可通过 /data/manual-stock-indicators.json 手工开启；NYSE A/D Line、New High/New Low 仍保持 Pending，未找到稳定免费自动源前不伪造数值。',
       'Distribution Days 自算方法：当日收跌且成交量 > 前一交易日 → 派发日，近 25 交易日统计。',
       ...notes,
