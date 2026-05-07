@@ -497,10 +497,45 @@ function metric({
 }
 
 /** 计算综合状态 */
+function applyManualIndicatorOverrides(metrics, manualConfig) {
+  const indicators = manualConfig?.indicators || {};
+  const validStatuses = new Set(['distribution', 'neutral', 'accumulation', 'pending']);
+  return metrics.map(metricItem => {
+    const override = indicators[metricItem.id];
+    if (!override?.enabled) return metricItem;
+
+    const status = validStatuses.has(override.status) ? override.status : metricItem.status;
+    const dataStatus = ['Manual', 'Cached', 'Live', 'Pending', 'data_unavailable'].includes(override.dataStatus)
+      ? override.dataStatus
+      : 'Manual';
+    const extras = {
+      ...(metricItem.extras || {}),
+      manualOverride: {
+        enabled: true,
+        schemaVersion: manualConfig?.schemaVersion || 1,
+        updatedAt: override.updatedAt || manualConfig?.updatedAt || null,
+        note: override.manualNote || null,
+      },
+    };
+
+    return metric({
+      ...metricItem,
+      value: override.value ?? metricItem.value,
+      status,
+      updatedAt: override.updatedAt || manualConfig?.updatedAt || metricItem.updatedAt,
+      dataStatus,
+      sourceUrl: override.sourceUrl || metricItem.sourceUrl,
+      logic: override.logic || metricItem.logic,
+      limitations: override.limitations || `${metricItem.limitations || ''} 手工开启值来自 data/manual-stock-indicators.json；请核对原始来源与日期。`.trim(),
+      extras,
+    });
+  });
+}
+
 function aggregate(metrics) {
-  // 仅对 Live 且有明确 status 的指标做投票
+  // 对 Live / Cached / Manual 且有明确 status 的指标做投票；Pending 不参与评分。
   const considered = metrics.filter(m =>
-    m.dataStatus === 'Live' && ['distribution', 'neutral', 'accumulation'].includes(m.status)
+    ['Live', 'Cached', 'Manual'].includes(m.dataStatus) && ['distribution', 'neutral', 'accumulation'].includes(m.status)
   );
   const distHits = metrics.filter(m => m.status === 'distribution').length;
   const accHits = metrics.filter(m => m.status === 'accumulation').length;
@@ -588,8 +623,10 @@ export default async function handler(req) {
   }
 
   const notes = [];
-  const [jsonResults] = await Promise.all([
+  const manualConfigUrl = new URL('/data/manual-stock-indicators.json', url.origin).toString();
+  const [jsonResults, manualConfigResult] = await Promise.all([
     Promise.all(Object.entries(endpoints).map(([k, u]) => safeFetchJson(k, u, 5000))),
+    safeFetchJson('manual_indicators', manualConfigUrl, 2500),
   ]);
   // CBOE 旧 CSV 在服务器 / Edge 环境长期返回 HTTP 403（已用 curl、UA、Referer 多次核验）。
   // 在找到可靠免费源或缓存管线前，不再每次请求实时抓取，直接显式降级为 Pending，避免 5s 无效等待。
@@ -603,6 +640,8 @@ export default async function handler(req) {
     else notes.push(`${r.key} fetch failed: ${r.error}`);
   }
   if (!cboePcResult.ok) notes.push(`cboe_pc unavailable: ${cboePcResult.error}`);
+  const manualConfig = manualConfigResult.ok ? manualConfigResult.data : null;
+  if (!manualConfigResult.ok) notes.push(`manual_indicators unavailable: ${manualConfigResult.error}`);
 
   const spyBars = extractCloses(data.spy || {});
   const qqqBars = extractCloses(data.qqq || {});
@@ -963,8 +1002,11 @@ export default async function handler(req) {
     }));
   }
 
+  // 手工开启：data/manual-stock-indicators.json 中 enabled=true 的指标覆盖同 id 卡片。
+  const finalMetrics = applyManualIndicatorOverrides(metrics, manualConfig);
+
   // 综合评分
-  const agg = aggregate(metrics);
+  const agg = aggregate(finalMetrics);
 
   // 股池元数据（前端直接读 /data/ai-stock-pool.json；这里也一并返回 summary）
   const stockPool = {
@@ -1006,14 +1048,14 @@ export default async function handler(req) {
     distributionHits: agg.distributionHits,
     accumulationHits: agg.accumulationHits,
     dataQuality: agg.dataQuality,
-    metrics,
+    metrics: finalMetrics,
     stockPool,
     pricedSample,
     notes: [
       '仅作研究参考，不构成投资建议。',
       'Live 指标通过 Yahoo Finance 免费公开行情获取；失败时单项降级为 data_unavailable/Pending，不影响整体返回。',
       'V2 第一阶段已接入小盘 IWM/SPY、等权 RSP/SPY、信用 HYG/SPY、板块轮动；V2 第二刀新增 AI 核心样本与 Mag7 真实宽度。CBOE Put/Call 已确认旧 CSV 服务器侧 403，等待可靠缓存源，不伪造数值。',
-      'BofA FMS / FINRA Margin Debt / AAII 仍为 Manual；NYSE A/D Line 与 New High/New Low 真实宽度指标暂为 Pending，不伪造实时值。',
+      'BofA FMS / FINRA Margin Debt / AAII 仍可通过 /data/manual-stock-indicators.json 手工开启；NYSE A/D Line、New High/New Low、CBOE Put/Call 也可先手工录入，enabled=true 后参与展示和评分。',
       'Distribution Days 自算方法：当日收跌且成交量 > 前一交易日 → 派发日，近 25 交易日统计。',
       ...notes,
     ],
