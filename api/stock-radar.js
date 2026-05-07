@@ -803,7 +803,25 @@ export default async function handler(req) {
     limitations: '样本量小、自愿填写，噪声大；只作为情绪拼图，不是机构证据。',
   })));
 
-  // 4) CBOE Put/Call Ratio（V2：从官方 Daily Market Statistics HTML / Next payload 自动解析，失败则 Pending）
+  // 4) FINRA Daily Short Sale Volume（GitHub Actions 快照自动抓官方 CNMS 文件；场外短量口径，不等于 short interest）
+  metrics.push(cachedMacroIndicatorMetric(breadthSnapshot, 'finra_short_sale_volume', metric({
+    id: 'finra_short_sale_volume',
+    name: 'FINRA 场外短量占比',
+    purpose: 'FINRA CNMS 日短量文件中的场外 short volume / total volume，占比观察短量是否集中涌入',
+    value: null,
+    status: 'pending',
+    threshold: '场外 short/total ≥58% 或高于20日均值6个百分点 偏派发风险；≤42% 或低于20日均值6个百分点 偏承接改善',
+    sourceName: 'FINRA Daily Short Sale Volume Files（CNMS）',
+    sourceUrl: 'https://www.finra.org/finra-data/browse-catalog/short-sale-volume-data/daily-short-sale-volume-files',
+    frequency: '日更（FINRA 通常在 T 日 18:00 ET 前发布）',
+    updatedAt: null,
+    dataStatus: 'Pending',
+    logic: '场外 short volume 占比突然升高，说明 TRF/ADF/ORF 报告口径下卖空成交集中涌入；若与指数下跌、宽度恶化共振，派发风险更高。',
+    caseStudy: '短量占比单独噪声大，适合与宽度、期权情绪、融资余额一起看；异常个股榜用于提示需要进一步查新闻/财报/Form 4。',
+    limitations: 'FINRA Daily Short Sale Volume 仅覆盖场外/OTC 报告口径，不等同于全市场 short interest，也不代表机构空头仓位；做市商对冲会带来噪声。',
+  })));
+
+  // 5) CBOE Put/Call Ratio（V2：从官方 Daily Market Statistics HTML / Next payload 自动解析，失败则 Pending）
   {
     const equity = cboePc?.equity;
     const total = cboePc?.total;
@@ -1158,7 +1176,7 @@ export default async function handler(req) {
       '仅作研究参考，不构成投资建议。',
       'Live 指标通过 Yahoo Finance 免费公开行情获取；失败时单项降级为 data_unavailable/Pending，不影响整体返回。',
       'V2 第一阶段已接入小盘 IWM/SPY、等权 RSP/SPY、信用 HYG/SPY、板块轮动；V2 第二刀新增 AI 核心样本与 Mag7 真实宽度；V2 第三刀新增 GitHub Actions 日更静态快照，覆盖全量 S&P500 与 QQQ/Nasdaq-100 持仓宽度。CBOE Put/Call 现在从 CBOE Daily Market Statistics 官网 HTML 自动解析，页面结构变化时单项降级。',
-      'FINRA Margin Debt 与 AAII Bull-Bear Spread 已通过 GitHub Actions 快照自动抓官方页面；BofA FMS 仍可通过 /data/manual-stock-indicators.json 手工开启；NYSE A/D Line、New High/New Low 仍保持 Pending，未找到稳定免费自动源前不伪造数值。',
+      'FINRA Margin Debt 与 FINRA Daily Short Sale Volume 已通过 GitHub Actions 快照自动抓官方页面/文件；AAII 若官方页面反爬失败则由手工值透明兜底；BofA FMS 仍可通过 /data/manual-stock-indicators.json 手工开启；NYSE A/D Line、New High/New Low 仍保持 Pending，未找到稳定免费自动源前不伪造数值。',
       'Distribution Days 自算方法：当日收跌且成交量 > 前一交易日 → 派发日，近 25 交易日统计。',
       ...notes,
     ],

@@ -22,7 +22,7 @@ import time
 import urllib.parse
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from statistics import mean
 
@@ -33,6 +33,7 @@ SP500_URL = "https://raw.githubusercontent.com/datasets/s-and-p-500-companies/ma
 QQQ_HOLDINGS_URL = "https://dng-api.invesco.com/cache/v1/accounts/en_US/shareclasses/QQQ/holdings/fund?idType=ticker&interval=monthly&productType=ETF"
 YAHOO_SPARK = "https://query1.finance.yahoo.com/v7/finance/spark"
 FINRA_MARGIN_URL = "https://www.finra.org/rules-guidance/key-topics/margin-accounts/margin-statistics"
+FINRA_SHORT_SALE_URL_TEMPLATE = "https://cdn.finra.org/equity/regsho/daily/CNMSshvol{date}.txt"
 AAII_SENTIMENT_URL = "https://www.aaii.com/sentimentsurvey"
 UA = "stock-breadth-snapshot/1.0 (+https://stock.zhixingshe.cc)"
 BROWSER_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
@@ -370,6 +371,123 @@ def parse_aaii_sentiment() -> dict | None:
     }
 
 
+def parse_finra_short_sale_file(date_token: str) -> dict[str, dict] | None:
+    url = FINRA_SHORT_SALE_URL_TEMPLATE.format(date=date_token)
+    try:
+        text = fetch_text(url, timeout=45, headers={"User-Agent": UA, "Accept": "text/plain,*/*"})
+    except Exception:
+        return None
+    rows: dict[str, dict] = {}
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    if not lines or not lines[0].startswith("Date|Symbol|ShortVolume"):
+        return None
+    for line in lines[1:]:
+        parts = line.split("|")
+        if len(parts) < 5:
+            continue
+        symbol = parts[1].strip().upper()
+        short_volume = parse_number(parts[2])
+        total_volume = parse_number(parts[4])
+        if not symbol or short_volume is None or total_volume is None or total_volume <= 0:
+            continue
+        rows[symbol] = {
+            "symbol": symbol,
+            "shortVolume": float(short_volume),
+            "totalVolume": float(total_volume),
+            "ratioPct": round(short_volume / total_volume * 100, 1),
+        }
+    return rows or None
+
+
+def recent_weekday_tokens(max_days: int = 45) -> list[str]:
+    today = datetime.now(timezone.utc).date()
+    tokens = []
+    # FINRA daily short-sale files are posted after the US session; start from yesterday UTC
+    # and walk back enough calendar days to cover weekends/holidays.
+    for delta in range(1, max_days + 1):
+        day = today - timedelta(days=delta)
+        if day.weekday() < 5:
+            tokens.append(day.strftime("%Y%m%d"))
+    return tokens
+
+
+def aggregate_short_rows(rows: dict[str, dict], symbols: set[str] | None = None, min_total: float = 0) -> dict:
+    selected = [r for sym, r in rows.items() if (symbols is None or sym in symbols) and r.get("totalVolume", 0) >= min_total]
+    short_total = sum(r["shortVolume"] for r in selected)
+    volume_total = sum(r["totalVolume"] for r in selected)
+    return {
+        "tickerCount": len(selected),
+        "shortVolume": round(short_total, 2),
+        "totalVolume": round(volume_total, 2),
+        "ratioPct": round(short_total / volume_total * 100, 1) if volume_total else None,
+    }
+
+
+def short_ratio_status(ratio: float | None, market_avg_20d: float | None) -> str:
+    if ratio is None:
+        return "pending"
+    if ratio >= 58 or (market_avg_20d is not None and ratio >= market_avg_20d + 6):
+        return "distribution"
+    if ratio <= 42 or (market_avg_20d is not None and ratio <= market_avg_20d - 6):
+        return "accumulation"
+    return "neutral"
+
+
+def parse_finra_short_sale_volume(sp500_rows: list[dict], qqq_rows: list[dict]) -> dict | None:
+    history = []
+    errors = []
+    for token in recent_weekday_tokens(45):
+        rows = parse_finra_short_sale_file(token)
+        if rows:
+            history.append({"date": token, "rows": rows})
+            if len(history) >= 20:
+                break
+        else:
+            errors.append(token)
+    if not history:
+        return None
+    latest = history[0]
+    latest_rows = latest["rows"]
+    sp500_symbols = {r["yahooSymbol"].upper() for r in sp500_rows}
+    qqq_symbols = {r["yahooSymbol"].upper() for r in qqq_rows}
+    market_now = aggregate_short_rows(latest_rows)
+    market_history = [aggregate_short_rows(day["rows"]) for day in history]
+    ratios = [x["ratioPct"] for x in market_history if x.get("ratioPct") is not None]
+    avg20 = round(mean(ratios), 1) if ratios else None
+    sp500_now = aggregate_short_rows(latest_rows, sp500_symbols)
+    qqq_now = aggregate_short_rows(latest_rows, qqq_symbols)
+    abnormal = sorted(
+        [r for r in latest_rows.values() if r["totalVolume"] >= 1_000_000 and r["ratioPct"] >= 65],
+        key=lambda r: (r["ratioPct"], r["totalVolume"]),
+        reverse=True,
+    )[:12]
+    status = short_ratio_status(market_now.get("ratioPct"), avg20)
+    date_iso = f"{latest['date'][:4]}-{latest['date'][4:6]}-{latest['date'][6:]}"
+    return {
+        "name": "FINRA 场外短量占比自动快照",
+        "source": FINRA_SHORT_SALE_URL_TEMPLATE.format(date=latest["date"]),
+        "sourceType": "official_txt",
+        "updatedAt": date_iso,
+        "value": f"市场 {market_now['ratioPct']}% · 20日均 {avg20}% · S&P500 {sp500_now['ratioPct']}% · QQQ {qqq_now['ratioPct']}%",
+        "status": status,
+        "marketRatioPct": market_now.get("ratioPct"),
+        "marketAverage20dPct": avg20,
+        "sp500RatioPct": sp500_now.get("ratioPct"),
+        "qqqRatioPct": qqq_now.get("ratioPct"),
+        "latest": {
+            "date": date_iso,
+            "market": market_now,
+            "sp500": sp500_now,
+            "qqq": qqq_now,
+        },
+        "history": [{"date": f"{x['date'][:4]}-{x['date'][4:6]}-{x['date'][6:]}", "marketRatioPct": aggregate_short_rows(x["rows"]).get("ratioPct")} for x in history],
+        "abnormalTickers": [{"symbol": r["symbol"], "ratioPct": r["ratioPct"], "totalVolume": round(r["totalVolume"], 0)} for r in abnormal],
+        "missingRecentFiles": errors[:8],
+        "threshold": "FINRA 场外 short/total ≥58% 或高于20日均值6个百分点：场外短量涌入/派发风险；≤42% 或低于20日均值6个百分点：空头压力缓和/承接改善；其他中性。",
+        "limitations": "FINRA Daily Short Sale Volume 仅覆盖 TRF/ADF/ORF 等场外报告口径，不等同于全市场 short interest 或机构空头仓位；做市商对冲会造成噪声。",
+    }
+
+
 def collect_macro_indicators(fetch_errors: list[dict]) -> dict:
     indicators = {}
     for key, parser in [("finra_margin_debt", parse_finra_margin), ("aaii_bull_bear", parse_aaii_sentiment)]:
@@ -393,6 +511,14 @@ def main() -> int:
     spark = fetched["data"]
     fetch_errors = list(fetched["errors"])
     macro_indicators = collect_macro_indicators(fetch_errors)
+    try:
+        short_sale = parse_finra_short_sale_volume(sp500, qqq)
+        if short_sale:
+            macro_indicators["finra_short_sale_volume"] = short_sale
+        else:
+            fetch_errors.append({"source": "finra_short_sale_volume", "error": "parser returned no data"})
+    except Exception as e:
+        fetch_errors.append({"source": "finra_short_sale_volume", "error": str(e)})
 
     snapshot = {
         "schemaVersion": 1,
@@ -403,6 +529,7 @@ def main() -> int:
             "qqqHoldings": QQQ_HOLDINGS_URL,
             "prices": "Yahoo Finance spark endpoint",
             "finraMarginDebt": FINRA_MARGIN_URL,
+            "finraShortSaleVolume": "https://cdn.finra.org/equity/regsho/daily/CNMSshvolYYYYMMDD.txt",
             "aaiiSentiment": AAII_SENTIMENT_URL,
         },
         "dataStatus": "Cached",

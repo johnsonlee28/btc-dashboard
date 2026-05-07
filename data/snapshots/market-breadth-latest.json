@@ -1,12 +1,13 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-07T12:12:09Z",
+  "generatedAt": "2026-05-07T12:23:14Z",
   "description": "Daily static market breadth snapshot for stock.zhixingshe.cc. Free public sources; not investment advice.",
   "sources": {
     "sp500Constituents": "https://raw.githubusercontent.com/datasets/s-and-p-500-companies/main/data/constituents.csv",
     "qqqHoldings": "https://dng-api.invesco.com/cache/v1/accounts/en_US/shareclasses/QQQ/holdings/fund?idType=ticker&interval=monthly&productType=ETF",
     "prices": "Yahoo Finance spark endpoint",
     "finraMarginDebt": "https://www.finra.org/rules-guidance/key-topics/margin-accounts/margin-statistics",
+    "finraShortSaleVolume": "https://cdn.finra.org/equity/regsho/daily/CNMSshvolYYYYMMDD.txt",
     "aaiiSentiment": "https://www.aaii.com/sentimentsurvey"
   },
   "dataStatus": "Cached",
@@ -227,6 +228,186 @@
         }
       ],
       "threshold": "YoY > +25% 且未明显出清：杠杆偏热/派发风险；YoY < 0 或距12月峰回撤 ≤ -10%：去杠杆/承接改善；其他中性。"
+    },
+    "finra_short_sale_volume": {
+      "name": "FINRA 场外短量占比自动快照",
+      "source": "https://cdn.finra.org/equity/regsho/daily/CNMSshvol20260506.txt",
+      "sourceType": "official_txt",
+      "updatedAt": "2026-05-06",
+      "value": "市场 47.1% · 20日均 48.5% · S&P500 46.5% · QQQ 42.1%",
+      "status": "neutral",
+      "marketRatioPct": 47.1,
+      "marketAverage20dPct": 48.5,
+      "sp500RatioPct": 46.5,
+      "qqqRatioPct": 42.1,
+      "latest": {
+        "date": "2026-05-06",
+        "market": {
+          "tickerCount": 11477,
+          "shortVolume": 3818970754.77,
+          "totalVolume": 8104341258.02,
+          "ratioPct": 47.1
+        },
+        "sp500": {
+          "tickerCount": 501,
+          "shortVolume": 650611145.71,
+          "totalVolume": 1399524947.55,
+          "ratioPct": 46.5
+        },
+        "qqq": {
+          "tickerCount": 98,
+          "shortVolume": 231098584.65,
+          "totalVolume": 548572437.43,
+          "ratioPct": 42.1
+        }
+      },
+      "history": [
+        {
+          "date": "2026-05-06",
+          "marketRatioPct": 47.1
+        },
+        {
+          "date": "2026-05-05",
+          "marketRatioPct": 48.3
+        },
+        {
+          "date": "2026-05-04",
+          "marketRatioPct": 48.3
+        },
+        {
+          "date": "2026-05-01",
+          "marketRatioPct": 47.7
+        },
+        {
+          "date": "2026-04-30",
+          "marketRatioPct": 47.7
+        },
+        {
+          "date": "2026-04-29",
+          "marketRatioPct": 49.6
+        },
+        {
+          "date": "2026-04-28",
+          "marketRatioPct": 47.9
+        },
+        {
+          "date": "2026-04-27",
+          "marketRatioPct": 47.8
+        },
+        {
+          "date": "2026-04-24",
+          "marketRatioPct": 49.1
+        },
+        {
+          "date": "2026-04-23",
+          "marketRatioPct": 49.2
+        },
+        {
+          "date": "2026-04-22",
+          "marketRatioPct": 48.6
+        },
+        {
+          "date": "2026-04-21",
+          "marketRatioPct": 49.3
+        },
+        {
+          "date": "2026-04-20",
+          "marketRatioPct": 48.4
+        },
+        {
+          "date": "2026-04-17",
+          "marketRatioPct": 48.2
+        },
+        {
+          "date": "2026-04-16",
+          "marketRatioPct": 49.6
+        },
+        {
+          "date": "2026-04-15",
+          "marketRatioPct": 49.4
+        },
+        {
+          "date": "2026-04-14",
+          "marketRatioPct": 48.8
+        },
+        {
+          "date": "2026-04-13",
+          "marketRatioPct": 47.7
+        },
+        {
+          "date": "2026-04-10",
+          "marketRatioPct": 48.8
+        },
+        {
+          "date": "2026-04-09",
+          "marketRatioPct": 49.4
+        }
+      ],
+      "abnormalTickers": [
+        {
+          "symbol": "IMAR",
+          "ratioPct": 99.6,
+          "totalVolume": 1795845.0
+        },
+        {
+          "symbol": "RVTY",
+          "ratioPct": 95.4,
+          "totalVolume": 1281728.0
+        },
+        {
+          "symbol": "EUFN",
+          "ratioPct": 95.0,
+          "totalVolume": 4892988.0
+        },
+        {
+          "symbol": "FTXN",
+          "ratioPct": 94.8,
+          "totalVolume": 1734494.0
+        },
+        {
+          "symbol": "IYT",
+          "ratioPct": 94.8,
+          "totalVolume": 1239935.0
+        },
+        {
+          "symbol": "AVT",
+          "ratioPct": 92.6,
+          "totalVolume": 1359554.0
+        },
+        {
+          "symbol": "BAPA",
+          "ratioPct": 91.7,
+          "totalVolume": 1228004.0
+        },
+        {
+          "symbol": "RDY",
+          "ratioPct": 90.3,
+          "totalVolume": 1725678.0
+        },
+        {
+          "symbol": "WB",
+          "ratioPct": 89.7,
+          "totalVolume": 1117918.0
+        },
+        {
+          "symbol": "EIDO",
+          "ratioPct": 89.5,
+          "totalVolume": 1166611.0
+        },
+        {
+          "symbol": "FLTR",
+          "ratioPct": 86.0,
+          "totalVolume": 1490930.0
+        },
+        {
+          "symbol": "RXO",
+          "ratioPct": 85.5,
+          "totalVolume": 1598917.0
+        }
+      ],
+      "missingRecentFiles": [],
+      "threshold": "FINRA 场外 short/total ≥58% 或高于20日均值6个百分点：场外短量涌入/派发风险；≤42% 或低于20日均值6个百分点：空头压力缓和/承接改善；其他中性。",
+      "limitations": "FINRA Daily Short Sale Volume 仅覆盖 TRF/ADF/ORF 等场外报告口径，不等同于全市场 short interest 或机构空头仓位；做市商对冲会造成噪声。"
     }
   },
   "fetchErrors": [
