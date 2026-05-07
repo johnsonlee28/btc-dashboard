@@ -628,6 +628,8 @@ const METRIC_WEIGHTS = {
   distribution_days: 7,
   sp500_breadth_snapshot: 7,
   nasdaq100_breadth_snapshot: 7,
+  nyse_ad_line: 7,
+  nyse_nh_nl: 6,
   ai_core_breadth_ma: 6,
   finra_short_sale_volume: 6,
   vix_term_structure: 6,
@@ -996,41 +998,41 @@ export default async function handler(req) {
     }));
   }
 
-  // 7) NYSE A/D Line（无稳定免费接口，Pending）
-  metrics.push(metric({
+  // 7) NYSE A/D 日宽度（GitHub Actions 快照抓 Barchart 页面；非累计 A/D Line，透明标注局限）
+  metrics.push(cachedMacroIndicatorMetric(breadthSnapshot, 'nyse_ad_line', metric({
     id: 'nyse_ad_line',
-    name: 'NYSE A/D Line',
-    purpose: '纽交所涨跌家数累计线，衡量市场宽度',
+    name: 'NYSE A/D 日宽度',
+    purpose: '纽交所当日上涨/下跌家数与 A/D 比率，衡量市场宽度是否扩散或恶化',
     value: null,
     status: 'pending',
-    threshold: '指数创新高但 A/D Line 未创新高 偏派发；同步创新高 偏宽度健康/承接扩散',
-    sourceName: 'StockCharts / WSJ Market Data',
-    sourceUrl: 'https://stockcharts.com/h-sc/ui?s=$NYAD',
-    frequency: '日更',
+    threshold: 'A/D ≤0.8 或下跌家数≥上涨家数1.25倍 偏派发；A/D ≥1.5 偏承接扩散；中间中性',
+    sourceName: 'Barchart NYSE Advancing / Declining Stocks',
+    sourceUrl: 'https://www.barchart.com/stocks/quotes/%24ADVN',
+    frequency: '日更（GitHub Actions，美股收盘后；页面抓取源可能盘中变化）',
     updatedAt: null,
     dataStatus: 'Pending',
-    logic: '背离原理：少数大票抬指数，多数股票走弱 → A/D 未创新高 → 宽度恶化，派发风险升高。',
-    caseStudy: '2021/11, 2015/05 均先出现 A/D 与指数背离后再现中期顶部。',
-    limitations: 'Yahoo 不直接提供 A/D 累计序列；MVP 第二期通过 StockCharts 抓取或自算 NYSE 成份股日涨跌数。',
-  }));
+    logic: '当指数仍强但上涨家数明显少于下跌家数，说明上涨集中在少数权重股，宽度恶化；上涨家数明显多于下跌家数，说明承接扩散。',
+    caseStudy: '2021/11、2015/05 一类顶部区域常见指数仍强但 A/D 宽度先转弱。',
+    limitations: 'Barchart 页面抓取非官方 JSON，可能改版或限流；该项是当日涨跌家数，不是 StockCharts $NYAD 累计 A/D Line；宽度信号不是机构交易明细。',
+  })));
 
-  // 8) NYSE New High/New Low
-  metrics.push(metric({
+  // 8) NYSE 52周新高 / 新低（GitHub Actions 快照抓 Barchart $MAHN/$MALN）
+  metrics.push(cachedMacroIndicatorMetric(breadthSnapshot, 'nyse_nh_nl', metric({
     id: 'nyse_nh_nl',
-    name: 'NYSE New High / New Low',
-    purpose: '纽交所 52 周新高 vs 新低家数',
+    name: 'NYSE 52周新高 / 新低',
+    purpose: '纽交所 52 周新高 vs 新低家数，观察指数新高是否由足够多股票确认',
     value: null,
     status: 'pending',
-    threshold: '指数新高但新高家数 < 100 且新低家数上升 偏派发；新低萎缩、新高扩张 偏宽度健康/承接扩散',
-    sourceName: 'WSJ Market Data / StockCharts',
-    sourceUrl: 'https://www.wsj.com/market-data/stocks/highsandlows',
-    frequency: '日更',
+    threshold: '新低家数>新高家数或新低≥100 偏派发；新高≥100且新高/新低≥3 偏承接扩散；中间中性',
+    sourceName: 'Barchart 52-Week Highs/Lows NYSE Exch',
+    sourceUrl: 'https://www.barchart.com/stocks/quotes/%24MAHN',
+    frequency: '日更（GitHub Actions，美股收盘后；页面抓取源可能盘中变化）',
     updatedAt: null,
     dataStatus: 'Pending',
-    logic: '宽度指标：指数新高但创新高个股变少，代表涨幅集中在少数权重股；新低家数同时抬头是典型派发前兆。',
-    caseStudy: '2000/03、2007/07 指数新高时新高家数反而持续走低。',
-    limitations: '免费接口不稳定，MVP 第二期接 WSJ / StockCharts 爬虫或 FINRA 统计。',
-  }));
+    logic: '指数新高但 52 周新高家数少、新低家数抬头，代表上涨集中在少数权重股；新高扩张且新低萎缩，代表宽度健康/承接扩散。',
+    caseStudy: '2000/03、2007/07 指数新高阶段，创新高家数持续收缩是典型宽度背离。',
+    limitations: 'Barchart 页面抓取非官方 JSON，可能改版或限流；只反映 52周新高/新低家数快照，不等于机构派发。需与 A/D、RSP/SPY、Form 4/13F 等共振判断。',
+  })));
 
   // 9) V2 第三刀：日更静态快照，全量 S&P500 / Nasdaq-100 宽度（API 优先读缓存 JSON，不在 Edge 实时拉 600 只）。
   metrics.push(cachedBreadthMetric(

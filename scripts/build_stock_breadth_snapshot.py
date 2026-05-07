@@ -43,6 +43,14 @@ SEC_SUBMISSIONS_URL_TEMPLATE = "https://data.sec.gov/submissions/CIK{cik10}.json
 SEC_ARCHIVE_TXT_URL_TEMPLATE = "https://www.sec.gov/Archives/edgar/data/{cik}/{accession_nodash}/{accession}.txt"
 SEC_FTD_PAGE_URL = "https://www.sec.gov/data-research/sec-markets-data/fails-deliver-data"
 SEC_FTD_BASE_URL = "https://www.sec.gov"
+BARCHART_QUOTE_URL_TEMPLATE = "https://www.barchart.com/stocks/quotes/{symbol}"
+BARCHART_NYSE_BREADTH_SYMBOLS = {
+    "advancers": "$ADVN",
+    "decliners": "$DECN",
+    "adRatio": "$ADRN",
+    "newHighs52w": "$MAHN",
+    "newLows52w": "$MALN",
+}
 SEC_FORM4_TICKERS = [
     "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA",
     "AVGO", "ORCL", "PLTR", "CRM", "AMD", "GE", "IBM", "QCOM",
@@ -591,11 +599,17 @@ def xml_text(node, path: str) -> str | None:
     return found.text.strip() if found is not None and found.text else None
 
 
-def parse_float_safe(value: str | None) -> float | None:
+def parse_float_safe(value) -> float | None:
     if value is None:
         return None
+    if isinstance(value, (int, float)):
+        return float(value) if math.isfinite(value) else None
+    text = str(value).strip().replace(",", "").replace("%", "")
+    if not text or text.upper() in {"N/A", "NA", "-"}:
+        return None
     try:
-        return float(value.replace(",", ""))
+        out = float(text)
+        return out if math.isfinite(out) else None
     except Exception:
         return None
 
@@ -1005,6 +1019,90 @@ def collect_sec_ftd_settlement_pressure(fetch_errors: list[dict]) -> dict | None
     }
 
 
+def parse_barchart_quote(symbol: str) -> dict:
+    encoded = urllib.parse.quote(symbol, safe="")
+    url = BARCHART_QUOTE_URL_TEMPLATE.format(symbol=encoded)
+    text = fetch_text(url, timeout=30, headers={"User-Agent": BROWSER_UA, "Accept": "text/html,*/*"})
+    match = re.search(r"data-ng-init='init\((\{.*?\})\)'", text)
+    if not match:
+        raise ValueError(f"Barchart quote payload not found for {symbol}")
+    payload = json.loads(html.unescape(match.group(1)))
+    return {
+        "symbol": payload.get("symbol") or symbol,
+        "name": payload.get("symbolName") or symbol,
+        "lastPrice": parse_float_safe(payload.get("lastPrice")),
+        "priceChange": parse_float_safe(payload.get("priceChange")),
+        "percentChange": parse_float_safe(payload.get("percentChange")),
+        "tradeTime": payload.get("tradeTime"),
+        "sessionDateDisplayLong": payload.get("sessionDateDisplayLong"),
+        "source": url,
+    }
+
+
+def collect_nyse_breadth_indicators(fetch_errors: list[dict]) -> dict:
+    quotes = {}
+    for key, symbol in BARCHART_NYSE_BREADTH_SYMBOLS.items():
+        try:
+            quotes[key] = parse_barchart_quote(symbol)
+            time.sleep(0.15)
+        except Exception as e:
+            fetch_errors.append({"source": "barchart_nyse_breadth", "symbol": symbol, "error": str(e)[:180]})
+
+    out = {}
+    adv = quotes.get("advancers", {}).get("lastPrice")
+    dec = quotes.get("decliners", {}).get("lastPrice")
+    ratio = quotes.get("adRatio", {}).get("lastPrice")
+    if adv is not None and dec is not None and dec > 0:
+        ratio = ratio if ratio is not None else adv / dec
+        if dec >= adv * 1.25 or ratio <= 0.8:
+            status = "distribution"
+        elif adv >= dec * 1.5 or ratio >= 1.5:
+            status = "accumulation"
+        else:
+            status = "neutral"
+        out["nyse_ad_line"] = {
+            "name": "NYSE A/D 日宽度",
+            "source": BARCHART_QUOTE_URL_TEMPLATE.format(symbol=urllib.parse.quote("$ADVN", safe="")),
+            "sourceType": "barchart_scraped_quote",
+            "updatedAt": utc_now(),
+            "value": f"上涨 {adv:.0f} · 下跌 {dec:.0f} · A/D {ratio:.2f}",
+            "status": status,
+            "advancers": int(round(adv)),
+            "decliners": int(round(dec)),
+            "advanceDeclineRatio": round(ratio, 3),
+            "quotes": {k: quotes.get(k) for k in ["advancers", "decliners", "adRatio"] if quotes.get(k)},
+            "threshold": "A/D ≤0.8 或下跌家数≥上涨家数1.25倍：宽度恶化/派发压力；A/D ≥1.5：宽度扩散/承接改善；中间中性。",
+            "limitations": "Barchart 页面抓取非官方 JSON，可能改版或限流；该项是当日 NYSE 上涨/下跌家数与比率，不是 StockCharts $NYAD 累计 A/D Line。宽度恶化只能说明市场结构走弱，不能单独证明机构派发。",
+        }
+
+    highs = quotes.get("newHighs52w", {}).get("lastPrice")
+    lows = quotes.get("newLows52w", {}).get("lastPrice")
+    if highs is not None and lows is not None:
+        hl_ratio = highs / lows if lows > 0 else None
+        if lows > highs or lows >= 100:
+            status = "distribution"
+        elif highs >= 100 and (hl_ratio is None or hl_ratio >= 3):
+            status = "accumulation"
+        else:
+            status = "neutral"
+        ratio_text = f" · H/L {hl_ratio:.2f}" if hl_ratio is not None else " · H/L ∞"
+        out["nyse_nh_nl"] = {
+            "name": "NYSE 52周新高 / 新低",
+            "source": BARCHART_QUOTE_URL_TEMPLATE.format(symbol=urllib.parse.quote("$MAHN", safe="")),
+            "sourceType": "barchart_scraped_quote",
+            "updatedAt": utc_now(),
+            "value": f"新高 {highs:.0f} · 新低 {lows:.0f}{ratio_text}",
+            "status": status,
+            "newHighs52w": int(round(highs)),
+            "newLows52w": int(round(lows)),
+            "highLowRatio": round(hl_ratio, 3) if hl_ratio is not None else None,
+            "quotes": {k: quotes.get(k) for k in ["newHighs52w", "newLows52w"] if quotes.get(k)},
+            "threshold": "新低家数>新高家数或新低≥100：宽度恶化/派发压力；新高≥100且新高/新低≥3：宽度扩散/承接改善；中间中性。",
+            "limitations": "Barchart 页面抓取非官方 JSON，可能改版或限流；该项只反映 NYSE 52周新高/新低家数快照，不直接反映机构交易。需与指数位置、A/D、RSP/SPY、Form 4/13F 等共振判断。",
+        }
+    return out
+
+
 def collect_macro_indicators(fetch_errors: list[dict]) -> dict:
     indicators = {}
     for key, parser in [("finra_margin_debt", parse_finra_margin), ("aaii_bull_bear", parse_aaii_sentiment)]:
@@ -1028,6 +1126,10 @@ def main() -> int:
     spark = fetched["data"]
     fetch_errors = list(fetched["errors"])
     macro_indicators = collect_macro_indicators(fetch_errors)
+    try:
+        macro_indicators.update(collect_nyse_breadth_indicators(fetch_errors))
+    except Exception as e:
+        fetch_errors.append({"source": "barchart_nyse_breadth", "error": str(e)[:180]})
     try:
         short_sale = parse_finra_short_sale_volume(sp500, qqq)
         if short_sale:
@@ -1078,6 +1180,7 @@ def main() -> int:
             "secSubmissions": "https://data.sec.gov/submissions/CIK##########.json",
             "sec13fDataSets": "https://www.sec.gov/data-research/sec-markets-data/form-13f-data-sets",
             "secFtdDataSets": SEC_FTD_PAGE_URL,
+            "barchartNyseBreadth": "https://www.barchart.com/stocks/quotes/$ADVN and $MAHN/$MALN",
             "aaiiSentiment": AAII_SENTIMENT_URL,
         },
         "dataStatus": "Cached",

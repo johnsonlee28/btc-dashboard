@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-07T13:34:43Z",
+  "generatedAt": "2026-05-07T14:43:32Z",
   "description": "Daily static market breadth snapshot for stock.zhixingshe.cc. Free public sources; not investment advice.",
   "sources": {
     "sp500Constituents": "https://raw.githubusercontent.com/datasets/s-and-p-500-companies/main/data/constituents.csv",
@@ -12,6 +12,7 @@
     "secSubmissions": "https://data.sec.gov/submissions/CIK##########.json",
     "sec13fDataSets": "https://www.sec.gov/data-research/sec-markets-data/form-13f-data-sets",
     "secFtdDataSets": "https://www.sec.gov/data-research/sec-markets-data/fails-deliver-data",
+    "barchartNyseBreadth": "https://www.barchart.com/stocks/quotes/$ADVN and $MAHN/$MALN",
     "aaiiSentiment": "https://www.aaii.com/sentimentsurvey"
   },
   "dataStatus": "Cached",
@@ -23,25 +24,25 @@
       "requested": 503,
       "sampleSize": 503,
       "coveragePct": 100.0,
-      "above20Pct": 51.9,
-      "above50Pct": 54.9,
-      "above200Pct": 56.3,
-      "nearHighPct": 25.6,
-      "newHighPct": 4.0,
-      "nearLowPct": 22.1,
-      "newLowPct": 1.8,
-      "advancePct": 50.9,
-      "declinePct": 48.5,
+      "above20Pct": 44.7,
+      "above50Pct": 51.9,
+      "above200Pct": 54.7,
+      "nearHighPct": 24.7,
+      "newHighPct": 2.4,
+      "nearLowPct": 23.7,
+      "newLowPct": 1.6,
+      "advancePct": 31.2,
+      "declinePct": 68.6,
       "counts": {
-        "above20": 261,
-        "above50": 276,
-        "above200": 283,
-        "nearHigh": 129,
-        "newHigh": 20,
-        "nearLow": 111,
-        "newLow": 9,
-        "advanced": 256,
-        "declined": 244
+        "above20": 225,
+        "above50": 261,
+        "above200": 275,
+        "nearHigh": 124,
+        "newHigh": 12,
+        "nearLow": 119,
+        "newLow": 8,
+        "advanced": 157,
+        "declined": 345
       },
       "updatedAt": "2026-05-07T13:30:00Z",
       "leaders": [
@@ -50,13 +51,13 @@
         "APD",
         "ABNB",
         "ALB",
-        "LNT",
         "ALL",
         "GOOGL",
         "GOOG",
         "AMZN",
         "AME",
-        "ADI"
+        "ADI",
+        "AAPL"
       ],
       "laggards": [
         "MMM",
@@ -68,12 +69,12 @@
         "ARE",
         "ALGN",
         "ALLE",
+        "LNT",
         "AMCR",
-        "AEE",
-        "AEP"
+        "AEE"
       ],
-      "status": "neutral",
-      "value": "MA50上方 54.9% · MA200上方 56.3% · 新高/新低 20/9 · 上涨/下跌 256/244"
+      "status": "distribution",
+      "value": "MA50上方 51.9% · MA200上方 54.7% · 新高/新低 12/8 · 上涨/下跌 157/345"
     },
     "nasdaq100": {
       "name": "Nasdaq-100 / QQQ 持仓宽度快照",
@@ -82,25 +83,25 @@
       "requested": 98,
       "sampleSize": 98,
       "coveragePct": 100.0,
-      "above20Pct": 64.3,
+      "above20Pct": 60.2,
       "above50Pct": 57.1,
-      "above200Pct": 58.2,
-      "nearHighPct": 35.7,
-      "newHighPct": 2.0,
-      "nearLowPct": 15.3,
+      "above200Pct": 56.1,
+      "nearHighPct": 34.7,
+      "newHighPct": 5.1,
+      "nearLowPct": 14.3,
       "newLowPct": 0.0,
-      "advancePct": 52.0,
-      "declinePct": 48.0,
+      "advancePct": 49.0,
+      "declinePct": 51.0,
       "counts": {
-        "above20": 63,
+        "above20": 59,
         "above50": 56,
-        "above200": 57,
-        "nearHigh": 35,
-        "newHigh": 2,
-        "nearLow": 15,
+        "above200": 55,
+        "nearHigh": 34,
+        "newHigh": 5,
+        "nearLow": 14,
         "newLow": 0,
-        "advanced": 51,
-        "declined": 47
+        "advanced": 48,
+        "declined": 50
       },
       "updatedAt": "2026-05-07T13:30:00Z",
       "leaders": [
@@ -132,7 +133,7 @@
         "SHOP"
       ],
       "status": "neutral",
-      "value": "MA50上方 57.1% · MA200上方 58.2% · 新高/新低 2/0 · 上涨/下跌 51/47"
+      "value": "MA50上方 57.1% · MA200上方 56.1% · 新高/新低 5/0 · 上涨/下跌 48/50"
     }
   },
   "macroIndicators": {
@@ -232,6 +233,100 @@
         }
       ],
       "threshold": "YoY > +25% 且未明显出清：杠杆偏热/派发风险；YoY < 0 或距12月峰回撤 ≤ -10%：去杠杆/承接改善；其他中性。"
+    },
+    "aaii_bull_bear": {
+      "name": "AAII Bull-Bear Spread 自动快照",
+      "source": "https://www.aaii.com/sentimentsurvey",
+      "sourceType": "official_html_js",
+      "updatedAt": "2026-05-06",
+      "value": "Bull 38.5% · Bear 37.5% · Spread +1.0",
+      "status": "neutral",
+      "bullishPct": 38.5,
+      "neutralPct": 24.0,
+      "bearishPct": 37.5,
+      "spreadPct": 1.0,
+      "threshold": "Bull-Bear Spread > +10 或 Bullish ≥50%：散户乐观偏热/派发风险；Spread < -10 或 Bearish ≥50%：悲观拥挤/恐慌释放；其他中性。",
+      "limitations": "AAII 页面受 Cloudflare 保护，需浏览器 UA/Referer；页面内变量为最新读数，dataChart5 仅约 52 周历史。"
+    },
+    "nyse_ad_line": {
+      "name": "NYSE A/D 日宽度",
+      "source": "https://www.barchart.com/stocks/quotes/%24ADVN",
+      "sourceType": "barchart_scraped_quote",
+      "updatedAt": "2026-05-07T14:43:51Z",
+      "value": "上涨 732 · 下跌 1107 · A/D 0.66",
+      "status": "distribution",
+      "advancers": 732,
+      "decliners": 1107,
+      "advanceDeclineRatio": 0.66,
+      "quotes": {
+        "advancers": {
+          "symbol": "$ADVN",
+          "name": "NYSE Advancing Stocks",
+          "lastPrice": 732.0,
+          "priceChange": -439.0,
+          "percentChange": -37.49,
+          "tradeTime": "05/07/26",
+          "sessionDateDisplayLong": "Thu, May 7th, 2026",
+          "source": "https://www.barchart.com/stocks/quotes/%24ADVN"
+        },
+        "decliners": {
+          "symbol": "$DECN",
+          "name": "NYSE Declining Stocks",
+          "lastPrice": 1107.0,
+          "priceChange": 423.0,
+          "percentChange": 61.84,
+          "tradeTime": "05/07/26",
+          "sessionDateDisplayLong": "Thu, May 7th, 2026",
+          "source": "https://www.barchart.com/stocks/quotes/%24DECN"
+        },
+        "adRatio": {
+          "symbol": "$ADRN",
+          "name": "NYSE Advance Decline Ratio",
+          "lastPrice": 0.66,
+          "priceChange": -1.05,
+          "percentChange": -61.4,
+          "tradeTime": "05/07/26",
+          "sessionDateDisplayLong": "Thu, May 7th, 2026",
+          "source": "https://www.barchart.com/stocks/quotes/%24ADRN"
+        }
+      },
+      "threshold": "A/D ≤0.8 或下跌家数≥上涨家数1.25倍：宽度恶化/派发压力；A/D ≥1.5：宽度扩散/承接改善；中间中性。",
+      "limitations": "Barchart 页面抓取非官方 JSON，可能改版或限流；该项是当日 NYSE 上涨/下跌家数与比率，不是 StockCharts $NYAD 累计 A/D Line。宽度恶化只能说明市场结构走弱，不能单独证明机构派发。"
+    },
+    "nyse_nh_nl": {
+      "name": "NYSE 52周新高 / 新低",
+      "source": "https://www.barchart.com/stocks/quotes/%24MAHN",
+      "sourceType": "barchart_scraped_quote",
+      "updatedAt": "2026-05-07T14:43:51Z",
+      "value": "新高 68 · 新低 21 · H/L 3.24",
+      "status": "neutral",
+      "newHighs52w": 68,
+      "newLows52w": 21,
+      "highLowRatio": 3.238,
+      "quotes": {
+        "newHighs52w": {
+          "symbol": "$MAHN",
+          "name": "52-Week Highs NYSE Exch",
+          "lastPrice": 68.0,
+          "priceChange": -86.0,
+          "percentChange": -55.84,
+          "tradeTime": "10:35 ET",
+          "sessionDateDisplayLong": "Thu, May 7th, 2026",
+          "source": "https://www.barchart.com/stocks/quotes/%24MAHN"
+        },
+        "newLows52w": {
+          "symbol": "$MALN",
+          "name": "52-Week Lows NYSE Exch",
+          "lastPrice": 21.0,
+          "priceChange": -8.0,
+          "percentChange": -27.59,
+          "tradeTime": "10:35 ET",
+          "sessionDateDisplayLong": "Thu, May 7th, 2026",
+          "source": "https://www.barchart.com/stocks/quotes/%24MALN"
+        }
+      },
+      "threshold": "新低家数>新高家数或新低≥100：宽度恶化/派发压力；新高≥100且新高/新低≥3：宽度扩散/承接改善；中间中性。",
+      "limitations": "Barchart 页面抓取非官方 JSON，可能改版或限流；该项只反映 NYSE 52周新高/新低家数快照，不直接反映机构交易。需与指数位置、A/D、RSP/SPY、Form 4/13F 等共振判断。"
     },
     "finra_short_sale_volume": {
       "name": "FINRA 场外短量占比自动快照",
@@ -2073,11 +2168,6 @@
       "limitations": "FTD 是 NSCC CNS 系统的交割失败余额，不是每日新增失败数；可能来自多种长/短交易原因，不等于裸卖空或机构派发证据。SEC 通常半月披露，存在延迟；价格字段为前一日收盘价且SEC不保证与其他源完全一致。"
     }
   },
-  "fetchErrors": [
-    {
-      "source": "aaii_bull_bear",
-      "error": "parser returned no data"
-    }
-  ],
+  "fetchErrors": [],
   "limitations": "S&P500 constituents come from a public GitHub dataset; Nasdaq-100 uses Invesco QQQ holdings as a practical proxy and can include non-index cash/other rows filtered out. Yahoo spark is a free public endpoint and may throttle. Breadth signals show market structure, not institutional intent by themselves."
 }
