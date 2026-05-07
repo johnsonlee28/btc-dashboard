@@ -55,13 +55,23 @@ function extractCloses(yfJson) {
     const result = yfJson?.chart?.result?.[0];
     const ts = result?.timestamp || [];
     const quote = result?.indicators?.quote?.[0] || {};
+    const opens = quote.open || [];
+    const highs = quote.high || [];
+    const lows = quote.low || [];
     const closes = quote.close || [];
     const volumes = quote.volume || [];
     const out = [];
     for (let i = 0; i < ts.length; i++) {
       const c = num(closes[i]);
       const v = num(volumes[i]);
-      if (c != null) out.push({ t: ts[i], close: c, volume: v });
+      if (c != null) out.push({
+        t: ts[i],
+        open: num(opens[i]),
+        high: num(highs[i]),
+        low: num(lows[i]),
+        close: c,
+        volume: v,
+      });
     }
     return out;
   } catch {
@@ -122,6 +132,154 @@ function computeVixTerm(vixBars, vix3mBars) {
     vix3m,
     ratio,
     inverted: ratio > 1.0,
+  };
+}
+
+function avg(values) {
+  const arr = values.filter(v => Number.isFinite(v));
+  if (!arr.length) return null;
+  return arr.reduce((a, b) => a + b, 0) / arr.length;
+}
+
+function movingAverage(bars, n, offset = 0) {
+  const end = bars.length - offset;
+  if (end < n) return null;
+  return avg(bars.slice(end - n, end).map(b => b.close));
+}
+
+function computeDownUpVolumeRatio(bars, lookback = 50) {
+  if (!Array.isArray(bars) || bars.length < lookback + 1) return null;
+  const recent = bars.slice(-lookback - 1);
+  let downVol = 0;
+  let upVol = 0;
+  for (let i = 1; i < recent.length; i++) {
+    const prev = recent[i - 1];
+    const cur = recent[i];
+    if (!Number.isFinite(cur.volume)) continue;
+    if (cur.close < prev.close) downVol += cur.volume;
+    else if (cur.close > prev.close) upVol += cur.volume;
+  }
+  if (!upVol) return null;
+  return { ratio: downVol / upVol, downVol, upVol, lookback };
+}
+
+function statusFromScore(score) {
+  if (score >= 70) return 'distribution';
+  if (score >= 50) return 'watch';
+  if (score < 30) return 'accumulation';
+  return 'neutral';
+}
+
+function statusLabel(status) {
+  if (status === 'distribution') return '明显派发';
+  if (status === 'watch') return '派发嫌疑';
+  if (status === 'accumulation') return '健康/吸筹';
+  return '中性观察';
+}
+
+function analyzeStockBars(symbol, bars, meta = {}) {
+  if (!Array.isArray(bars) || bars.length < 60) return null;
+  const last = bars[bars.length - 1];
+  const prev = bars[bars.length - 2];
+  const dd = computeDistributionDays(bars, 25);
+  const du = computeDownUpVolumeRatio(bars, 50);
+  const ma20 = movingAverage(bars, 20);
+  const ma50 = movingAverage(bars, 50);
+  const ma20Prev5 = movingAverage(bars, 20, 5);
+  const highs = bars.map(b => Number.isFinite(b.high) ? b.high : b.close).filter(Number.isFinite);
+  const high52w = highs.length ? Math.max(...highs) : null;
+  const drawdownFrom52wHigh = high52w ? (high52w - last.close) / high52w : null;
+  const changePct = prev?.close ? (last.close / prev.close - 1) * 100 : null;
+
+  let ddScore = 0;
+  if (dd?.count >= 6) ddScore = 35;
+  else if (dd?.count >= 4) ddScore = 25;
+  else if (dd?.count >= 2) ddScore = 12;
+
+  let duScore = 0;
+  if (du?.ratio >= 1.3) duScore = 30;
+  else if (du?.ratio >= 1.0) duScore = 18;
+  else if (du?.ratio >= 0.8) duScore = 8;
+
+  let maScore = 0;
+  let maStructure = 'unknown';
+  if (Number.isFinite(ma20) && Number.isFinite(ma50)) {
+    if (last.close < ma50 && ma20 < ma50) { maScore = 20; maStructure = '破 MA50 且 MA20 < MA50'; }
+    else if (last.close < ma20) { maScore = 12; maStructure = '价格低于 MA20，短期走弱'; }
+    else if (last.close > ma20 && ma20 > ma50) { maScore = 0; maStructure = '价格 > MA20 > MA50，趋势健康'; }
+    else { maScore = 7; maStructure = '均线结构中性'; }
+    if (Number.isFinite(ma20Prev5) && ma20 < ma20Prev5) maScore = Math.min(20, maScore + 4);
+  }
+
+  let dd52Score = 0;
+  if (drawdownFrom52wHigh != null) {
+    if (drawdownFrom52wHigh >= 0.15) dd52Score = 15;
+    else if (drawdownFrom52wHigh >= 0.08) dd52Score = 11;
+    else if (drawdownFrom52wHigh >= 0.03) dd52Score = 5;
+  }
+
+  const score = Math.max(0, Math.min(100, Math.round(ddScore + duScore + maScore + dd52Score)));
+  const status = statusFromScore(score);
+
+  return {
+    symbol: String(symbol || meta.symbol || '').toUpperCase(),
+    generatedAt: nowISO(),
+    updatedAt: meta.regularMarketTime || new Date(last.t * 1000).toISOString(),
+    sourceName: 'Yahoo Finance chart',
+    sourceUrl: `https://finance.yahoo.com/quote/${encodeURIComponent(symbol)}/history`,
+    frequency: '日更（美股交易日）',
+    dataStatus: 'Live',
+    status,
+    verdict: statusLabel(status),
+    score,
+    price: Number(last.close.toFixed(2)),
+    changePct: changePct != null ? Number(changePct.toFixed(2)) : null,
+    metrics: [
+      {
+        id: 'distribution_days_25d',
+        name: '近25日放量下跌日',
+        value: dd ? `${dd.count}/25` : '无数据',
+        status: dd?.count >= 6 ? 'distribution' : dd?.count >= 4 ? 'watch' : dd?.count <= 1 ? 'accumulation' : 'neutral',
+        logic: '单日收跌且成交量高于前一日，记为放量下跌日；连续聚集说明机构可能在分发。',
+        threshold: '≥6 强派发；4-5 派发嫌疑；0-1 健康',
+      },
+      {
+        id: 'down_up_volume_ratio_50d',
+        name: '50日下跌量能/上涨量能',
+        value: du ? Number(du.ratio.toFixed(2)) : '无数据',
+        status: du?.ratio >= 1.3 ? 'distribution' : du?.ratio >= 1.0 ? 'watch' : du?.ratio < 0.8 ? 'accumulation' : 'neutral',
+        logic: '下跌日总成交量明显大于上涨日，说明卖盘主导；反之说明承接更强。',
+        threshold: '≥1.30 派发；1.00-1.30 偏弱；<0.80 健康/吸筹',
+      },
+      {
+        id: 'ma_structure',
+        name: 'MA20 / MA50 结构',
+        value: maStructure,
+        status: maScore >= 16 ? 'distribution' : maScore >= 10 ? 'watch' : maScore <= 3 ? 'accumulation' : 'neutral',
+        logic: '价格跌破短中期均线、MA20 下行或跌破 MA50，通常意味着机构承接变弱。',
+        threshold: '价格 < MA50 且 MA20 < MA50 为趋势破位',
+      },
+      {
+        id: 'drawdown_from_52w_high',
+        name: '距52周高点回撤',
+        value: drawdownFrom52wHigh != null ? `${(drawdownFrom52wHigh * 100).toFixed(1)}%` : '无数据',
+        status: drawdownFrom52wHigh >= 0.15 ? 'distribution' : drawdownFrom52wHigh >= 0.08 ? 'watch' : drawdownFrom52wHigh < 0.03 ? 'accumulation' : 'neutral',
+        logic: '强势龙头通常贴近新高；从高位回撤扩大且伴随放量下跌，更像派发完成后的结果。',
+        threshold: '≥15% 深度回撤；8-15% 警示；<3% 强势',
+      },
+    ],
+    raw: {
+      distributionDays: dd,
+      downUpVolumeRatio: du,
+      ma20: ma20 != null ? Number(ma20.toFixed(2)) : null,
+      ma50: ma50 != null ? Number(ma50.toFixed(2)) : null,
+      high52w: high52w != null ? Number(high52w.toFixed(2)) : null,
+      drawdownFrom52wHigh,
+    },
+    notes: [
+      '这是免费行情可做的量价派发判断，不含 Form 4、13F、暗池、期权大单。',
+      '个股结论只能回答“量价上像不像在派发”，不能单独证明机构真实出货。',
+    ],
   };
 }
 
@@ -195,6 +353,24 @@ export default async function handler(req) {
 
   const url = new URL(req.url);
   const includePrices = url.searchParams.get('prices') !== '0';
+  const symbolParam = (url.searchParams.get('symbol') || '').trim().toUpperCase();
+
+  if (symbolParam) {
+    if (!/^[A-Z0-9.-]{1,12}$/.test(symbolParam)) {
+      return new Response(JSON.stringify({ error: 'Invalid symbol' }), { status: 400, headers: JSON_HEADERS });
+    }
+    const r = await safeFetchJson(symbolParam, YF_CHART(symbolParam, '1y', '1d'), 6500);
+    if (!r.ok) {
+      return new Response(JSON.stringify({ error: 'symbol_fetch_failed', symbol: symbolParam, detail: r.error }), { status: 502, headers: JSON_HEADERS });
+    }
+    const bars = extractCloses(r.data);
+    const meta = latestMeta(r.data);
+    const analysis = analyzeStockBars(symbolParam, bars, meta);
+    if (!analysis) {
+      return new Response(JSON.stringify({ error: 'insufficient_data', symbol: symbolParam }), { status: 422, headers: JSON_HEADERS });
+    }
+    return new Response(JSON.stringify(analysis, null, 2), { status: 200, headers: JSON_HEADERS });
+  }
 
   // 大盘指标需要的 Yahoo 数据
   const endpoints = {
