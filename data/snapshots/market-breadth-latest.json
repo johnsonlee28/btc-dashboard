@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-07T12:23:14Z",
+  "generatedAt": "2026-05-07T12:47:07Z",
   "description": "Daily static market breadth snapshot for stock.zhixingshe.cc. Free public sources; not investment advice.",
   "sources": {
     "sp500Constituents": "https://raw.githubusercontent.com/datasets/s-and-p-500-companies/main/data/constituents.csv",
@@ -8,6 +8,8 @@
     "prices": "Yahoo Finance spark endpoint",
     "finraMarginDebt": "https://www.finra.org/rules-guidance/key-topics/margin-accounts/margin-statistics",
     "finraShortSaleVolume": "https://cdn.finra.org/equity/regsho/daily/CNMSshvolYYYYMMDD.txt",
+    "secCompanyTickers": "https://www.sec.gov/files/company_tickers.json",
+    "secSubmissions": "https://data.sec.gov/submissions/CIK##########.json",
     "aaiiSentiment": "https://www.aaii.com/sentimentsurvey"
   },
   "dataStatus": "Cached",
@@ -408,6 +410,351 @@
       "missingRecentFiles": [],
       "threshold": "FINRA 场外 short/total ≥58% 或高于20日均值6个百分点：场外短量涌入/派发风险；≤42% 或低于20日均值6个百分点：空头压力缓和/承接改善；其他中性。",
       "limitations": "FINRA Daily Short Sale Volume 仅覆盖 TRF/ADF/ORF 等场外报告口径，不等同于全市场 short interest 或机构空头仓位；做市商对冲会造成噪声。"
+    },
+    "sec_form4_insider_activity": {
+      "name": "SEC Form 4 内部人交易快照",
+      "source": "https://www.sec.gov/edgar/search/",
+      "sourceType": "official_sec_form4",
+      "updatedAt": "2026-05-06",
+      "value": "90日卖出 $738.5M · 买入 $3.0M · 卖出股票 18只 · 买入股票 1只",
+      "status": "distribution",
+      "lookbackDays": 90,
+      "tickerUniverse": [
+        "AAPL",
+        "MSFT",
+        "NVDA",
+        "AMZN",
+        "GOOGL",
+        "META",
+        "TSLA",
+        "AVGO",
+        "ORCL",
+        "PLTR",
+        "CRM",
+        "AMD",
+        "GE",
+        "IBM",
+        "QCOM",
+        "NOW",
+        "ADBE",
+        "APP",
+        "ISRG",
+        "PDD",
+        "NEE",
+        "CEG",
+        "VST",
+        "OKLO"
+      ],
+      "coveredTickers": [
+        "AAPL",
+        "MSFT",
+        "NVDA",
+        "AMZN",
+        "GOOGL",
+        "META",
+        "TSLA",
+        "AVGO",
+        "ORCL",
+        "PLTR",
+        "CRM",
+        "AMD",
+        "GE",
+        "IBM",
+        "QCOM",
+        "NOW",
+        "ADBE",
+        "APP",
+        "ISRG",
+        "PDD",
+        "NEE",
+        "CEG",
+        "VST",
+        "OKLO"
+      ],
+      "missingTickers": [],
+      "sellValueUsd": 738539466.73,
+      "buyValueUsd": 3000057.97,
+      "saleTickerCount": 18,
+      "buyTickerCount": 1,
+      "topSaleTickers": [
+        {
+          "ticker": "PLTR",
+          "valueUsd": 299901858.95
+        },
+        {
+          "ticker": "APP",
+          "valueUsd": 131649934.19
+        },
+        {
+          "ticker": "NVDA",
+          "valueUsd": 108435862.91
+        },
+        {
+          "ticker": "AMD",
+          "valueUsd": 39729622.33
+        },
+        {
+          "ticker": "AMZN",
+          "valueUsd": 31390002.12
+        },
+        {
+          "ticker": "TSLA",
+          "valueUsd": 30851168.55
+        },
+        {
+          "ticker": "OKLO",
+          "valueUsd": 30061571.99
+        },
+        {
+          "ticker": "AAPL",
+          "valueUsd": 24594922.77
+        },
+        {
+          "ticker": "ADBE",
+          "valueUsd": 18782504.09
+        },
+        {
+          "ticker": "META",
+          "valueUsd": 7561859.8
+        }
+      ],
+      "topBuyTickers": [
+        {
+          "ticker": "NOW",
+          "valueUsd": 3000057.97
+        }
+      ],
+      "topSales": [
+        {
+          "ticker": "PLTR",
+          "transactionDate": "2026-03-02",
+          "filingDate": "2026-03-04",
+          "accessionNumber": "0001211060-26-000007",
+          "ownerName": "THIEL PETER",
+          "ownerTitle": null,
+          "isDirector": false,
+          "isOfficer": false,
+          "code": "S",
+          "direction": "sale",
+          "shares": 721136.0,
+          "price": 145.1654,
+          "valueUsd": 104683995.89,
+          "sourceUrl": "https://www.sec.gov/Archives/edgar/data/1321655/000121106026000007/0001211060-26-000007.txt"
+        },
+        {
+          "ticker": "PLTR",
+          "transactionDate": "2026-03-02",
+          "filingDate": "2026-03-04",
+          "accessionNumber": "0001211060-26-000007",
+          "ownerName": "THIEL PETER",
+          "ownerTitle": null,
+          "isDirector": false,
+          "isOfficer": false,
+          "code": "S",
+          "direction": "sale",
+          "shares": 488783.0,
+          "price": 146.1385,
+          "valueUsd": 71430014.45,
+          "sourceUrl": "https://www.sec.gov/Archives/edgar/data/1321655/000121106026000007/0001211060-26-000007.txt"
+        },
+        {
+          "ticker": "PLTR",
+          "transactionDate": "2026-03-02",
+          "filingDate": "2026-03-04",
+          "accessionNumber": "0001211060-26-000007",
+          "ownerName": "THIEL PETER",
+          "ownerTitle": null,
+          "isDirector": false,
+          "isOfficer": false,
+          "code": "S",
+          "direction": "sale",
+          "shares": 419113.0,
+          "price": 144.1774,
+          "valueUsd": 60426622.65,
+          "sourceUrl": "https://www.sec.gov/Archives/edgar/data/1321655/000121106026000007/0001211060-26-000007.txt"
+        },
+        {
+          "ticker": "NVDA",
+          "transactionDate": "2026-03-18",
+          "filingDate": "2026-03-20",
+          "accessionNumber": "0001347842-26-000011",
+          "ownerName": "Puri Ajay K",
+          "ownerTitle": "EVP, Worldwide Field Ops",
+          "isDirector": false,
+          "isOfficer": true,
+          "code": "S",
+          "direction": "sale",
+          "shares": 270134.0,
+          "price": 182.2978,
+          "valueUsd": 49244833.91,
+          "sourceUrl": "https://www.sec.gov/Archives/edgar/data/1045810/000134784226000011/0001347842-26-000011.txt"
+        },
+        {
+          "ticker": "PLTR",
+          "transactionDate": "2026-03-02",
+          "filingDate": "2026-03-04",
+          "accessionNumber": "0001211060-26-000007",
+          "ownerName": "THIEL PETER",
+          "ownerTitle": null,
+          "isDirector": false,
+          "isOfficer": false,
+          "code": "S",
+          "direction": "sale",
+          "shares": 222837.0,
+          "price": 143.2751,
+          "valueUsd": 31926993.46,
+          "sourceUrl": "https://www.sec.gov/Archives/edgar/data/1321655/000121106026000007/0001211060-26-000007.txt"
+        },
+        {
+          "ticker": "NVDA",
+          "transactionDate": "2026-03-20",
+          "filingDate": "2026-03-24",
+          "accessionNumber": "0001199039-26-000003",
+          "ownerName": "STEVENS MARK A",
+          "ownerTitle": null,
+          "isDirector": true,
+          "isOfficer": false,
+          "code": "S",
+          "direction": "sale",
+          "shares": 121682.0,
+          "price": 174.5685,
+          "valueUsd": 21241844.22,
+          "sourceUrl": "https://www.sec.gov/Archives/edgar/data/1045810/000119903926000003/0001199039-26-000003.txt"
+        },
+        {
+          "ticker": "NVDA",
+          "transactionDate": "2026-03-20",
+          "filingDate": "2026-03-24",
+          "accessionNumber": "0001199039-26-000003",
+          "ownerName": "STEVENS MARK A",
+          "ownerTitle": null,
+          "isDirector": true,
+          "isOfficer": false,
+          "code": "S",
+          "direction": "sale",
+          "shares": 100000.0,
+          "price": 172.6068,
+          "valueUsd": 17260680.0,
+          "sourceUrl": "https://www.sec.gov/Archives/edgar/data/1045810/000119903926000003/0001199039-26-000003.txt"
+        },
+        {
+          "ticker": "APP",
+          "transactionDate": "2026-03-16",
+          "filingDate": "2026-03-18",
+          "accessionNumber": "0001848493-26-000003",
+          "ownerName": "Vivas Eduardo",
+          "ownerTitle": null,
+          "isDirector": false,
+          "isOfficer": false,
+          "code": "S",
+          "direction": "sale",
+          "shares": 33406.0,
+          "price": 451.5,
+          "valueUsd": 15082809.0,
+          "sourceUrl": "https://www.sec.gov/Archives/edgar/data/1751008/000184849326000003/0001848493-26-000003.txt"
+        },
+        {
+          "ticker": "APP",
+          "transactionDate": "2026-03-16",
+          "filingDate": "2026-03-18",
+          "accessionNumber": "0001848493-26-000003",
+          "ownerName": "Vivas Eduardo",
+          "ownerTitle": null,
+          "isDirector": false,
+          "isOfficer": false,
+          "code": "S",
+          "direction": "sale",
+          "shares": 28807.0,
+          "price": 452.5,
+          "valueUsd": 13035167.5,
+          "sourceUrl": "https://www.sec.gov/Archives/edgar/data/1751008/000184849326000003/0001848493-26-000003.txt"
+        },
+        {
+          "ticker": "ADBE",
+          "transactionDate": "2026-04-28",
+          "filingDate": "2026-04-30",
+          "accessionNumber": "0000796343-26-000105",
+          "ownerName": "NARAYEN SHANTANU",
+          "ownerTitle": "Chair and CEO",
+          "isDirector": true,
+          "isOfficer": true,
+          "code": "S",
+          "direction": "sale",
+          "shares": 51422.0,
+          "price": 243.1937,
+          "valueUsd": 12505506.44,
+          "sourceUrl": "https://www.sec.gov/Archives/edgar/data/796343/000079634326000105/0000796343-26-000105.txt"
+        },
+        {
+          "ticker": "APP",
+          "transactionDate": "2026-03-16",
+          "filingDate": "2026-03-18",
+          "accessionNumber": "0001848493-26-000003",
+          "ownerName": "Vivas Eduardo",
+          "ownerTitle": null,
+          "isDirector": false,
+          "isOfficer": false,
+          "code": "S",
+          "direction": "sale",
+          "shares": 26877.0,
+          "price": 453.48,
+          "valueUsd": 12188181.96,
+          "sourceUrl": "https://www.sec.gov/Archives/edgar/data/1751008/000184849326000003/0001848493-26-000003.txt"
+        },
+        {
+          "ticker": "AMD",
+          "transactionDate": "2026-04-24",
+          "filingDate": "2026-04-28",
+          "accessionNumber": "0000002488-26-000068",
+          "ownerName": "Papermaster Mark D",
+          "ownerTitle": "Chief Technology Officer & EVP",
+          "isDirector": false,
+          "isOfficer": true,
+          "code": "S",
+          "direction": "sale",
+          "shares": 31320.0,
+          "price": 350.0,
+          "valueUsd": 10962000.0,
+          "sourceUrl": "https://www.sec.gov/Archives/edgar/data/2488/000000248826000068/0000002488-26-000068.txt"
+        }
+      ],
+      "topPurchases": [
+        {
+          "ticker": "NOW",
+          "transactionDate": "2026-02-27",
+          "filingDate": "2026-03-02",
+          "accessionNumber": "0001334944-26-000020",
+          "ownerName": "McDermott William R",
+          "ownerTitle": "Chairman & CEO",
+          "isDirector": true,
+          "isOfficer": true,
+          "code": "P",
+          "direction": "purchase",
+          "shares": 28677.0,
+          "price": 104.597,
+          "valueUsd": 2999528.17,
+          "sourceUrl": "https://www.sec.gov/Archives/edgar/data/1373715/000133494426000020/0001334944-26-000020.txt"
+        },
+        {
+          "ticker": "NOW",
+          "transactionDate": "2026-02-27",
+          "filingDate": "2026-03-02",
+          "accessionNumber": "0001334944-26-000020",
+          "ownerName": "McDermott William R",
+          "ownerTitle": "Chairman & CEO",
+          "isDirector": true,
+          "isOfficer": true,
+          "code": "P",
+          "direction": "purchase",
+          "shares": 5.0,
+          "price": 105.96,
+          "valueUsd": 529.8,
+          "sourceUrl": "https://www.sec.gov/Archives/edgar/data/1373715/000133494426000020/0001334944-26-000020.txt"
+        }
+      ],
+      "transactionCount": 299,
+      "threshold": "90日内部人公开市场卖出≥$50M、净卖出≥$25M、且涉及≥3只样本股：内部人卖出证据偏强；公开市场买入≥$5M、买入额≥卖出额1.5倍、且涉及≥2只样本股：内部人买入/承接证据偏强；其他中性。",
+      "limitations": "SEC Form 4 只覆盖公司内部人交易，不等于机构13F持仓或暗池/期权流；大型科技公司高管10b5-1计划性卖出很常见，必须结合价格、宽度、成交量和公告背景判断。"
     }
   },
   "fetchErrors": [

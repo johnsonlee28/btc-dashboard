@@ -21,6 +21,7 @@ import sys
 import time
 import urllib.parse
 import urllib.request
+import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -35,7 +36,15 @@ YAHOO_SPARK = "https://query1.finance.yahoo.com/v7/finance/spark"
 FINRA_MARGIN_URL = "https://www.finra.org/rules-guidance/key-topics/margin-accounts/margin-statistics"
 FINRA_SHORT_SALE_URL_TEMPLATE = "https://cdn.finra.org/equity/regsho/daily/CNMSshvol{date}.txt"
 AAII_SENTIMENT_URL = "https://www.aaii.com/sentimentsurvey"
-UA = "stock-breadth-snapshot/1.0 (+https://stock.zhixingshe.cc)"
+SEC_COMPANY_TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
+SEC_SUBMISSIONS_URL_TEMPLATE = "https://data.sec.gov/submissions/CIK{cik10}.json"
+SEC_ARCHIVE_TXT_URL_TEMPLATE = "https://www.sec.gov/Archives/edgar/data/{cik}/{accession_nodash}/{accession}.txt"
+SEC_FORM4_TICKERS = [
+    "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA",
+    "AVGO", "ORCL", "PLTR", "CRM", "AMD", "GE", "IBM", "QCOM",
+    "NOW", "ADBE", "APP", "ISRG", "PDD", "NEE", "CEG", "VST", "OKLO",
+]
+UA = "stock-breadth-snapshot/1.0 (+https://stock.zhixingshe.cc; contact: admin@zhixingshe.cc)"
 BROWSER_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
 
 
@@ -488,6 +497,175 @@ def parse_finra_short_sale_volume(sp500_rows: list[dict], qqq_rows: list[dict]) 
     }
 
 
+def load_sec_ticker_cik_map() -> dict[str, dict]:
+    data = json.loads(fetch_text(SEC_COMPANY_TICKERS_URL, timeout=30, headers={"User-Agent": UA, "Accept": "application/json"}))
+    out = {}
+    for row in data.values():
+        ticker = (row.get("ticker") or "").strip().upper().replace(".", "-")
+        cik = row.get("cik_str")
+        if ticker and cik:
+            out[ticker] = {
+                "cik": str(cik),
+                "cik10": str(cik).zfill(10),
+                "title": row.get("title") or ticker,
+            }
+    return out
+
+
+def sec_recent_form4_filings(cik10: str, limit: int = 8) -> list[dict]:
+    data = json.loads(fetch_text(SEC_SUBMISSIONS_URL_TEMPLATE.format(cik10=cik10), timeout=30, headers={"User-Agent": UA, "Accept": "application/json"}))
+    recent = data.get("filings", {}).get("recent", {})
+    filings = []
+    for form, accession, filing_date, report_date in zip(
+        recent.get("form", []),
+        recent.get("accessionNumber", []),
+        recent.get("filingDate", []),
+        recent.get("reportDate", []),
+    ):
+        if form == "4":
+            filings.append({
+                "accessionNumber": accession,
+                "filingDate": filing_date,
+                "reportDate": report_date,
+            })
+        if len(filings) >= limit:
+            break
+    return filings
+
+
+def extract_ownership_xml(submission_text: str) -> str | None:
+    m = re.search(r"<ownershipDocument[\s\S]*?</ownershipDocument>", submission_text)
+    return m.group(0) if m else None
+
+
+def xml_text(node, path: str) -> str | None:
+    found = node.find(path)
+    return found.text.strip() if found is not None and found.text else None
+
+
+def parse_float_safe(value: str | None) -> float | None:
+    if value is None:
+        return None
+    try:
+        return float(value.replace(",", ""))
+    except Exception:
+        return None
+
+
+def parse_sec_form4_transactions(ticker: str, cik: str, filing: dict) -> list[dict]:
+    accession = filing["accessionNumber"]
+    url = SEC_ARCHIVE_TXT_URL_TEMPLATE.format(cik=str(int(cik)), accession_nodash=accession.replace("-", ""), accession=accession)
+    text = fetch_text(url, timeout=30, headers={"User-Agent": UA, "Accept": "text/plain,*/*"})
+    xml = extract_ownership_xml(text)
+    if not xml:
+        return []
+    root = ET.fromstring(xml)
+    owner_name = xml_text(root, "./reportingOwner/reportingOwnerId/rptOwnerName")
+    owner_title = xml_text(root, "./reportingOwner/reportingOwnerRelationship/officerTitle")
+    is_director = xml_text(root, "./reportingOwner/reportingOwnerRelationship/isDirector") == "1"
+    is_officer = xml_text(root, "./reportingOwner/reportingOwnerRelationship/isOfficer") == "1"
+    out = []
+    for tx in root.findall("./nonDerivativeTable/nonDerivativeTransaction"):
+        code = xml_text(tx, "./transactionCoding/transactionCode")
+        acq_disp = xml_text(tx, "./transactionAmounts/transactionAcquiredDisposedCode/value")
+        shares = parse_float_safe(xml_text(tx, "./transactionAmounts/transactionShares/value"))
+        price = parse_float_safe(xml_text(tx, "./transactionAmounts/transactionPricePerShare/value")) or 0.0
+        tx_date = xml_text(tx, "./transactionDate/value") or filing.get("reportDate") or filing.get("filingDate")
+        if code not in {"S", "P"} or shares is None or shares <= 0:
+            continue
+        value = shares * price
+        direction = "sale" if code == "S" or acq_disp == "D" else "purchase"
+        out.append({
+            "ticker": ticker,
+            "transactionDate": tx_date,
+            "filingDate": filing.get("filingDate"),
+            "accessionNumber": accession,
+            "ownerName": owner_name,
+            "ownerTitle": owner_title,
+            "isDirector": is_director,
+            "isOfficer": is_officer,
+            "code": code,
+            "direction": direction,
+            "shares": round(shares, 2),
+            "price": round(price, 4) if price else None,
+            "valueUsd": round(value, 2),
+            "sourceUrl": url,
+        })
+    return out
+
+
+def sec_form4_status(sell_value: float, buy_value: float, sale_tickers: int, buy_tickers: int) -> str:
+    net_sell = sell_value - buy_value
+    if sell_value >= 50_000_000 and net_sell >= 25_000_000 and sale_tickers >= 3:
+        return "distribution"
+    if buy_value >= 5_000_000 and buy_value >= sell_value * 1.5 and buy_tickers >= 2:
+        return "accumulation"
+    return "neutral"
+
+
+def collect_sec_form4_insider_activity(fetch_errors: list[dict]) -> dict | None:
+    cik_map = load_sec_ticker_cik_map()
+    since_date = (datetime.now(timezone.utc).date() - timedelta(days=90)).isoformat()
+    transactions = []
+    missing = []
+    for ticker in SEC_FORM4_TICKERS:
+        info = cik_map.get(ticker)
+        if not info:
+            missing.append(ticker)
+            continue
+        try:
+            filings = sec_recent_form4_filings(info["cik10"], limit=8)
+            time.sleep(0.12)
+            for filing in filings:
+                if filing.get("filingDate") and filing["filingDate"] < since_date:
+                    continue
+                try:
+                    transactions.extend(parse_sec_form4_transactions(ticker, info["cik"], filing))
+                except Exception as e:
+                    fetch_errors.append({"source": "sec_form4_insider_activity", "ticker": ticker, "accession": filing.get("accessionNumber"), "error": str(e)[:180]})
+                time.sleep(0.12)
+        except Exception as e:
+            fetch_errors.append({"source": "sec_form4_insider_activity", "ticker": ticker, "error": str(e)[:180]})
+    sales = [t for t in transactions if t["direction"] == "sale"]
+    purchases = [t for t in transactions if t["direction"] == "purchase"]
+    sell_value = sum(t["valueUsd"] for t in sales)
+    buy_value = sum(t["valueUsd"] for t in purchases)
+    sale_by_ticker = {}
+    buy_by_ticker = {}
+    for t in sales:
+        sale_by_ticker[t["ticker"]] = sale_by_ticker.get(t["ticker"], 0) + t["valueUsd"]
+    for t in purchases:
+        buy_by_ticker[t["ticker"]] = buy_by_ticker.get(t["ticker"], 0) + t["valueUsd"]
+    status = sec_form4_status(sell_value, buy_value, len(sale_by_ticker), len(buy_by_ticker))
+    top_sales = sorted(sales, key=lambda x: x["valueUsd"], reverse=True)[:12]
+    top_purchases = sorted(purchases, key=lambda x: x["valueUsd"], reverse=True)[:8]
+    value = f"90日卖出 ${sell_value/1_000_000:.1f}M · 买入 ${buy_value/1_000_000:.1f}M · 卖出股票 {len(sale_by_ticker)}只 · 买入股票 {len(buy_by_ticker)}只"
+    latest_date = max([t["filingDate"] for t in transactions if t.get("filingDate")] or [utc_now()[:10]])
+    return {
+        "name": "SEC Form 4 内部人交易快照",
+        "source": "https://www.sec.gov/edgar/search/",
+        "sourceType": "official_sec_form4",
+        "updatedAt": latest_date,
+        "value": value,
+        "status": status,
+        "lookbackDays": 90,
+        "tickerUniverse": SEC_FORM4_TICKERS,
+        "coveredTickers": [t for t in SEC_FORM4_TICKERS if t in cik_map],
+        "missingTickers": missing,
+        "sellValueUsd": round(sell_value, 2),
+        "buyValueUsd": round(buy_value, 2),
+        "saleTickerCount": len(sale_by_ticker),
+        "buyTickerCount": len(buy_by_ticker),
+        "topSaleTickers": sorted([{"ticker": k, "valueUsd": round(v, 2)} for k, v in sale_by_ticker.items()], key=lambda x: x["valueUsd"], reverse=True)[:10],
+        "topBuyTickers": sorted([{"ticker": k, "valueUsd": round(v, 2)} for k, v in buy_by_ticker.items()], key=lambda x: x["valueUsd"], reverse=True)[:10],
+        "topSales": top_sales,
+        "topPurchases": top_purchases,
+        "transactionCount": len(transactions),
+        "threshold": "90日内部人公开市场卖出≥$50M、净卖出≥$25M、且涉及≥3只样本股：内部人卖出证据偏强；公开市场买入≥$5M、买入额≥卖出额1.5倍、且涉及≥2只样本股：内部人买入/承接证据偏强；其他中性。",
+        "limitations": "SEC Form 4 只覆盖公司内部人交易，不等于机构13F持仓或暗池/期权流；大型科技公司高管10b5-1计划性卖出很常见，必须结合价格、宽度、成交量和公告背景判断。",
+    }
+
+
 def collect_macro_indicators(fetch_errors: list[dict]) -> dict:
     indicators = {}
     for key, parser in [("finra_margin_debt", parse_finra_margin), ("aaii_bull_bear", parse_aaii_sentiment)]:
@@ -520,6 +698,15 @@ def main() -> int:
     except Exception as e:
         fetch_errors.append({"source": "finra_short_sale_volume", "error": str(e)})
 
+    try:
+        form4 = collect_sec_form4_insider_activity(fetch_errors)
+        if form4:
+            macro_indicators["sec_form4_insider_activity"] = form4
+        else:
+            fetch_errors.append({"source": "sec_form4_insider_activity", "error": "parser returned no data"})
+    except Exception as e:
+        fetch_errors.append({"source": "sec_form4_insider_activity", "error": str(e)})
+
     snapshot = {
         "schemaVersion": 1,
         "generatedAt": generated,
@@ -530,6 +717,8 @@ def main() -> int:
             "prices": "Yahoo Finance spark endpoint",
             "finraMarginDebt": FINRA_MARGIN_URL,
             "finraShortSaleVolume": "https://cdn.finra.org/equity/regsho/daily/CNMSshvolYYYYMMDD.txt",
+            "secCompanyTickers": SEC_COMPANY_TICKERS_URL,
+            "secSubmissions": "https://data.sec.gov/submissions/CIK##########.json",
             "aaiiSentiment": AAII_SENTIMENT_URL,
         },
         "dataStatus": "Cached",

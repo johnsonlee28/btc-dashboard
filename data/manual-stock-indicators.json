@@ -30,6 +30,15 @@
       "sourceUrl": "https://www.finra.org/finra-data/browse-catalog/short-sale-volume-data/daily-short-sale-volume-files",
       "manualNote": "自动快照失效时手工兜底：填写 FINRA CNMS 最新日 short/total、20日均值、S&P500/QQQ 口径；注意这是场外短量，不是 short interest。"
     },
+    "sec_form4_insider_activity": {
+      "enabled": false,
+      "value": null,
+      "status": "pending",
+      "updatedAt": null,
+      "dataStatus": "Manual",
+      "sourceUrl": "https://www.sec.gov/edgar/search/",
+      "manualNote": "自动快照失效时手工兜底：填写 Mag7/AI 核心样本最近90天 Form 4 内部人公开市场买入/卖出汇总。注意 Form 4 是内部人交易，不等于13F机构持仓。"
+    },
     "aaii_bull_bear": {
       "enabled": true,
       "value": "Apr 29 Bull 38.1% · Bear 39.7% · Spread -1.6%",

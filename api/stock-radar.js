@@ -7,8 +7,9 @@
  *   / logic / threshold / caseStudy / limitations 完整元数据。
  * - 免费公开接口（Yahoo chart）失败时，指标 dataStatus = "data_unavailable"，
  *   不让整个 API 失败；不伪造值。
- * - AAII / BofA FMS / FINRA Margin Debt 目前无稳定 Edge 可抓取接口，
- *   走 Manual；CBOE Put/Call 从官方 Daily Market Statistics HTML 的 Next payload 自动解析。
+ * - AAII / BofA FMS 可走 Manual 兜底；FINRA Margin Debt、FINRA Daily Short Sale Volume、
+ *   SEC Form 4 内部人交易快照走 GitHub Actions 静态快照；CBOE Put/Call 从官方 Daily
+ *   Market Statistics HTML 的 Next payload 自动解析。
  * - 仅作研究参考，不构成投资建议。
  */
 
@@ -821,7 +822,25 @@ export default async function handler(req) {
     limitations: 'FINRA Daily Short Sale Volume 仅覆盖场外/OTC 报告口径，不等同于全市场 short interest，也不代表机构空头仓位；做市商对冲会带来噪声。',
   })));
 
-  // 5) CBOE Put/Call Ratio（V2：从官方 Daily Market Statistics HTML / Next payload 自动解析，失败则 Pending）
+  // 5) SEC Form 4 内部人交易快照（GitHub Actions 快照抓 SEC 官方 company submissions + filing txt）
+  metrics.push(cachedMacroIndicatorMetric(breadthSnapshot, 'sec_form4_insider_activity', metric({
+    id: 'sec_form4_insider_activity',
+    name: 'SEC Form 4 内部人交易快照',
+    purpose: '追踪 Mag7/AI 核心样本过去90天内部人公开市场买卖，作为个股事件证据层',
+    value: null,
+    status: 'pending',
+    threshold: '90日内部人公开市场卖出≥$50M、净卖出≥$25M、且涉及≥3只样本股 偏卖出证据；公开市场买入≥$5M、买入额≥卖出额1.5倍、且涉及≥2只样本股 偏承接证据',
+    sourceName: 'SEC EDGAR Form 4 / company submissions',
+    sourceUrl: 'https://www.sec.gov/edgar/search/',
+    frequency: '日更检查（Form 4 通常在交易后2个工作日内披露）',
+    updatedAt: null,
+    dataStatus: 'Pending',
+    logic: 'Form 4 是董事、高管、10%持有人等内部人的强制交易披露。多家公司、多位内部人集中公开市场卖出，是事件层卖出证据；集中公开市场买入，则是承接信号。',
+    caseStudy: '科技龙头高管计划性卖出很常见，因此必须看是否跨公司、跨人员、金额足够大，并结合宽度、量价和公告背景。',
+    limitations: 'Form 4 不是13F机构持仓，也不是暗池/期权流；10b5-1计划卖出、税务/期权行权相关交易会造成噪声，不能单独判断机构派发。',
+  })));
+
+  // 6) CBOE Put/Call Ratio（V2：从官方 Daily Market Statistics HTML / Next payload 自动解析，失败则 Pending）
   {
     const equity = cboePc?.equity;
     const total = cboePc?.total;
@@ -1176,7 +1195,7 @@ export default async function handler(req) {
       '仅作研究参考，不构成投资建议。',
       'Live 指标通过 Yahoo Finance 免费公开行情获取；失败时单项降级为 data_unavailable/Pending，不影响整体返回。',
       'V2 第一阶段已接入小盘 IWM/SPY、等权 RSP/SPY、信用 HYG/SPY、板块轮动；V2 第二刀新增 AI 核心样本与 Mag7 真实宽度；V2 第三刀新增 GitHub Actions 日更静态快照，覆盖全量 S&P500 与 QQQ/Nasdaq-100 持仓宽度。CBOE Put/Call 现在从 CBOE Daily Market Statistics 官网 HTML 自动解析，页面结构变化时单项降级。',
-      'FINRA Margin Debt 与 FINRA Daily Short Sale Volume 已通过 GitHub Actions 快照自动抓官方页面/文件；AAII 若官方页面反爬失败则由手工值透明兜底；BofA FMS 仍可通过 /data/manual-stock-indicators.json 手工开启；NYSE A/D Line、New High/New Low 仍保持 Pending，未找到稳定免费自动源前不伪造数值。',
+      'FINRA Margin Debt、FINRA Daily Short Sale Volume 与 SEC Form 4 内部人交易快照已通过 GitHub Actions 快照自动抓官方页面/文件/API；AAII 若官方页面反爬失败则由手工值透明兜底；BofA FMS 仍可通过 /data/manual-stock-indicators.json 手工开启；NYSE A/D Line、New High/New Low 仍保持 Pending，未找到稳定免费自动源前不伪造数值。',
       'Distribution Days 自算方法：当日收跌且成交量 > 前一交易日 → 派发日，近 25 交易日统计。',
       ...notes,
     ],
