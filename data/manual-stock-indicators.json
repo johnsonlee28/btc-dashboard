@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "description": "手工开启 stock.zhixingshe.cc 的 Manual/Pending 指标。只填写来自公开来源的真实值；不要为了显示而估算。enabled=true 后会覆盖同 id 指标。",
-  "updatedAt": "2026-05-07T09:51:15Z",
+  "description": "手工开启 stock.zhixingshe.cc 的 Manual/Pending 指标。只填写来自公开来源的真实值；不要为了显示而估算。enabled=true 后会覆盖同 id 指标；CBOE Put/Call 已优先走自动抓取，手工项仅作自动源失效时的备用记录。",
+  "updatedAt": "2026-05-07T10:18:53Z",
   "indicators": {
     "bofa_fms_cash": {
       "enabled": true,
@@ -31,13 +31,13 @@
       "manualNote": "AAII 官方历史数据：Apr 29 bullish 38.1%、bearish 39.7%，bull-bear spread = -1.6%。未达到 >+30% 过热或 <-20% 恐慌阈值，按中性录入。"
     },
     "cboe_equity_pc": {
-      "enabled": true,
+      "enabled": false,
       "value": "Equity 0.51 · Total 0.67",
       "status": "distribution",
       "updatedAt": "2026-05-07",
       "dataStatus": "Manual",
       "sourceUrl": "https://www.cboe.com/markets/us/options/market-statistics/daily/",
-      "manualNote": "Cboe 官方 Daily Market Statistics 页面当前显示 Total Put/Call 0.67、Equity Put/Call 0.51。Equity <0.55，说明 Call 投机偏热，按偏派发风险录入。"
+      "manualNote": "备用记录：Cboe 官方 Daily Market Statistics 页面曾显示 Total Put/Call 0.67、Equity Put/Call 0.51。当前 API 已优先自动解析 CBOE 官网 HTML；仅当自动源失效且人工复核最新值后，再改 enabled=true 覆盖。"
     },
     "nyse_ad_line": {
       "enabled": false,

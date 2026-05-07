@@ -7,8 +7,8 @@
  *   / logic / threshold / caseStudy / limitations 完整元数据。
  * - 免费公开接口（Yahoo chart）失败时，指标 dataStatus = "data_unavailable"，
  *   不让整个 API 失败；不伪造值。
- * - CBOE Equity Put/Call / AAII / BofA FMS / FINRA Margin Debt 目前无稳定 Edge 可抓取接口，
- *   一律标记 Manual 或 Pending，只给方法论，不给捏造数值。
+ * - AAII / BofA FMS / FINRA Margin Debt 目前无稳定 Edge 可抓取接口，
+ *   走 Manual；CBOE Put/Call 从官方 Daily Market Statistics HTML 的 Next payload 自动解析。
  * - 仅作研究参考，不构成投资建议。
  */
 
@@ -227,30 +227,48 @@ function rsStatus(rs, invert = false) {
   return 'neutral';
 }
 
-function parseCboePutCallCsv(text) {
+function escapeRegex(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function parseCboeDailyMarketStatsHtml(text) {
   if (!text || typeof text !== 'string') return null;
-  const lines = text.trim().split(/\r?\n/).filter(Boolean);
-  if (lines.length < 2) return null;
-  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-  const rows = [];
-  for (const line of lines.slice(1)) {
-    const cells = line.split(',').map(c => c.trim().replace(/^"|"$/g, ''));
-    const row = {};
-    headers.forEach((h, i) => { row[h] = cells[i]; });
-    rows.push(row);
-  }
-  const pick = rows.reverse().find(r => Object.values(r).some(v => Number.isFinite(Number(v))));
-  if (!pick) return null;
-  const dateKey = headers.find(h => /date/i.test(h)) || headers[0];
-  const totalKey = headers.find(h => /total.*put.*call.*ratio/i.test(h)) || headers.find(h => /^total$/i.test(h));
-  const equityKey = headers.find(h => /equity.*put.*call.*ratio/i.test(h)) || headers.find(h => /^equity$/i.test(h));
-  const total = totalKey ? num(pick[totalKey]) : null;
-  const equity = equityKey ? num(pick[equityKey]) : null;
+
+  // Cboe 新页面是 Next.js/RSC HTML，数据嵌在 self.__next_f payload 中，形态类似：
+  // \"ratios\":[{\"name\":\"TOTAL PUT/CALL RATIO\",\"value\":\"0.67\"}, ...]
+  // 先把转义字符串还原成普通 JSON 片段，再用窄正则提取目标字段；不 eval，不执行页面脚本。
+  const normalized = text
+    .replace(/\\u0026/g, '&')
+    .replace(/\\u003c/g, '<')
+    .replace(/\\u003e/g, '>')
+    .replace(/\\"/g, '"');
+
+  const pickRatio = (label) => {
+    const re = new RegExp(`"name"\\s*:\\s*"${escapeRegex(label)}"\\s*,\\s*"value"\\s*:\\s*"([0-9.]+)"`, 'i');
+    const match = normalized.match(re);
+    return match ? num(match[1]) : null;
+  };
+
+  const total = pickRatio('TOTAL PUT/CALL RATIO');
+  const index = pickRatio('INDEX PUT/CALL RATIO');
+  const etp = pickRatio('EXCHANGE TRADED PRODUCTS PUT/CALL RATIO');
+  const equity = pickRatio('EQUITY PUT/CALL RATIO');
+  const vix = pickRatio('CBOE VOLATILITY INDEX (VIX) PUT/CALL RATIO');
+  const spx = pickRatio('SPX + SPXW PUT/CALL RATIO');
+  const selectedDate = normalized.match(/"selectedDate"\s*:\s*"([0-9]{4}-[0-9]{2}-[0-9]{2})"/i)?.[1]
+    || normalized.match(/"prevTradingDay"\s*:\s*"([0-9]{4}-[0-9]{2}-[0-9]{2})"/i)?.[1]
+    || null;
+
+  if (total == null && equity == null) return null;
   return {
-    asOf: pick[dateKey] || null,
+    asOf: selectedDate,
     total,
+    index,
+    etp,
     equity,
-    headers,
+    vix,
+    spx,
+    source: 'cboe_next_payload',
   };
 }
 
@@ -624,16 +642,12 @@ export default async function handler(req) {
 
   const notes = [];
   const manualConfigUrl = new URL('/data/manual-stock-indicators.json', url.origin).toString();
-  const [jsonResults, manualConfigResult] = await Promise.all([
+  const cboeDailyStatsUrl = 'https://www.cboe.com/markets/us/options/market-statistics/daily/';
+  const [jsonResults, manualConfigResult, cboePcResult] = await Promise.all([
     Promise.all(Object.entries(endpoints).map(([k, u]) => safeFetchJson(k, u, 5000))),
     safeFetchJson('manual_indicators', manualConfigUrl, 2500),
+    safeFetchText('cboe_pc', cboeDailyStatsUrl, 5000),
   ]);
-  // CBOE 旧 CSV 在服务器 / Edge 环境长期返回 HTTP 403（已用 curl、UA、Referer 多次核验）。
-  // 在找到可靠免费源或缓存管线前，不再每次请求实时抓取，直接显式降级为 Pending，避免 5s 无效等待。
-  const cboePcResult = {
-    ok: false,
-    error: 'disabled: CBOE CSV returns HTTP 403 from server/Edge; waiting for reliable free cached source',
-  };
   const data = {};
   for (const r of jsonResults) {
     if (r.ok) data[r.key] = r.data;
@@ -653,7 +667,8 @@ export default async function handler(req) {
   const skewBars = extractCloses(data.skew || {});
   const sectorBars = Object.fromEntries(['xlk','xlf','xle','xlv','xly','xlp','xli','xlb','xlu','xlre','xlc'].map(k => [k, extractCloses(data[k] || {})]));
   const aiSymbolBars = Object.fromEntries(AI_BREADTH_TICKERS.map(symbol => [symbol, extractCloses(data[`ai_${symbol}`] || {})]));
-  const cboePc = cboePcResult.ok ? parseCboePutCallCsv(cboePcResult.text) : null;
+  const cboePc = cboePcResult.ok ? parseCboeDailyMarketStatsHtml(cboePcResult.text) : null;
+  if (cboePcResult.ok && !cboePc) notes.push('cboe_pc parse failed: CBOE page fetched but ratio payload was not found');
 
   const spyMeta = latestMeta(data.spy || {});
   const qqqMeta = latestMeta(data.qqq || {});
@@ -716,7 +731,7 @@ export default async function handler(req) {
     limitations: '样本量小、自愿填写，噪声大；需要在 AAII 官网手工同步或抓取。',
   }));
 
-  // 4) CBOE Put/Call Ratio（V2：官方旧 CSV 已被 403 拦截，先显式 Pending，不伪造值）
+  // 4) CBOE Put/Call Ratio（V2：从官方 Daily Market Statistics HTML / Next payload 自动解析，失败则 Pending）
   {
     const equity = cboePc?.equity;
     const total = cboePc?.total;
@@ -729,14 +744,14 @@ export default async function handler(req) {
       value,
       status,
       threshold: '< 0.55 Call 投机偏热/派发风险；> 0.85 保护性需求偏强/恐慌释放；0.55-0.85 中性',
-      sourceName: 'CBOE Daily Market Statistics（待可靠缓存源）',
-      sourceUrl: 'https://www.cboe.com/us/options/market_statistics/daily/',
-      frequency: '日更（CBOE 收盘后发布；当前服务器侧不可稳定抓取）',
+      sourceName: 'CBOE Daily Market Statistics',
+      sourceUrl: cboeDailyStatsUrl,
+      frequency: '日更（CBOE 收盘后发布；自动解析官网 HTML 中的 Next payload）',
       updatedAt: cboePc?.asOf || null,
       dataStatus: equity != null ? 'Live' : 'Pending',
       logic: 'Equity Put/Call 越低，说明个股 Call 投机越拥挤，常见于情绪过热阶段；越高说明保护性需求上升，常见于风险释放阶段。它是期权情绪证据，不等于机构真实派发。',
       caseStudy: '2021 年末 Equity P/C 低位徘徊，成长股投机拥挤；2022 年多个阶段 Equity P/C 升高后出现恐慌释放。',
-      limitations: 'CBOE 官网页面为动态页面，旧 CSV 在服务器/Edge 环境返回 403；当前只保留方法论，等待 GitHub Actions 缓存或可靠免费源后再自动显示数值。',
+      limitations: '依赖 CBOE 官网 HTML 中的 Next/RSC 数据片段，页面结构若改版会自动降级为 Pending；旧 CSV 在服务器/Edge 环境仍可能 403，不作为主来源。',
       extras: cboePc || null,
     }));
   }
@@ -1054,8 +1069,8 @@ export default async function handler(req) {
     notes: [
       '仅作研究参考，不构成投资建议。',
       'Live 指标通过 Yahoo Finance 免费公开行情获取；失败时单项降级为 data_unavailable/Pending，不影响整体返回。',
-      'V2 第一阶段已接入小盘 IWM/SPY、等权 RSP/SPY、信用 HYG/SPY、板块轮动；V2 第二刀新增 AI 核心样本与 Mag7 真实宽度。CBOE Put/Call 已确认旧 CSV 服务器侧 403，等待可靠缓存源，不伪造数值。',
-      'BofA FMS / FINRA Margin Debt / AAII 仍可通过 /data/manual-stock-indicators.json 手工开启；NYSE A/D Line、New High/New Low、CBOE Put/Call 也可先手工录入，enabled=true 后参与展示和评分。',
+      'V2 第一阶段已接入小盘 IWM/SPY、等权 RSP/SPY、信用 HYG/SPY、板块轮动；V2 第二刀新增 AI 核心样本与 Mag7 真实宽度。CBOE Put/Call 现在从 CBOE Daily Market Statistics 官网 HTML 自动解析，页面结构变化时单项降级。',
+      'BofA FMS / FINRA Margin Debt / AAII 仍可通过 /data/manual-stock-indicators.json 手工开启；NYSE A/D Line、New High/New Low 仍保持 Pending，未找到稳定免费自动源前不伪造数值。',
       'Distribution Days 自算方法：当日收跌且成交量 > 前一交易日 → 派发日，近 25 交易日统计。',
       ...notes,
     ],
