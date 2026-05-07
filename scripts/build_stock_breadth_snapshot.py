@@ -44,6 +44,41 @@ SEC_FORM4_TICKERS = [
     "AVGO", "ORCL", "PLTR", "CRM", "AMD", "GE", "IBM", "QCOM",
     "NOW", "ADBE", "APP", "ISRG", "PDD", "NEE", "CEG", "VST", "OKLO",
 ]
+SEC_13F_MANAGERS = [
+    {"name": "Citadel Advisors", "cik": "0001423053"},
+    {"name": "Renaissance Technologies", "cik": "0001037389"},
+    {"name": "ARK Investment Management", "cik": "0001697748"},
+    {"name": "Millennium Management", "cik": "0001273087"},
+    {"name": "D. E. Shaw", "cik": "0001009207"},
+    {"name": "Coatue Management", "cik": "0001135730"},
+    {"name": "Tiger Global Management", "cik": "0001167483"},
+    {"name": "Berkshire Hathaway", "cik": "0001067983"},
+]
+SEC_13F_TARGETS = {
+    "AAPL": {"cusips": ["037833100"], "patterns": ["APPLE INC"]},
+    "MSFT": {"cusips": ["594918104"], "patterns": ["MICROSOFT CORP"]},
+    "NVDA": {"cusips": ["67066G104"], "patterns": ["NVIDIA CORP"]},
+    "AMZN": {"cusips": ["023135106"], "patterns": ["AMAZON COM INC"]},
+    "GOOGL": {"cusips": ["02079K305", "02079K107"], "patterns": ["ALPHABET INC"]},
+    "META": {"cusips": ["30303M102"], "patterns": ["META PLATFORMS INC"]},
+    "TSLA": {"cusips": ["88160R101"], "patterns": ["TESLA INC"]},
+    "AVGO": {"cusips": ["11135F101"], "patterns": ["BROADCOM INC"]},
+    "ORCL": {"cusips": ["68389X105"], "patterns": ["ORACLE CORP"]},
+    "PLTR": {"cusips": ["69608A108"], "patterns": ["PALANTIR TECHNOLOGIES"]},
+    "CRM": {"cusips": ["79466L302"], "patterns": ["SALESFORCE INC"]},
+    "AMD": {"cusips": ["007903107"], "patterns": ["ADVANCED MICRO DEVICES"]},
+    "IBM": {"cusips": ["459200101"], "patterns": ["INTL BUSINESS MACHS", "INTERNATIONAL BUSINESS"]},
+    "QCOM": {"cusips": ["747525103"], "patterns": ["QUALCOMM INC"]},
+    "NOW": {"cusips": ["81762P102"], "patterns": ["SERVICENOW INC"]},
+    "ADBE": {"cusips": ["00724F101"], "patterns": ["ADOBE INC"]},
+    "APP": {"cusips": ["03831W108"], "patterns": ["APPLOVIN CORP"]},
+    "ISRG": {"cusips": ["46120E602"], "patterns": ["INTUITIVE SURGICAL"]},
+    "PDD": {"cusips": ["722304102"], "patterns": ["PDD HOLDINGS"]},
+    "NEE": {"cusips": ["65339F101"], "patterns": ["NEXTERA ENERGY"]},
+    "CEG": {"cusips": ["21037T109"], "patterns": ["CONSTELLATION ENERGY"]},
+    "VST": {"cusips": ["92840M102"], "patterns": ["VISTRA CORP"]},
+    "OKLO": {"cusips": ["02156V109"], "patterns": ["OKLO INC"]},
+}
 UA = "stock-breadth-snapshot/1.0 (+https://stock.zhixingshe.cc; contact: admin@zhixingshe.cc)"
 BROWSER_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
 
@@ -666,6 +701,187 @@ def collect_sec_form4_insider_activity(fetch_errors: list[dict]) -> dict | None:
     }
 
 
+def local_name(tag: str) -> str:
+    return tag.rsplit('}', 1)[-1] if '}' in tag else tag
+
+
+def child_text_local(node, name: str) -> str | None:
+    for child in list(node):
+        if local_name(child.tag) == name:
+            if name == "shrsOrPrnAmt":
+                for sub in list(child):
+                    if local_name(sub.tag) == "sshPrnamt" and sub.text:
+                        return sub.text.strip()
+            return child.text.strip() if child.text else None
+    return None
+
+
+def recent_13f_filings(cik10: str, limit: int = 2) -> list[dict]:
+    data = json.loads(fetch_text(SEC_SUBMISSIONS_URL_TEMPLATE.format(cik10=cik10), timeout=30, headers={"User-Agent": UA, "Accept": "application/json"}))
+    recent = data.get("filings", {}).get("recent", {})
+    filings = []
+    for form, accession, filing_date, report_date in zip(
+        recent.get("form", []), recent.get("accessionNumber", []), recent.get("filingDate", []), recent.get("reportDate", [])
+    ):
+        if form in {"13F-HR", "13F-HR/A"}:
+            filings.append({"form": form, "accessionNumber": accession, "filingDate": filing_date, "reportDate": report_date})
+        if len(filings) >= limit:
+            break
+    return filings
+
+
+def match_13f_target(name: str, cusip: str) -> str | None:
+    n = re.sub(r"\s+", " ", (name or "").upper()).strip()
+    c = (cusip or "").upper().strip()
+    for ticker, spec in SEC_13F_TARGETS.items():
+        if c and c in spec.get("cusips", []):
+            return ticker
+        if any(p in n for p in spec.get("patterns", [])):
+            return ticker
+    return None
+
+
+def extract_information_table_xml(submission_text: str) -> str | None:
+    m = re.search(r"<informationTable[\s\S]*?</informationTable>", submission_text)
+    return m.group(0) if m else None
+
+
+def parse_13f_target_holdings(cik: str, filing: dict) -> dict[str, dict]:
+    accession = filing["accessionNumber"]
+    url = SEC_ARCHIVE_TXT_URL_TEMPLATE.format(cik=str(int(cik)), accession_nodash=accession.replace("-", ""), accession=accession)
+    text = fetch_text(url, timeout=45, headers={"User-Agent": UA, "Accept": "text/plain,*/*"})
+    xml = extract_information_table_xml(text)
+    if not xml:
+        return {}
+    root = ET.fromstring(xml)
+    holdings: dict[str, dict] = {}
+    for row in root.iter():
+        if local_name(row.tag) != "infoTable":
+            continue
+        put_call = child_text_local(row, "putCall")
+        if put_call:
+            continue  # keep common-stock exposure separate from option positions
+        issuer = child_text_local(row, "nameOfIssuer") or ""
+        cusip = child_text_local(row, "cusip") or ""
+        ticker = match_13f_target(issuer, cusip)
+        if not ticker:
+            continue
+        value_usd = parse_float_safe(child_text_local(row, "value")) or 0.0
+        shares = parse_float_safe(child_text_local(row, "shrsOrPrnAmt")) or 0.0
+        current = holdings.setdefault(ticker, {"ticker": ticker, "issuer": issuer, "cusip": cusip, "valueUsd": 0.0, "shares": 0.0})
+        # Recent SEC 13F XML information tables expose value at dollar scale in the
+        # flattened/as-filed data we parse from EDGAR txt submissions. Do not multiply by 1000.
+        current["valueUsd"] += value_usd
+        current["shares"] += shares
+    for item in holdings.values():
+        item["valueUsd"] = round(item["valueUsd"], 2)
+        item["shares"] = round(item["shares"], 2)
+    return holdings
+
+
+def collect_sec_13f_institutional_sample(fetch_errors: list[dict]) -> dict | None:
+    managers = []
+    changed_rows = []
+    increased = decreased = unchanged = 0
+    current_value = previous_value = 0.0
+    for manager in SEC_13F_MANAGERS:
+        cik = manager["cik"]
+        try:
+            filings = recent_13f_filings(cik, limit=2)
+            time.sleep(0.15)
+            if len(filings) < 2:
+                fetch_errors.append({"source": "sec_13f_institutional_sample", "manager": manager["name"], "error": "less than two 13F filings"})
+                continue
+            current_filing, previous_filing = filings[0], filings[1]
+            current = parse_13f_target_holdings(cik, current_filing)
+            time.sleep(0.15)
+            previous = parse_13f_target_holdings(cik, previous_filing)
+            time.sleep(0.15)
+            manager_current_value = sum(x["valueUsd"] for x in current.values())
+            manager_previous_value = sum(x["valueUsd"] for x in previous.values())
+            current_value += manager_current_value
+            previous_value += manager_previous_value
+            tickers = sorted(set(current) | set(previous))
+            manager_changes = []
+            for ticker in tickers:
+                cur = current.get(ticker, {"shares": 0, "valueUsd": 0, "issuer": None})
+                prev = previous.get(ticker, {"shares": 0, "valueUsd": 0})
+                share_change = cur["shares"] - prev["shares"]
+                if abs(share_change) < 1:
+                    unchanged += 1
+                    direction = "flat"
+                elif share_change > 0:
+                    increased += 1
+                    direction = "increase"
+                else:
+                    decreased += 1
+                    direction = "decrease"
+                pct_change = round(share_change / prev["shares"] * 100, 1) if prev.get("shares") else (100.0 if share_change > 0 else None)
+                row = {
+                    "manager": manager["name"],
+                    "ticker": ticker,
+                    "direction": direction,
+                    "shares": round(cur["shares"], 2),
+                    "previousShares": round(prev["shares"], 2),
+                    "shareChange": round(share_change, 2),
+                    "shareChangePct": pct_change,
+                    "valueUsd": round(cur["valueUsd"], 2),
+                    "previousValueUsd": round(prev["valueUsd"], 2),
+                }
+                manager_changes.append(row)
+                if direction != "flat":
+                    changed_rows.append(row)
+            managers.append({
+                "name": manager["name"],
+                "cik": cik,
+                "currentFilingDate": current_filing.get("filingDate"),
+                "currentReportDate": current_filing.get("reportDate"),
+                "previousFilingDate": previous_filing.get("filingDate"),
+                "previousReportDate": previous_filing.get("reportDate"),
+                "targetValueUsd": round(manager_current_value, 2),
+                "previousTargetValueUsd": round(manager_previous_value, 2),
+                "targetTickerCount": len(current),
+                "changes": sorted(manager_changes, key=lambda x: abs(x.get("valueUsd", 0)), reverse=True)[:12],
+            })
+        except Exception as e:
+            fetch_errors.append({"source": "sec_13f_institutional_sample", "manager": manager["name"], "error": str(e)[:180]})
+    total_changes = increased + decreased + unchanged
+    if not managers:
+        return None
+    decrease_ratio = decreased / total_changes * 100 if total_changes else 0
+    increase_ratio = increased / total_changes * 100 if total_changes else 0
+    value_change_pct = round((current_value / previous_value - 1) * 100, 1) if previous_value else None
+    if decrease_ratio >= 60 and value_change_pct is not None and value_change_pct <= -10:
+        status = "distribution"
+    elif increase_ratio >= 60 and value_change_pct is not None and value_change_pct >= 10:
+        status = "accumulation"
+    else:
+        status = "neutral"
+    latest_date = max([m["currentFilingDate"] for m in managers if m.get("currentFilingDate")] or [utc_now()[:10]])
+    top_decreases = sorted([r for r in changed_rows if r["direction"] == "decrease"], key=lambda x: abs(x["shareChange"]), reverse=True)[:12]
+    top_increases = sorted([r for r in changed_rows if r["direction"] == "increase"], key=lambda x: abs(x["shareChange"]), reverse=True)[:12]
+    return {
+        "name": "SEC 13F 样本机构持仓慢变量",
+        "source": "https://www.sec.gov/data-research/sec-markets-data/form-13f-data-sets",
+        "sourceType": "official_sec_13f",
+        "updatedAt": latest_date,
+        "value": f"样本机构AI/Mag7持仓 ${current_value/1_000_000_000:.1f}B · 较上季 {value_change_pct:+.1f}% · 增/减 {increased}/{decreased}",
+        "status": status,
+        "managerCount": len(managers),
+        "currentValueUsd": round(current_value, 2),
+        "previousValueUsd": round(previous_value, 2),
+        "valueChangePct": value_change_pct,
+        "increasedPositions": increased,
+        "decreasedPositions": decreased,
+        "unchangedPositions": unchanged,
+        "managers": managers,
+        "topIncreases": top_increases,
+        "topDecreases": top_decreases,
+        "threshold": "样本持仓市值较上季下降≥10%、且减持位置占比≥60%：机构样本持仓收缩/派发压力；上升≥10%、且增持位置占比≥60%：机构样本暴露增加/承接改善；否则中性。",
+        "limitations": "13F 是季度披露，最多滞后45天；只覆盖样本机构多头持仓，不含空头、衍生品完整风险、盘中交易或非13F证券。CUSIP/ticker 映射采用白名单与发行人名称匹配，适合慢变量观察，不适合短线交易信号。",
+    }
+
+
 def collect_macro_indicators(fetch_errors: list[dict]) -> dict:
     indicators = {}
     for key, parser in [("finra_margin_debt", parse_finra_margin), ("aaii_bull_bear", parse_aaii_sentiment)]:
@@ -707,6 +923,15 @@ def main() -> int:
     except Exception as e:
         fetch_errors.append({"source": "sec_form4_insider_activity", "error": str(e)})
 
+    try:
+        sec13f = collect_sec_13f_institutional_sample(fetch_errors)
+        if sec13f:
+            macro_indicators["sec_13f_institutional_sample"] = sec13f
+        else:
+            fetch_errors.append({"source": "sec_13f_institutional_sample", "error": "parser returned no data"})
+    except Exception as e:
+        fetch_errors.append({"source": "sec_13f_institutional_sample", "error": str(e)})
+
     snapshot = {
         "schemaVersion": 1,
         "generatedAt": generated,
@@ -719,6 +944,7 @@ def main() -> int:
             "finraShortSaleVolume": "https://cdn.finra.org/equity/regsho/daily/CNMSshvolYYYYMMDD.txt",
             "secCompanyTickers": SEC_COMPANY_TICKERS_URL,
             "secSubmissions": "https://data.sec.gov/submissions/CIK##########.json",
+            "sec13fDataSets": "https://www.sec.gov/data-research/sec-markets-data/form-13f-data-sets",
             "aaiiSentiment": AAII_SENTIMENT_URL,
         },
         "dataStatus": "Cached",

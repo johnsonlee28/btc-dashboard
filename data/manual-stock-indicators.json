@@ -39,6 +39,15 @@
       "sourceUrl": "https://www.sec.gov/edgar/search/",
       "manualNote": "自动快照失效时手工兜底：填写 Mag7/AI 核心样本最近90天 Form 4 内部人公开市场买入/卖出汇总。注意 Form 4 是内部人交易，不等于13F机构持仓。"
     },
+    "sec_13f_institutional_sample": {
+      "enabled": false,
+      "value": null,
+      "status": "pending",
+      "updatedAt": null,
+      "dataStatus": "Manual",
+      "sourceUrl": "https://www.sec.gov/data-research/sec-markets-data/form-13f-data-sets",
+      "manualNote": "自动快照失效时手工兜底：填写样本机构上一季13F中AI/Mag7多头持仓市值、较上季变化、增/减持位置数。注意13F季度滞后，不是实时机构流。"
+    },
     "aaii_bull_bear": {
       "enabled": true,
       "value": "Apr 29 Bull 38.1% · Bear 39.7% · Spread -1.6%",

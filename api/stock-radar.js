@@ -840,7 +840,25 @@ export default async function handler(req) {
     limitations: 'Form 4 不是13F机构持仓，也不是暗池/期权流；10b5-1计划卖出、税务/期权行权相关交易会造成噪声，不能单独判断机构派发。',
   })));
 
-  // 6) CBOE Put/Call Ratio（V2：从官方 Daily Market Statistics HTML / Next payload 自动解析，失败则 Pending）
+  // 6) SEC 13F 样本机构持仓慢变量（季度披露、滞后，不作为短线派发警报）
+  metrics.push(cachedMacroIndicatorMetric(breadthSnapshot, 'sec_13f_institutional_sample', metric({
+    id: 'sec_13f_institutional_sample',
+    name: 'SEC 13F 样本机构持仓慢变量',
+    purpose: '追踪样本机构上一季对 AI/Mag7 核心股票的多头持仓变化，作为机构慢变量证据',
+    value: null,
+    status: 'pending',
+    threshold: '样本持仓市值较上季下降≥10%、且减持位置占比≥60% 偏持仓收缩/派发压力；上升≥10%、且增持位置占比≥60% 偏暴露增加/承接改善',
+    sourceName: 'SEC EDGAR 13F-HR information table',
+    sourceUrl: 'https://www.sec.gov/data-research/sec-markets-data/form-13f-data-sets',
+    frequency: '季更（13F 通常在季末后45天内披露；快照日更检查最新文件）',
+    updatedAt: null,
+    dataStatus: 'Pending',
+    logic: '13F 披露机构投资经理季度末多头持仓。样本机构对 AI/Mag7 共同增持，说明机构暴露扩张；共同减持，说明慢变量持仓收缩。',
+    caseStudy: '13F 常用于观察巴菲特、ARK、Citadel、Coatue 等机构上一季度持仓方向，但它天然滞后，不适合判断当日/当周派发。',
+    limitations: '13F 只显示季度末多头持仓，不含空头、完整衍生品风险和季内交易；CUSIP/ticker 映射采用白名单与名称匹配，适合趋势证据，不是实时机构流。',
+  })));
+
+  // 7) CBOE Put/Call Ratio（V2：从官方 Daily Market Statistics HTML / Next payload 自动解析，失败则 Pending）
   {
     const equity = cboePc?.equity;
     const total = cboePc?.total;
@@ -1195,7 +1213,7 @@ export default async function handler(req) {
       '仅作研究参考，不构成投资建议。',
       'Live 指标通过 Yahoo Finance 免费公开行情获取；失败时单项降级为 data_unavailable/Pending，不影响整体返回。',
       'V2 第一阶段已接入小盘 IWM/SPY、等权 RSP/SPY、信用 HYG/SPY、板块轮动；V2 第二刀新增 AI 核心样本与 Mag7 真实宽度；V2 第三刀新增 GitHub Actions 日更静态快照，覆盖全量 S&P500 与 QQQ/Nasdaq-100 持仓宽度。CBOE Put/Call 现在从 CBOE Daily Market Statistics 官网 HTML 自动解析，页面结构变化时单项降级。',
-      'FINRA Margin Debt、FINRA Daily Short Sale Volume 与 SEC Form 4 内部人交易快照已通过 GitHub Actions 快照自动抓官方页面/文件/API；AAII 若官方页面反爬失败则由手工值透明兜底；BofA FMS 仍可通过 /data/manual-stock-indicators.json 手工开启；NYSE A/D Line、New High/New Low 仍保持 Pending，未找到稳定免费自动源前不伪造数值。',
+      'FINRA Margin Debt、FINRA Daily Short Sale Volume、SEC Form 4 内部人交易快照与 SEC 13F 样本机构持仓慢变量已通过 GitHub Actions 快照自动抓官方页面/文件/API；AAII 若官方页面反爬失败则由手工值透明兜底；BofA FMS 仍可通过 /data/manual-stock-indicators.json 手工开启；NYSE A/D Line、New High/New Low 仍保持 Pending，未找到稳定免费自动源前不伪造数值。',
       'Distribution Days 自算方法：当日收跌且成交量 > 前一交易日 → 派发日，近 25 交易日统计。',
       ...notes,
     ],
