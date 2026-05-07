@@ -1,6 +1,6 @@
 /**
  * Vercel Edge Function: /api/stock-radar
- * 美股派发/建仓雷达 MVP 第一期
+ * 美股派发/承接雷达 V2
  *
  * 原则：
  * - 可解释性 > 漂亮。每个指标必须带 sourceName / sourceUrl / frequency / updatedAt / dataStatus
@@ -45,6 +45,22 @@ async function safeFetchJson(key, url, timeout = 5500) {
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return { key, ok: true, data: await res.json() };
+  } catch (err) {
+    return { key, ok: false, error: err?.message || String(err) };
+  }
+}
+
+async function safeFetchText(key, url, timeout = 5500) {
+  try {
+    const res = await fetch(url, {
+      headers: {
+        'Accept': 'text/csv,text/plain,*/*',
+        'User-Agent': 'stock-distribution-radar/2.0 (+https://stock.zhixingshe.cc)',
+      },
+      signal: AbortSignal.timeout(timeout),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return { key, ok: true, text: await res.text() };
   } catch (err) {
     return { key, ok: false, error: err?.message || String(err) };
   }
@@ -161,6 +177,89 @@ function computeDownUpVolumeRatio(bars, lookback = 50) {
   }
   if (!upVol) return null;
   return { ratio: downVol / upVol, downVol, upVol, lookback };
+}
+
+
+function computeRelativeStrength(numeratorBars, denominatorBars, lookback = 60) {
+  if (!Array.isArray(numeratorBars) || !Array.isArray(denominatorBars)) return null;
+  const len = Math.min(numeratorBars.length, denominatorBars.length);
+  if (len < lookback + 1) return null;
+  const nRecent = numeratorBars.slice(-lookback - 1);
+  const dRecent = denominatorBars.slice(-lookback - 1);
+  const ratios = [];
+  for (let i = 0; i < nRecent.length; i++) {
+    const n = nRecent[i]?.close;
+    const d = dRecent[i]?.close;
+    if (Number.isFinite(n) && Number.isFinite(d) && d !== 0) ratios.push(n / d);
+  }
+  if (ratios.length < lookback * 0.8) return null;
+  const first = ratios[0];
+  const last = ratios[ratios.length - 1];
+  const changePct = (last / first - 1) * 100;
+  const slope = changePct / lookback;
+  return {
+    ratio: last,
+    changePct,
+    slope,
+    trend: changePct <= -3 ? 'weakening' : changePct >= 3 ? 'improving' : 'flat',
+  };
+}
+
+function rsStatus(rs, invert = false) {
+  if (!rs) return 'pending';
+  if (!invert) {
+    if (rs.changePct <= -3) return 'distribution';
+    if (rs.changePct >= 3) return 'accumulation';
+    return 'neutral';
+  }
+  if (rs.changePct >= 3) return 'distribution';
+  if (rs.changePct <= -3) return 'accumulation';
+  return 'neutral';
+}
+
+function parseCboePutCallCsv(text) {
+  if (!text || typeof text !== 'string') return null;
+  const lines = text.trim().split(/\r?\n/).filter(Boolean);
+  if (lines.length < 2) return null;
+  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+  const rows = [];
+  for (const line of lines.slice(1)) {
+    const cells = line.split(',').map(c => c.trim().replace(/^"|"$/g, ''));
+    const row = {};
+    headers.forEach((h, i) => { row[h] = cells[i]; });
+    rows.push(row);
+  }
+  const pick = rows.reverse().find(r => Object.values(r).some(v => Number.isFinite(Number(v))));
+  if (!pick) return null;
+  const dateKey = headers.find(h => /date/i.test(h)) || headers[0];
+  const totalKey = headers.find(h => /total.*put.*call.*ratio/i.test(h)) || headers.find(h => /^total$/i.test(h));
+  const equityKey = headers.find(h => /equity.*put.*call.*ratio/i.test(h)) || headers.find(h => /^equity$/i.test(h));
+  const total = totalKey ? num(pick[totalKey]) : null;
+  const equity = equityKey ? num(pick[equityKey]) : null;
+  return {
+    asOf: pick[dateKey] || null,
+    total,
+    equity,
+    headers,
+  };
+}
+
+function computeSectorRotation(sectorBars, spyBars) {
+  const sectors = [
+    ['XLK', '科技'], ['XLF', '金融'], ['XLE', '能源'], ['XLV', '医疗'], ['XLY', '可选消费'],
+    ['XLP', '必需消费'], ['XLI', '工业'], ['XLB', '材料'], ['XLU', '公用事业'], ['XLRE', '地产'], ['XLC', '通信'],
+  ];
+  const ranking = sectors.map(([symbol, name]) => {
+    const rs = computeRelativeStrength(sectorBars[symbol.toLowerCase()], spyBars, 60);
+    return rs ? { symbol, name, changePct: Number(rs.changePct.toFixed(2)), trend: rs.trend } : null;
+  }).filter(Boolean).sort((a, b) => b.changePct - a.changePct);
+  if (ranking.length < 6) return null;
+  const defensive = ['XLU', 'XLP', 'XLV'];
+  const growth = ['XLK', 'XLY', 'XLC'];
+  const defensiveAvg = avg(ranking.filter(r => defensive.includes(r.symbol)).map(r => r.changePct));
+  const growthAvg = avg(ranking.filter(r => growth.includes(r.symbol)).map(r => r.changePct));
+  const spread = defensiveAvg != null && growthAvg != null ? defensiveAvg - growthAvg : null;
+  return { ranking, defensiveAvg, growthAvg, spread };
 }
 
 function statusFromScore(score) {
@@ -373,29 +472,52 @@ export default async function handler(req) {
     return new Response(JSON.stringify(analysis, null, 2), { status: 200, headers: JSON_HEADERS });
   }
 
-  // 大盘指标需要的 Yahoo 数据
+  // 大盘指标需要的 Yahoo 数据。V2 第一阶段坚持免费 + 自动化：指数、ETF、板块 ETF 全走 Yahoo chart。
   const endpoints = {
-    spy: YF_CHART('SPY', '3mo', '1d'),
-    qqq: YF_CHART('QQQ', '3mo', '1d'),
+    spy: YF_CHART('SPY', '6mo', '1d'),
+    qqq: YF_CHART('QQQ', '6mo', '1d'),
+    iwm: YF_CHART('IWM', '6mo', '1d'),
+    rsp: YF_CHART('RSP', '6mo', '1d'),
+    hyg: YF_CHART('HYG', '6mo', '1d'),
     vix: YF_CHART('^VIX', '1mo', '1d'),     // Yahoo chart 会在 YF_CHART 内统一 encode
     vix3m: YF_CHART('^VIX3M', '1mo', '1d'),
     skew: YF_CHART('^SKEW', '1mo', '1d'),
     gspc: YF_CHART('^GSPC', '1mo', '1d'),
+    xlk: YF_CHART('XLK', '6mo', '1d'),
+    xlf: YF_CHART('XLF', '6mo', '1d'),
+    xle: YF_CHART('XLE', '6mo', '1d'),
+    xlv: YF_CHART('XLV', '6mo', '1d'),
+    xly: YF_CHART('XLY', '6mo', '1d'),
+    xlp: YF_CHART('XLP', '6mo', '1d'),
+    xli: YF_CHART('XLI', '6mo', '1d'),
+    xlb: YF_CHART('XLB', '6mo', '1d'),
+    xlu: YF_CHART('XLU', '6mo', '1d'),
+    xlre: YF_CHART('XLRE', '6mo', '1d'),
+    xlc: YF_CHART('XLC', '6mo', '1d'),
   };
 
   const notes = [];
-  const results = await Promise.all(Object.entries(endpoints).map(([k, u]) => safeFetchJson(k, u)));
+  const [jsonResults, cboePcResult] = await Promise.all([
+    Promise.all(Object.entries(endpoints).map(([k, u]) => safeFetchJson(k, u, 5000))),
+    safeFetchText('cboe_pc', 'https://cdn.cboe.com/api/global/us_indices/daily_prices/Cboe_Volume_And_Put_Call_Ratio.csv', 5000),
+  ]);
   const data = {};
-  for (const r of results) {
+  for (const r of jsonResults) {
     if (r.ok) data[r.key] = r.data;
     else notes.push(`${r.key} fetch failed: ${r.error}`);
   }
+  if (!cboePcResult.ok) notes.push(`cboe_pc fetch failed: ${cboePcResult.error}`);
 
   const spyBars = extractCloses(data.spy || {});
   const qqqBars = extractCloses(data.qqq || {});
+  const iwmBars = extractCloses(data.iwm || {});
+  const rspBars = extractCloses(data.rsp || {});
+  const hygBars = extractCloses(data.hyg || {});
   const vixBars = extractCloses(data.vix || {});
   const vix3mBars = extractCloses(data.vix3m || {});
   const skewBars = extractCloses(data.skew || {});
+  const sectorBars = Object.fromEntries(['xlk','xlf','xle','xlv','xly','xlp','xli','xlb','xlu','xlre','xlc'].map(k => [k, extractCloses(data[k] || {})]));
+  const cboePc = cboePcResult.ok ? parseCboePutCallCsv(cboePcResult.text) : null;
 
   const spyMeta = latestMeta(data.spy || {});
   const qqqMeta = latestMeta(data.qqq || {});
@@ -411,13 +533,13 @@ export default async function handler(req) {
     purpose: '全球基金经理月度问卷的现金仓位，反向情绪指标',
     value: null,
     status: 'pending',
-    threshold: '< 4% 触发 sell signal；> 5% 偏防御/建仓',
+    threshold: '< 4% 触发 sell signal；> 5% 偏防御/承接改善',
     sourceName: 'BofA Global Fund Manager Survey',
     sourceUrl: 'https://business.bofa.com/en-us/content/global-research.html',
     frequency: '月更（每月中旬发布）',
     updatedAt: null,
     dataStatus: 'Manual',
-    logic: '机构现金仓位极低 → 子弹打完，易成为顶部反向信号；现金仓位抬升 → 防御/等待建仓。',
+    logic: '机构现金仓位极低 → 子弹打完，易成为顶部反向信号；现金仓位抬升 → 防御/等待更好承接位置。',
     caseStudy: '2018/01, 2021/11 现金仓位跌破 4% 后均伴随中期顶部。',
     limitations: '月度样本，时效差；BofA 报告非公开 JSON 接口，需人工/第三方转载同步。',
   }));
@@ -429,7 +551,7 @@ export default async function handler(req) {
     purpose: '融资余额（杠杆敞口）月度变化',
     value: null,
     status: 'pending',
-    threshold: '同比 > +25% 且创新高 偏派发；同比转负 偏建仓',
+    threshold: '同比 > +25% 且创新高 偏派发；同比转负 偏去杠杆/承接改善',
     sourceName: 'FINRA Margin Statistics',
     sourceUrl: 'https://www.finra.org/investors/learn-to-invest/advanced-investing/margin-statistics',
     frequency: '月更（次月中下旬发布上月数据）',
@@ -447,7 +569,7 @@ export default async function handler(req) {
     purpose: '美国散户投资者协会周度情绪调查的看多-看空差',
     value: null,
     status: 'pending',
-    threshold: '> +30% 散户极度乐观 偏派发；< -20% 极度悲观 偏建仓',
+    threshold: '> +30% 散户极度乐观 偏派发；< -20% 极度悲观 偏恐慌释放/承接改善',
     sourceName: 'AAII Investor Sentiment Survey',
     sourceUrl: 'https://www.aaii.com/sentimentsurvey',
     frequency: '周更（每周四公布）',
@@ -458,23 +580,30 @@ export default async function handler(req) {
     limitations: '样本量小、自愿填写，噪声大；需要在 AAII 官网手工同步或抓取。',
   }));
 
-  // 4) CBOE Equity Put/Call Ratio
-  metrics.push(metric({
-    id: 'cboe_equity_pc',
-    name: 'CBOE Equity Put/Call Ratio',
-    purpose: '个股期权 Put/Call 成交量比（不含指数），反向情绪指标',
-    value: null,
-    status: 'pending',
-    threshold: '< 0.50 极度贪婪 偏派发；> 0.80 偏恐慌/建仓',
-    sourceName: 'CBOE Market Statistics',
-    sourceUrl: 'https://www.cboe.com/us/options/market_statistics/daily/',
-    frequency: '日更（收盘后发布）',
-    updatedAt: null,
-    dataStatus: 'Manual',
-    logic: '个股 Put/Call 越低，说明散户买 Call 投机情绪越重；通常与市场顶部重合。',
-    caseStudy: '2021/11 equity P/C 持续 < 0.40，伴随成长股顶部；2022/10 飙升至 > 0.9 后出现中期底。',
-    limitations: 'CBOE 官网以 CSV/HTML 发布，没有稳定免费 JSON 接口；MVP 人工同步。',
-  }));
+  // 4) CBOE Put/Call Ratio（V2：免费 CSV 自动接入，T+1/EOD）
+  {
+    const equity = cboePc?.equity;
+    const total = cboePc?.total;
+    const value = equity != null ? `Equity ${equity.toFixed(2)}` + (total != null ? ` · Total ${total.toFixed(2)}` : '') : null;
+    const status = equity == null ? 'pending' : equity < 0.55 ? 'distribution' : equity > 0.85 ? 'accumulation' : 'neutral';
+    metrics.push(metric({
+      id: 'cboe_equity_pc',
+      name: 'CBOE Equity Put/Call Ratio',
+      purpose: '个股期权 Put/Call 成交量比（不含指数），观察散户投机与保护性需求',
+      value,
+      status,
+      threshold: '< 0.55 Call 投机偏热/派发风险；> 0.85 保护性需求偏强/恐慌释放；0.55-0.85 中性',
+      sourceName: 'CBOE Daily Market Statistics CSV',
+      sourceUrl: 'https://cdn.cboe.com/api/global/us_indices/daily_prices/Cboe_Volume_And_Put_Call_Ratio.csv',
+      frequency: '日更（CBOE 收盘后发布，T+1/EOD）',
+      updatedAt: cboePc?.asOf || null,
+      dataStatus: equity != null ? 'Live' : 'data_unavailable',
+      logic: 'Equity Put/Call 越低，说明个股 Call 投机越拥挤，常见于情绪过热阶段；越高说明保护性需求上升，常见于风险释放阶段。它是期权情绪证据，不等于机构真实派发。',
+      caseStudy: '2021 年末 Equity P/C 低位徘徊，成长股投机拥挤；2022 年多个阶段 Equity P/C 升高后出现恐慌释放。',
+      limitations: 'CBOE CSV 为收盘后数据，不是实时 options flow；只看总量，不能识别具体个股大单或 dealer gamma。',
+      extras: cboePc || null,
+    }));
+  }
 
   // 5) SKEW Index（Live via Yahoo ^SKEW）
   {
@@ -489,7 +618,7 @@ export default async function handler(req) {
       purpose: '尾部风险指数，衡量 OTM put 相对 ATM 的溢价',
       value: skew != null ? Number(skew.toFixed(2)) : null,
       status,
-      threshold: '> 150 机构买尾部保险（派发/对冲信号）；< 125 相对放松（建仓/风险偏好）',
+      threshold: '> 150 机构买尾部保险（派发/对冲信号）；< 125 相对放松（风险偏好改善）',
       sourceName: 'CBOE SKEW (via Yahoo ^SKEW)',
       sourceUrl: 'https://finance.yahoo.com/quote/%5ESKEW/',
       frequency: '日更（交易日收盘后）',
@@ -497,7 +626,7 @@ export default async function handler(req) {
       dataStatus: skew != null ? 'Live' : 'data_unavailable',
       logic: 'SKEW 越高 → 机构越愿意为黑天鹅付保费，通常与派发/分散出货同步；SKEW 偏低 → 市场不担心尾部风险。',
       caseStudy: '2018/01, 2021/11 SKEW 持续 > 150 之后出现显著回调。',
-      limitations: 'SKEW 对方向性预测能力弱，仅反映尾部溢价；仅作派发/建仓拼图之一。',
+      limitations: 'SKEW 对方向性预测能力弱，仅反映尾部溢价；仅作派发/承接环境拼图之一。',
     }));
   }
 
@@ -521,7 +650,7 @@ export default async function handler(req) {
       purpose: 'VIX 近月 vs 3 个月期限结构，倒挂代表近期恐慌显著上升',
       value,
       status,
-      threshold: 'VIX / VIX3M ≥ 1.00 倒挂 偏派发；≤ 0.85 深度 contango 偏建仓',
+      threshold: 'VIX / VIX3M ≥ 1.00 倒挂 偏派发；≤ 0.85 深度 contango 偏承接环境改善',
       sourceName: 'Yahoo Finance ^VIX & ^VIX3M',
       sourceUrl: 'https://www.cboe.com/tradable_products/vix/',
       frequency: '日更',
@@ -541,7 +670,7 @@ export default async function handler(req) {
     purpose: '纽交所涨跌家数累计线，衡量市场宽度',
     value: null,
     status: 'pending',
-    threshold: '指数创新高但 A/D Line 未创新高 偏派发；同步创新高 偏建仓',
+    threshold: '指数创新高但 A/D Line 未创新高 偏派发；同步创新高 偏宽度健康/承接扩散',
     sourceName: 'StockCharts / WSJ Market Data',
     sourceUrl: 'https://stockcharts.com/h-sc/ui?s=$NYAD',
     frequency: '日更',
@@ -559,7 +688,7 @@ export default async function handler(req) {
     purpose: '纽交所 52 周新高 vs 新低家数',
     value: null,
     status: 'pending',
-    threshold: '指数新高但新高家数 < 100 且新低家数上升 偏派发；新低萎缩、新高扩张 偏建仓',
+    threshold: '指数新高但新高家数 < 100 且新低家数上升 偏派发；新低萎缩、新高扩张 偏宽度健康/承接扩散',
     sourceName: 'WSJ Market Data / StockCharts',
     sourceUrl: 'https://www.wsj.com/market-data/stocks/highsandlows',
     frequency: '日更',
@@ -570,7 +699,96 @@ export default async function handler(req) {
     limitations: '免费接口不稳定，MVP 第二期接 WSJ / StockCharts 爬虫或 FINRA 统计。',
   }));
 
-  // 9) Distribution Days（Live 自算：SPY）
+  // 9) V2 市场宽度代理：小盘/等权/信用相对 SPY。免费自动化，用来观察“指数强但底层股票先弱”。
+  {
+    const iwmRs = computeRelativeStrength(iwmBars, spyBars, 60);
+    metrics.push(metric({
+      id: 'smallcap_rs_iwm_spy',
+      name: '小盘相对强弱 IWM/SPY',
+      purpose: '观察次要股票/小盘股是否先于指数走弱，是“少数权重股撑指数”的重要代理',
+      value: iwmRs ? `${iwmRs.changePct.toFixed(2)}% / 60D` : null,
+      status: rsStatus(iwmRs),
+      threshold: '60日相对 SPY ≤ -3% 偏派发；≥ +3% 承接改善；中间为中性',
+      sourceName: 'Yahoo Finance IWM/SPY 自算',
+      sourceUrl: 'https://finance.yahoo.com/quote/IWM/history',
+      frequency: '日更（美股交易日）',
+      updatedAt: spyMeta.regularMarketTime || nowISO(),
+      dataStatus: iwmRs ? 'Live' : 'data_unavailable',
+      logic: '派发期常见现象不是指数立刻下跌，而是小盘股、次级股票先跌，指数由少数大权重继续托住。IWM/SPY 下行说明风险偏好正在从底层股票撤退。',
+      caseStudy: '2021 年下半年，很多成长/小盘股先走熊，指数仍由大票维持，随后宽度恶化扩散。',
+      limitations: 'IWM 是 ETF 代理，不等于全市场 A/D Line；只代表小盘相对强弱，不能单独证明机构派发。',
+      extras: iwmRs || null,
+    }));
+  }
+
+  {
+    const rspRs = computeRelativeStrength(rspBars, spyBars, 60);
+    metrics.push(metric({
+      id: 'equal_weight_rs_rsp_spy',
+      name: '等权相对强弱 RSP/SPY',
+      purpose: '观察 S&P500 普通成分股是否跑输市值权重指数，识别“龙头撑指数”',
+      value: rspRs ? `${rspRs.changePct.toFixed(2)}% / 60D` : null,
+      status: rsStatus(rspRs),
+      threshold: '60日相对 SPY ≤ -2% 宽度走弱；≥ +2% 承接扩散；中间为中性',
+      sourceName: 'Yahoo Finance RSP/SPY 自算',
+      sourceUrl: 'https://finance.yahoo.com/quote/RSP/history',
+      frequency: '日更（美股交易日）',
+      updatedAt: spyMeta.regularMarketTime || nowISO(),
+      dataStatus: rspRs ? 'Live' : 'data_unavailable',
+      logic: 'RSP 等权代表“普通 S&P500 成分股”的平均表现。若 SPY 强而 RSP/SPY 走弱，说明上涨集中在少数权重股，宽度恶化。',
+      caseStudy: '大型科技权重集中上涨时，RSP/SPY 经常提前暴露市场内部走弱。',
+      limitations: 'RSP 仍是 S&P500 内部代理，不覆盖小盘/中盘/海外市场；需要与 IWM/SPY、A/D、NH/NL 共振看。',
+      extras: rspRs || null,
+    }));
+  }
+
+  {
+    const hygRs = computeRelativeStrength(hygBars, spyBars, 60);
+    metrics.push(metric({
+      id: 'credit_risk_hyg_spy',
+      name: '信用风险偏好 HYG/SPY',
+      purpose: '观察高收益债是否相对股票走弱；信用市场走弱常早于权益风险释放',
+      value: hygRs ? `${hygRs.changePct.toFixed(2)}% / 60D` : null,
+      status: rsStatus(hygRs),
+      threshold: '60日相对 SPY ≤ -3% 信用风险走弱；≥ +3% 风险偏好改善',
+      sourceName: 'Yahoo Finance HYG/SPY 自算',
+      sourceUrl: 'https://finance.yahoo.com/quote/HYG/history',
+      frequency: '日更（美股交易日）',
+      updatedAt: spyMeta.regularMarketTime || nowISO(),
+      dataStatus: hygRs ? 'Live' : 'data_unavailable',
+      logic: '高收益债对流动性和信用风险更敏感。HYG 相对 SPY 持续走弱，说明风险资产内部可能开始撤退。',
+      caseStudy: '信用利差走阔、高收益债走弱，常与权益市场调整或风险偏好下降同步出现。',
+      limitations: 'HYG 受利率与信用双重影响，不是纯机构派发指标；需和宽度、VIX、派发日一起看。',
+      extras: hygRs || null,
+    }));
+  }
+
+  // 10) V2 板块轮动：进攻/防御切换。
+  {
+    const sector = computeSectorRotation(sectorBars, spyBars);
+    const leaders = sector?.ranking?.slice(0, 3).map(r => `${r.symbol} ${r.changePct.toFixed(1)}%`).join(' / ');
+    const laggards = sector?.ranking?.slice(-3).map(r => `${r.symbol} ${r.changePct.toFixed(1)}%`).join(' / ');
+    const status = !sector ? 'pending' : sector.spread != null && sector.spread >= 3 ? 'distribution' : sector.spread != null && sector.spread <= -3 ? 'accumulation' : 'neutral';
+    metrics.push(metric({
+      id: 'sector_rotation_rs',
+      name: '板块相对强弱：防御 vs 进攻',
+      purpose: '观察资金是否从科技/消费/通信等进攻板块切向公用事业/必需消费/医疗等防御板块',
+      value: sector ? `领涨 ${leaders} · 落后 ${laggards}` : null,
+      status,
+      threshold: '防御板块 60日相对表现 - 进攻板块 ≥ +3% 偏派发；≤ -3% 风险偏好改善',
+      sourceName: 'Yahoo Finance 11 SPDR Sector ETFs 自算',
+      sourceUrl: 'https://www.sectorspdrs.com/',
+      frequency: '日更（美股交易日）',
+      updatedAt: spyMeta.regularMarketTime || nowISO(),
+      dataStatus: sector ? 'Live' : 'data_unavailable',
+      logic: '派发期常出现防御板块开始跑赢、进攻板块开始掉队。它说明资金风险偏好下降，但不是单票机构交易证据。',
+      caseStudy: '市场见顶或调整前，XLU/XLP/XLV 相对走强、XLK/XLY 等高 beta 板块相对走弱较常见。',
+      limitations: '板块 ETF 受成分股权重影响，防御领先也可能来自利率变化；需与宽度和派发日共同判断。',
+      extras: sector || null,
+    }));
+  }
+
+  // 11) Distribution Days（Live 自算：SPY）
   {
     const ddSpy = computeDistributionDays(spyBars, 25);
     const ddQqq = computeDistributionDays(qqqBars, 25);
@@ -592,7 +810,7 @@ export default async function handler(req) {
       purpose: 'IBD 经典方法：放量下跌日统计，衡量机构分发力度',
       value,
       status,
-      threshold: '近 25 交易日 ≥ 5 派发日 → 偏派发；≤ 2 → 偏建仓',
+      threshold: '近 25 交易日 ≥ 5 派发日 → 偏派发；≤ 2 → 派发压力低/承接尚可',
       sourceName: 'Yahoo Finance SPY/QQQ 自算',
       sourceUrl: 'https://finance.yahoo.com/quote/SPY/history',
       frequency: '日更（美股收盘后）',
@@ -653,9 +871,9 @@ export default async function handler(req) {
     pricedSample,
     notes: [
       '仅作研究参考，不构成投资建议。',
-      'Live 指标通过 Yahoo Finance 免费公开接口获取；失败时单项降级为 data_unavailable，不影响整体返回。',
-      'BofA FMS / FINRA Margin Debt / AAII / CBOE Equity Put-Call 目前无稳定免费 JSON 接口，MVP 一期标记 Manual / Pending，不伪造实时值。',
-      'NYSE A/D Line 与 New High/New Low 宽度指标将在 MVP 第二期接入。',
+      'Live 指标通过 Yahoo Finance / CBOE 免费公开接口获取；失败时单项降级为 data_unavailable，不影响整体返回。',
+      'V2 第一阶段已接入小盘 IWM/SPY、等权 RSP/SPY、信用 HYG/SPY、板块轮动与 CBOE Put/Call，用免费自动化数据观察“指数强但底层先弱”。',
+      'BofA FMS / FINRA Margin Debt / AAII 仍为 Manual；NYSE A/D Line 与 New High/New Low 真实宽度指标暂为 Pending，不伪造实时值。',
       'Distribution Days 自算方法：当日收跌且成交量 > 前一交易日 → 派发日，近 25 交易日统计。',
       ...notes,
     ],
