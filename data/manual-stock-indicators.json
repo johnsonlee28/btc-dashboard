@@ -1,43 +1,43 @@
 {
   "schemaVersion": 1,
   "description": "手工开启 stock.zhixingshe.cc 的 Manual/Pending 指标。只填写来自公开来源的真实值；不要为了显示而估算。enabled=true 后会覆盖同 id 指标。",
-  "updatedAt": null,
+  "updatedAt": "2026-05-07T09:51:15Z",
   "indicators": {
     "bofa_fms_cash": {
-      "enabled": false,
-      "value": null,
-      "status": "pending",
-      "updatedAt": null,
+      "enabled": true,
+      "value": "Cash 4.3% AUM",
+      "status": "neutral",
+      "updatedAt": "2026-04-15",
       "dataStatus": "Manual",
-      "sourceUrl": "https://business.bofa.com/en-us/content/global-research.html",
-      "manualNote": "填 BofA Global Fund Manager Survey 的 cash level，例如 4.3%。阈值：<4% 偏派发；>5% 偏防御/承接改善。"
+      "sourceUrl": "https://www.investing.com/news/stock-market-news/bofa-survey-shows-investors-are-most-bearish-since-june-4612222",
+      "manualNote": "媒体转载 BofA Global Fund Manager Survey：现金水平 4.3%，低于 5% contrarian buy 阈值、高于 4% sell signal 阈值，按中性录入。二手来源，需优先用 BofA 原报告复核。"
     },
     "finra_margin_debt": {
-      "enabled": false,
-      "value": null,
-      "status": "pending",
-      "updatedAt": null,
+      "enabled": true,
+      "value": "Mar-26 $1.2209T · YoY +38.7% · off peak -4.5%",
+      "status": "distribution",
+      "updatedAt": "2026-03-31",
       "dataStatus": "Manual",
       "sourceUrl": "https://www.finra.org/investors/learn-to-invest/advanced-investing/margin-statistics",
-      "manualNote": "填 FINRA Margin Debt 最新融资余额，可写 '$918B · YoY +12%'。阈值：同比>+25%且创新高偏派发；同比转负偏去杠杆/承接改善。"
+      "manualNote": "FINRA 官方 Margin Statistics：Mar-26 debit balances $1,220,922m；Mar-25 $880,316m，YoY +38.7%；较 Jan-26 高点 $1,279,042m 低 4.5%。杠杆高位且同比扩张，按偏派发风险录入。"
     },
     "aaii_bull_bear": {
-      "enabled": false,
-      "value": null,
-      "status": "pending",
-      "updatedAt": null,
+      "enabled": true,
+      "value": "Apr 29 Bull 38.1% · Bear 39.7% · Spread -1.6%",
+      "status": "neutral",
+      "updatedAt": "2026-04-29",
       "dataStatus": "Manual",
-      "sourceUrl": "https://www.aaii.com/sentimentsurvey",
-      "manualNote": "填 AAII Bull-Bear Spread，例如 '+18.4%'。阈值：>+30% 散户极度乐观偏派发；<-20% 极度悲观偏恐慌释放。"
+      "sourceUrl": "https://www.aaii.com/sentimentsurvey/sent_results",
+      "manualNote": "AAII 官方历史数据：Apr 29 bullish 38.1%、bearish 39.7%，bull-bear spread = -1.6%。未达到 >+30% 过热或 <-20% 恐慌阈值，按中性录入。"
     },
     "cboe_equity_pc": {
-      "enabled": false,
-      "value": null,
-      "status": "pending",
-      "updatedAt": null,
+      "enabled": true,
+      "value": "Equity 0.51 · Total 0.67",
+      "status": "distribution",
+      "updatedAt": "2026-05-07",
       "dataStatus": "Manual",
-      "sourceUrl": "https://www.cboe.com/us/options/market_statistics/daily/",
-      "manualNote": "填 CBOE Equity Put/Call Ratio，例如 'Equity 0.61 · Total 0.92'。阈值：Equity<0.55 Call投机偏热；>0.85 保护性需求偏强。"
+      "sourceUrl": "https://www.cboe.com/markets/us/options/market-statistics/daily/",
+      "manualNote": "Cboe 官方 Daily Market Statistics 页面当前显示 Total Put/Call 0.67、Equity Put/Call 0.51。Equity <0.55，说明 Call 投机偏热，按偏派发风险录入。"
     },
     "nyse_ad_line": {
       "enabled": false,
