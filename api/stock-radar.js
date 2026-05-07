@@ -413,6 +413,29 @@ function cachedBreadthMetric(snapshot, key, id, name, purpose) {
   });
 }
 
+function cachedMacroIndicatorMetric(snapshot, key, fallback) {
+  const item = snapshot?.macroIndicators?.[key];
+  if (!item) return fallback;
+  return metric({
+    ...fallback,
+    value: item.value ?? fallback.value,
+    status: item.status || fallback.status,
+    updatedAt: item.updatedAt || snapshot?.generatedAt || fallback.updatedAt,
+    dataStatus: 'Cached',
+    sourceUrl: item.source || fallback.sourceUrl,
+    threshold: item.threshold || fallback.threshold,
+    limitations: item.limitations || fallback.limitations,
+    extras: {
+      ...(fallback.extras || {}),
+      cachedSnapshot: {
+        generatedAt: snapshot?.generatedAt || null,
+        sourceType: item.sourceType || null,
+        ...item,
+      },
+    },
+  });
+}
+
 function statusFromScore(score) {
   if (score >= 70) return 'distribution';
   if (score >= 50) return 'watch';
@@ -744,41 +767,41 @@ export default async function handler(req) {
     limitations: '月度样本，时效差；BofA 报告非公开 JSON 接口，需人工/第三方转载同步。',
   }));
 
-  // 2) FINRA Margin Debt
-  metrics.push(metric({
+  // 2) FINRA Margin Debt（GitHub Actions 快照自动抓官方 HTML；失败时保留透明 Pending）
+  metrics.push(cachedMacroIndicatorMetric(breadthSnapshot, 'finra_margin_debt', metric({
     id: 'finra_margin_debt',
     name: 'FINRA Margin Debt',
     purpose: '融资余额（杠杆敞口）月度变化',
     value: null,
     status: 'pending',
-    threshold: '同比 > +25% 且创新高 偏派发；同比转负 偏去杠杆/承接改善',
+    threshold: '同比 > +25% 且未明显出清 偏派发；同比转负或距12月峰回撤 ≤ -10% 偏去杠杆/承接改善',
     sourceName: 'FINRA Margin Statistics',
-    sourceUrl: 'https://www.finra.org/investors/learn-to-invest/advanced-investing/margin-statistics',
-    frequency: '月更（次月中下旬发布上月数据）',
+    sourceUrl: 'https://www.finra.org/rules-guidance/key-topics/margin-accounts/margin-statistics',
+    frequency: '月更（FINRA 通常在次月第三周发布）',
     updatedAt: null,
-    dataStatus: 'Manual',
-    logic: '融资买入余额 = 杠杆总规模；高位且同比快速扩张 → 散户/对冲基金杠杆拥挤，派发风险升高。',
-    caseStudy: '2000/03, 2007/07, 2021/10 margin debt 同比峰值均早于或同步于大顶。',
-    limitations: '月度数据，滞后 4-6 周；FINRA 只发 PDF/表格，需要抓取或人工录入。',
-  }));
+    dataStatus: 'Pending',
+    logic: '融资余额代表市场杠杆敞口。同比快速扩张且未出清，说明杠杆拥挤、派发风险升高；同比转负或从峰值明显回撤，说明去杠杆已经发生。',
+    caseStudy: '2000/03、2007/07、2021/10 附近 margin debt 同比高位均与中期顶部区域重合。',
+    limitations: '月度数据，滞后 3-4 周；只能说明杠杆拥挤/出清，不是机构交易明细。',
+  })));
 
-  // 3) AAII Bull-Bear Spread
-  metrics.push(metric({
+  // 3) AAII Bull-Bear Spread（GitHub Actions 快照自动抓 AAII 官方页面；失败时保留透明 Pending）
+  metrics.push(cachedMacroIndicatorMetric(breadthSnapshot, 'aaii_bull_bear', metric({
     id: 'aaii_bull_bear',
     name: 'AAII Bull-Bear Spread',
     purpose: '美国散户投资者协会周度情绪调查的看多-看空差',
     value: null,
     status: 'pending',
-    threshold: '> +30% 散户极度乐观 偏派发；< -20% 极度悲观 偏恐慌释放/承接改善',
+    threshold: 'Spread > +10 或 Bullish ≥50% 乐观偏热/派发风险；Spread < -10 或 Bearish ≥50% 悲观拥挤/恐慌释放',
     sourceName: 'AAII Investor Sentiment Survey',
     sourceUrl: 'https://www.aaii.com/sentimentsurvey',
-    frequency: '周更（每周四公布）',
+    frequency: '周更（每周四公布；快照日更检查）',
     updatedAt: null,
-    dataStatus: 'Manual',
-    logic: '反向指标：散户看多过度 → 情绪拥挤，顶部风险；极度看空 → 常伴随阶段性底部。',
-    caseStudy: '2024/01, 2025/07 bull-bear spread 连续多周 > 30% 后出现震荡/回调。',
-    limitations: '样本量小、自愿填写，噪声大；需要在 AAII 官网手工同步或抓取。',
-  }));
+    dataStatus: 'Pending',
+    logic: '反向指标：散户看多过度代表情绪拥挤，阶段性顶部风险增加；极度看空代表恐慌拥挤，常见于风险释放后。',
+    caseStudy: '散户情绪极端乐观/悲观常与中短期反转区间重合，但单周读数噪声较大。',
+    limitations: '样本量小、自愿填写，噪声大；只作为情绪拼图，不是机构证据。',
+  })));
 
   // 4) CBOE Put/Call Ratio（V2：从官方 Daily Market Statistics HTML / Next payload 自动解析，失败则 Pending）
   {
@@ -1135,7 +1158,7 @@ export default async function handler(req) {
       '仅作研究参考，不构成投资建议。',
       'Live 指标通过 Yahoo Finance 免费公开行情获取；失败时单项降级为 data_unavailable/Pending，不影响整体返回。',
       'V2 第一阶段已接入小盘 IWM/SPY、等权 RSP/SPY、信用 HYG/SPY、板块轮动；V2 第二刀新增 AI 核心样本与 Mag7 真实宽度；V2 第三刀新增 GitHub Actions 日更静态快照，覆盖全量 S&P500 与 QQQ/Nasdaq-100 持仓宽度。CBOE Put/Call 现在从 CBOE Daily Market Statistics 官网 HTML 自动解析，页面结构变化时单项降级。',
-      'BofA FMS / FINRA Margin Debt / AAII 仍可通过 /data/manual-stock-indicators.json 手工开启；NYSE A/D Line、New High/New Low 仍保持 Pending，未找到稳定免费自动源前不伪造数值。',
+      'FINRA Margin Debt 与 AAII Bull-Bear Spread 已通过 GitHub Actions 快照自动抓官方页面；BofA FMS 仍可通过 /data/manual-stock-indicators.json 手工开启；NYSE A/D Line、New High/New Low 仍保持 Pending，未找到稳定免费自动源前不伪造数值。',
       'Distribution Days 自算方法：当日收跌且成交量 > 前一交易日 → 派发日，近 25 交易日统计。',
       ...notes,
     ],

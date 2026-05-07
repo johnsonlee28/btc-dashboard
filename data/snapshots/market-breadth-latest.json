@@ -1,11 +1,13 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-07T11:19:27Z",
+  "generatedAt": "2026-05-07T12:12:09Z",
   "description": "Daily static market breadth snapshot for stock.zhixingshe.cc. Free public sources; not investment advice.",
   "sources": {
     "sp500Constituents": "https://raw.githubusercontent.com/datasets/s-and-p-500-companies/main/data/constituents.csv",
     "qqqHoldings": "https://dng-api.invesco.com/cache/v1/accounts/en_US/shareclasses/QQQ/holdings/fund?idType=ticker&interval=monthly&productType=ETF",
-    "prices": "Yahoo Finance spark endpoint"
+    "prices": "Yahoo Finance spark endpoint",
+    "finraMarginDebt": "https://www.finra.org/rules-guidance/key-topics/margin-accounts/margin-statistics",
+    "aaiiSentiment": "https://www.aaii.com/sentimentsurvey"
   },
   "dataStatus": "Cached",
   "universes": {
@@ -71,7 +73,7 @@
     "nasdaq100": {
       "name": "Nasdaq-100 / QQQ 持仓宽度快照",
       "source": "https://dng-api.invesco.com/cache/v1/accounts/en_US/shareclasses/QQQ/holdings/fund?idType=ticker&interval=monthly&productType=ETF",
-      "sourceUpdatedAt": "2026-05-05",
+      "sourceUpdatedAt": "2026-05-06",
       "requested": 98,
       "sampleSize": 98,
       "coveragePct": 100.0,
@@ -102,21 +104,21 @@
         "AMZN",
         "GOOGL",
         "GOOG",
-        "AVGO",
         "MU",
-        "WMT",
+        "AVGO",
         "AMD",
+        "WMT",
         "INTC",
-        "CSCO",
-        "LRCX"
+        "LRCX",
+        "CSCO"
       ],
       "laggards": [
         "META",
         "COST",
         "NFLX",
         "PLTR",
-        "TMUS",
         "PEP",
+        "TMUS",
         "AMGN",
         "GILD",
         "ISRG",
@@ -128,6 +130,110 @@
       "value": "MA50上方 55.1% · MA200上方 55.1% · 新高/新低 21/3 · 上涨/下跌 60/38"
     }
   },
-  "fetchErrors": [],
+  "macroIndicators": {
+    "finra_margin_debt": {
+      "name": "FINRA Margin Debt 自动快照",
+      "source": "https://www.finra.org/rules-guidance/key-topics/margin-accounts/margin-statistics",
+      "sourceType": "official_html",
+      "updatedAt": "Mar-26",
+      "value": "Mar-26 1,220,922M · YoY +38.7% · 距12月峰 -4.5%",
+      "status": "distribution",
+      "latest": {
+        "month": "Mar-26",
+        "debitBalanceMillions": 1220922,
+        "cashCreditBalanceMillions": 221860,
+        "securitiesCreditBalanceMillions": 205600
+      },
+      "yoyPct": 38.7,
+      "drawdownFrom12mPeakPct": -4.5,
+      "rows": [
+        {
+          "month": "Mar-26",
+          "debitBalanceMillions": 1220922,
+          "cashCreditBalanceMillions": 221860,
+          "securitiesCreditBalanceMillions": 205600
+        },
+        {
+          "month": "Feb-26",
+          "debitBalanceMillions": 1253192,
+          "cashCreditBalanceMillions": 205060,
+          "securitiesCreditBalanceMillions": 200047
+        },
+        {
+          "month": "Jan-26",
+          "debitBalanceMillions": 1279042,
+          "cashCreditBalanceMillions": 203700,
+          "securitiesCreditBalanceMillions": 196911
+        },
+        {
+          "month": "Dec-25",
+          "debitBalanceMillions": 1225597,
+          "cashCreditBalanceMillions": 211720,
+          "securitiesCreditBalanceMillions": 199762
+        },
+        {
+          "month": "Nov-25",
+          "debitBalanceMillions": 1214321,
+          "cashCreditBalanceMillions": 202131,
+          "securitiesCreditBalanceMillions": 194418
+        },
+        {
+          "month": "Oct-25",
+          "debitBalanceMillions": 1183654,
+          "cashCreditBalanceMillions": 197923,
+          "securitiesCreditBalanceMillions": 195376
+        },
+        {
+          "month": "Sep-25",
+          "debitBalanceMillions": 1126494,
+          "cashCreditBalanceMillions": 204106,
+          "securitiesCreditBalanceMillions": 194884
+        },
+        {
+          "month": "Aug-25",
+          "debitBalanceMillions": 1059723,
+          "cashCreditBalanceMillions": 188221,
+          "securitiesCreditBalanceMillions": 181563
+        },
+        {
+          "month": "Jul-25",
+          "debitBalanceMillions": 1022548,
+          "cashCreditBalanceMillions": 194712,
+          "securitiesCreditBalanceMillions": 186672
+        },
+        {
+          "month": "Jun-25",
+          "debitBalanceMillions": 1007961,
+          "cashCreditBalanceMillions": 200573,
+          "securitiesCreditBalanceMillions": 185584
+        },
+        {
+          "month": "May-25",
+          "debitBalanceMillions": 920960,
+          "cashCreditBalanceMillions": 187685,
+          "securitiesCreditBalanceMillions": 176698
+        },
+        {
+          "month": "Apr-25",
+          "debitBalanceMillions": 850558,
+          "cashCreditBalanceMillions": 187958,
+          "securitiesCreditBalanceMillions": 175824
+        },
+        {
+          "month": "Mar-25",
+          "debitBalanceMillions": 880316,
+          "cashCreditBalanceMillions": 189855,
+          "securitiesCreditBalanceMillions": 176161
+        }
+      ],
+      "threshold": "YoY > +25% 且未明显出清：杠杆偏热/派发风险；YoY < 0 或距12月峰回撤 ≤ -10%：去杠杆/承接改善；其他中性。"
+    }
+  },
+  "fetchErrors": [
+    {
+      "source": "aaii_bull_bear",
+      "error": "parser returned no data"
+    }
+  ],
   "limitations": "S&P500 constituents come from a public GitHub dataset; Nasdaq-100 uses Invesco QQQ holdings as a practical proxy and can include non-index cash/other rows filtered out. Yahoo spark is a free public endpoint and may throttle. Breadth signals show market structure, not institutional intent by themselves."
 }

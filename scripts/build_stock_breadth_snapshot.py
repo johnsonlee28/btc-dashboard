@@ -11,8 +11,12 @@ Output: data/snapshots/market-breadth-latest.json
 from __future__ import annotations
 
 import csv
+import html
 import json
 import math
+import re
+import shutil
+import subprocess
 import sys
 import time
 import urllib.parse
@@ -28,15 +32,21 @@ OUT = ROOT / "data" / "snapshots" / "market-breadth-latest.json"
 SP500_URL = "https://raw.githubusercontent.com/datasets/s-and-p-500-companies/main/data/constituents.csv"
 QQQ_HOLDINGS_URL = "https://dng-api.invesco.com/cache/v1/accounts/en_US/shareclasses/QQQ/holdings/fund?idType=ticker&interval=monthly&productType=ETF"
 YAHOO_SPARK = "https://query1.finance.yahoo.com/v7/finance/spark"
+FINRA_MARGIN_URL = "https://www.finra.org/rules-guidance/key-topics/margin-accounts/margin-statistics"
+AAII_SENTIMENT_URL = "https://www.aaii.com/sentimentsurvey"
 UA = "stock-breadth-snapshot/1.0 (+https://stock.zhixingshe.cc)"
+BROWSER_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
 
 
 def utc_now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
-def fetch_text(url: str, timeout: int = 30) -> str:
-    req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "*/*"})
+def fetch_text(url: str, timeout: int = 30, headers: dict | None = None) -> str:
+    req_headers = {"User-Agent": UA, "Accept": "*/*"}
+    if headers:
+        req_headers.update(headers)
+    req = urllib.request.Request(url, headers=req_headers)
     with urllib.request.urlopen(req, timeout=timeout) as r:
         return r.read().decode("utf-8", "ignore")
 
@@ -90,18 +100,25 @@ def fetch_spark_batch(symbols: list[str]) -> dict[str, dict]:
         "interval": "1d",
     })
     url = f"{YAHOO_SPARK}?{qs}"
-    raw = fetch_text(url, timeout=45)
-    data = json.loads(raw)
-    out = {}
-    for item in data.get("spark", {}).get("result", []):
-        sym = item.get("symbol")
-        resp = (item.get("response") or [{}])[0]
-        if sym and resp:
-            out[sym.upper()] = resp
-    return out
+    last_error = None
+    for attempt in range(3):
+        try:
+            raw = fetch_text(url, timeout=45)
+            data = json.loads(raw)
+            out = {}
+            for item in data.get("spark", {}).get("result", []):
+                sym = item.get("symbol")
+                resp = (item.get("response") or [{}])[0]
+                if sym and resp:
+                    out[sym.upper()] = resp
+            return out
+        except Exception as e:
+            last_error = e
+            time.sleep(1.5 * (attempt + 1))
+    raise last_error
 
 
-def fetch_prices(symbols: list[str], batch_size: int = 15, workers: int = 4) -> dict[str, dict]:
+def fetch_prices(symbols: list[str], batch_size: int = 10, workers: int = 2) -> dict[str, dict]:
     batches = list(chunks(sorted(set(symbols)), batch_size))
     merged: dict[str, dict] = {}
     errors = []
@@ -113,7 +130,7 @@ def fetch_prices(symbols: list[str], batch_size: int = 15, workers: int = 4) -> 
                 merged.update(fut.result())
             except Exception as e:  # keep partial snapshot useful
                 errors.append({"batch": b[:3] + (["..."] if len(b) > 3 else []), "error": str(e)})
-            time.sleep(0.05)
+            time.sleep(0.15)
     return {"data": merged, "errors": errors}
 
 
@@ -225,6 +242,148 @@ def analyze_universe(name: str, source: str, rows: list[dict], spark: dict, sour
     return stats
 
 
+def parse_number(text: str) -> float | None:
+    cleaned = re.sub(r"[^0-9.\-]", "", html.unescape(text or ""))
+    if cleaned in {"", ".", "-"}:
+        return None
+    try:
+        return float(cleaned)
+    except ValueError:
+        return None
+
+
+def parse_finra_margin() -> dict | None:
+    try:
+        text = fetch_text(FINRA_MARGIN_URL, timeout=45, headers={"User-Agent": "Mozilla/5.0", "Referer": "https://www.finra.org/"})
+    except Exception:
+        text = fetch_text(FINRA_MARGIN_URL, timeout=45, headers={"User-Agent": UA, "Referer": "https://www.finra.org/"})
+    rows = []
+    for row_html in re.findall(r"<tr>(.*?)</tr>", text, flags=re.I | re.S):
+        cells = re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", row_html, flags=re.I | re.S)
+        if len(cells) < 4:
+            continue
+        month = re.sub(r"<.*?>", "", cells[0]).strip()
+        debit = parse_number(cells[1])
+        cash_credit = parse_number(cells[2])
+        margin_credit = parse_number(cells[3])
+        if re.match(r"^[A-Z][a-z]{2}-\d{2}$", month) and debit is not None:
+            rows.append({
+                "month": month,
+                "debitBalanceMillions": int(debit),
+                "cashCreditBalanceMillions": int(cash_credit) if cash_credit is not None else None,
+                "securitiesCreditBalanceMillions": int(margin_credit) if margin_credit is not None else None,
+            })
+    if not rows:
+        return None
+    latest = rows[0]
+    latest_val = latest["debitBalanceMillions"]
+    yoy_row = rows[12] if len(rows) >= 13 else None
+    yoy = ((latest_val / yoy_row["debitBalanceMillions"] - 1) * 100) if yoy_row and yoy_row["debitBalanceMillions"] else None
+    peak12 = max(r["debitBalanceMillions"] for r in rows[:12])
+    drawdown = ((latest_val / peak12 - 1) * 100) if peak12 else None
+    if yoy is not None and yoy >= 25 and (drawdown is None or drawdown > -10):
+        status = "distribution"
+    elif (yoy is not None and yoy < 0) or (drawdown is not None and drawdown <= -10):
+        status = "accumulation"
+    else:
+        status = "neutral"
+    return {
+        "name": "FINRA Margin Debt 自动快照",
+        "source": FINRA_MARGIN_URL,
+        "sourceType": "official_html",
+        "updatedAt": latest["month"],
+        "value": f"{latest['month']} {latest_val:,}M" + (f" · YoY {yoy:+.1f}%" if yoy is not None else "") + (f" · 距12月峰 {drawdown:+.1f}%" if drawdown is not None else ""),
+        "status": status,
+        "latest": latest,
+        "yoyPct": round(yoy, 1) if yoy is not None else None,
+        "drawdownFrom12mPeakPct": round(drawdown, 1) if drawdown is not None else None,
+        "rows": rows[:13],
+        "threshold": "YoY > +25% 且未明显出清：杠杆偏热/派发风险；YoY < 0 或距12月峰回撤 ≤ -10%：去杠杆/承接改善；其他中性。",
+    }
+
+
+def fetch_aaii_html() -> str:
+    headers = {
+        "User-Agent": BROWSER_UA,
+        "Referer": AAII_SENTIMENT_URL,
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+    }
+    text = fetch_text(AAII_SENTIMENT_URL, timeout=45, headers=headers)
+    if "Pardon Our Interruption" not in text and ("bullTotalCnt" in text or "dataChart5" in text):
+        return text
+    # AAII/Imperva sometimes blocks Python urllib by TLS/HTTP fingerprint while curl passes.
+    # GitHub Actions has curl by default; keep this as a no-secret, no-browser fallback.
+    if not shutil.which("curl"):
+        return text
+    cmd = [
+        "curl", "-sS", "--max-time", "45",
+        "-A", BROWSER_UA,
+        "-H", f"Referer: {AAII_SENTIMENT_URL}",
+        "-H", "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "-H", "Accept-Language: en-US,en;q=0.9",
+        AAII_SENTIMENT_URL,
+    ]
+    result = subprocess.run(cmd, check=False, capture_output=True, text=True, timeout=55)
+    if result.returncode == 0 and result.stdout:
+        return result.stdout
+    return text
+
+
+def parse_aaii_sentiment() -> dict | None:
+    text = fetch_aaii_html()
+    def pick_var(name: str) -> float | None:
+        m = re.search(rf"var\s+{re.escape(name)}\s*=\s*([0-9.\-]+)", text)
+        return float(m.group(1)) if m else None
+    bullish = pick_var("bullTotalCnt")
+    neutral = pick_var("neutralTotalCnt")
+    bearish = pick_var("bearTotalCnt")
+    dates = re.findall(r'"date_"\s*:\s*"([0-9]{4}-[0-9]{2}-[0-9]{2})"', text)
+    as_of = dates[-1] if dates else None
+    if bullish is None or bearish is None:
+        # Fallback to the latest dataChart5 row (integer precision).
+        rows = re.findall(r'\{\s*"date_"\s*:\s*"([0-9-]+)".*?"bullish"\s*:\s*"([0-9.\-]+)".*?"bearish"\s*:\s*"([0-9.\-]+)".*?"neutral"\s*:\s*"([0-9.\-]+)".*?spread\s*:\s*"?([0-9.\-]+)"?', text, flags=re.S)
+        if not rows:
+            return None
+        as_of, b, br, n, _ = rows[-1]
+        bullish, bearish, neutral = float(b), float(br), float(n)
+    spread = bullish - bearish
+    if spread > 10 or bullish >= 50:
+        status = "distribution"
+    elif spread < -10 or bearish >= 50:
+        status = "accumulation"
+    else:
+        status = "neutral"
+    return {
+        "name": "AAII Bull-Bear Spread 自动快照",
+        "source": AAII_SENTIMENT_URL,
+        "sourceType": "official_html_js",
+        "updatedAt": as_of,
+        "value": f"Bull {bullish:.1f}% · Bear {bearish:.1f}% · Spread {spread:+.1f}",
+        "status": status,
+        "bullishPct": round(bullish, 1),
+        "neutralPct": round(neutral, 1) if neutral is not None else None,
+        "bearishPct": round(bearish, 1),
+        "spreadPct": round(spread, 1),
+        "threshold": "Bull-Bear Spread > +10 或 Bullish ≥50%：散户乐观偏热/派发风险；Spread < -10 或 Bearish ≥50%：悲观拥挤/恐慌释放；其他中性。",
+        "limitations": "AAII 页面受 Cloudflare 保护，需浏览器 UA/Referer；页面内变量为最新读数，dataChart5 仅约 52 周历史。",
+    }
+
+
+def collect_macro_indicators(fetch_errors: list[dict]) -> dict:
+    indicators = {}
+    for key, parser in [("finra_margin_debt", parse_finra_margin), ("aaii_bull_bear", parse_aaii_sentiment)]:
+        try:
+            item = parser()
+            if item:
+                indicators[key] = item
+            else:
+                fetch_errors.append({"source": key, "error": "parser returned no data"})
+        except Exception as e:
+            fetch_errors.append({"source": key, "error": str(e)})
+    return indicators
+
+
 def main() -> int:
     generated = utc_now()
     sp500 = load_sp500()
@@ -232,6 +391,8 @@ def main() -> int:
     symbols = [r["yahooSymbol"] for r in sp500 + qqq]
     fetched = fetch_prices(symbols)
     spark = fetched["data"]
+    fetch_errors = list(fetched["errors"])
+    macro_indicators = collect_macro_indicators(fetch_errors)
 
     snapshot = {
         "schemaVersion": 1,
@@ -241,13 +402,16 @@ def main() -> int:
             "sp500Constituents": SP500_URL,
             "qqqHoldings": QQQ_HOLDINGS_URL,
             "prices": "Yahoo Finance spark endpoint",
+            "finraMarginDebt": FINRA_MARGIN_URL,
+            "aaiiSentiment": AAII_SENTIMENT_URL,
         },
         "dataStatus": "Cached",
         "universes": {
             "sp500": analyze_universe("S&P 500 宽度快照", SP500_URL, sp500, spark),
             "nasdaq100": analyze_universe("Nasdaq-100 / QQQ 持仓宽度快照", QQQ_HOLDINGS_URL, qqq, spark, qqq_date),
         },
-        "fetchErrors": fetched["errors"],
+        "macroIndicators": macro_indicators,
+        "fetchErrors": fetch_errors,
         "limitations": "S&P500 constituents come from a public GitHub dataset; Nasdaq-100 uses Invesco QQQ holdings as a practical proxy and can include non-index cash/other rows filtered out. Yahoo spark is a free public endpoint and may throttle. Breadth signals show market structure, not institutional intent by themselves.",
     }
 
@@ -258,7 +422,8 @@ def main() -> int:
         "generatedAt": generated,
         "sp500": snapshot["universes"]["sp500"],
         "nasdaq100": snapshot["universes"]["nasdaq100"],
-        "fetchErrors": len(fetched["errors"]),
+        "macroIndicators": snapshot["macroIndicators"],
+        "fetchErrors": len(snapshot["fetchErrors"]),
     }, ensure_ascii=False, indent=2))
     return 0
 

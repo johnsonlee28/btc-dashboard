@@ -13,13 +13,13 @@
       "manualNote": "媒体转载 BofA Global Fund Manager Survey：现金水平 4.3%，低于 5% contrarian buy 阈值、高于 4% sell signal 阈值，按中性录入。二手来源，需优先用 BofA 原报告复核。"
     },
     "finra_margin_debt": {
-      "enabled": true,
+      "enabled": false,
       "value": "Mar-26 $1.2209T · YoY +38.7% · off peak -4.5%",
       "status": "distribution",
       "updatedAt": "2026-03-31",
       "dataStatus": "Manual",
       "sourceUrl": "https://www.finra.org/investors/learn-to-invest/advanced-investing/margin-statistics",
-      "manualNote": "FINRA 官方 Margin Statistics：Mar-26 debit balances $1,220,922m；Mar-25 $880,316m，YoY +38.7%；较 Jan-26 高点 $1,279,042m 低 4.5%。杠杆高位且同比扩张，按偏派发风险录入。"
+      "manualNote": "已由 data/snapshots/market-breadth-latest.json 的 macroIndicators.finra_margin_debt 自动快照接管；保留本项作为官方源失败时的手工兜底。"
     },
     "aaii_bull_bear": {
       "enabled": true,
