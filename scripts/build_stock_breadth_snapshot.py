@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import csv
 import html
+import io
 import json
 import math
 import re
@@ -22,6 +23,7 @@ import time
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
+import zipfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -39,6 +41,8 @@ AAII_SENTIMENT_URL = "https://www.aaii.com/sentimentsurvey"
 SEC_COMPANY_TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
 SEC_SUBMISSIONS_URL_TEMPLATE = "https://data.sec.gov/submissions/CIK{cik10}.json"
 SEC_ARCHIVE_TXT_URL_TEMPLATE = "https://www.sec.gov/Archives/edgar/data/{cik}/{accession_nodash}/{accession}.txt"
+SEC_FTD_PAGE_URL = "https://www.sec.gov/data-research/sec-markets-data/fails-deliver-data"
+SEC_FTD_BASE_URL = "https://www.sec.gov"
 SEC_FORM4_TICKERS = [
     "AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA",
     "AVGO", "ORCL", "PLTR", "CRM", "AMD", "GE", "IBM", "QCOM",
@@ -94,6 +98,15 @@ def fetch_text(url: str, timeout: int = 30, headers: dict | None = None) -> str:
     req = urllib.request.Request(url, headers=req_headers)
     with urllib.request.urlopen(req, timeout=timeout) as r:
         return r.read().decode("utf-8", "ignore")
+
+
+def fetch_bytes(url: str, timeout: int = 45, headers: dict | None = None) -> bytes:
+    req_headers = {"User-Agent": UA, "Accept": "*/*"}
+    if headers:
+        req_headers.update(headers)
+    req = urllib.request.Request(url, headers=req_headers)
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        return r.read()
 
 
 def yahoo_symbol(symbol: str) -> str:
@@ -882,6 +895,116 @@ def collect_sec_13f_institutional_sample(fetch_errors: list[dict]) -> dict | Non
     }
 
 
+def latest_sec_ftd_zip_urls(limit: int = 2) -> list[str]:
+    html_text = fetch_text(SEC_FTD_PAGE_URL, timeout=45, headers={"User-Agent": UA, "Accept": "text/html,*/*"})
+    links = re.findall(r'href="([^"]*cnsfails\d{6}[ab](?:_\d+)?\.zip)"', html_text, flags=re.I)
+    seen = []
+    for link in links:
+        url = urllib.parse.urljoin(SEC_FTD_BASE_URL, link)
+        if url not in seen:
+            seen.append(url)
+    return seen[:limit]
+
+
+def parse_sec_ftd_zip(url: str, target_symbols: set[str]) -> dict:
+    raw = fetch_bytes(url, timeout=90, headers={"User-Agent": UA, "Accept": "application/zip,*/*"})
+    rows = []
+    with zipfile.ZipFile(io.BytesIO(raw)) as zf:
+        names = [n for n in zf.namelist() if not n.endswith('/')]
+        if not names:
+            return {"url": url, "rows": [], "latestDate": None}
+        with zf.open(names[0]) as f:
+            text = f.read().decode("latin-1", "ignore")
+    reader = csv.DictReader(text.splitlines(), delimiter="|")
+    for row in reader:
+        symbol = (row.get("SYMBOL") or row.get("Symbol") or "").strip().upper()
+        if symbol not in target_symbols:
+            continue
+        date_raw = (row.get("SETTLEMENT DATE") or row.get("SETTLEMENTDATE") or row.get("Date") or "").strip()
+        quantity = parse_float_safe(row.get("QUANTITY (FAILS)") or row.get("QUANTITY") or row.get("FAILS")) or 0
+        price = parse_float_safe(row.get("PRICE")) or 0
+        rows.append({
+            "date": date_raw,
+            "symbol": symbol,
+            "cusip": (row.get("CUSIP") or "").strip(),
+            "issuer": (row.get("DESCRIPTION") or row.get("ISSUER") or "").strip(),
+            "fails": int(quantity),
+            "price": round(price, 4),
+            "notionalUsd": round(quantity * price, 2),
+        })
+    latest = max([r["date"] for r in rows] or [None])
+    return {"url": url, "rows": rows, "latestDate": latest}
+
+
+def collect_sec_ftd_settlement_pressure(fetch_errors: list[dict]) -> dict | None:
+    targets = set(SEC_FORM4_TICKERS)
+    urls = latest_sec_ftd_zip_urls(limit=4)
+    if not urls:
+        return None
+    parsed = []
+    for url in urls:
+        try:
+            parsed.append(parse_sec_ftd_zip(url, targets))
+            time.sleep(0.1)
+        except Exception as e:
+            fetch_errors.append({"source": "sec_ftd_settlement_pressure", "url": url, "error": str(e)[:180]})
+    all_rows = [r for p in parsed for r in p.get("rows", [])]
+    if not all_rows:
+        return None
+    latest_date = max(r["date"] for r in all_rows if r.get("date"))
+    latest_rows = [r for r in all_rows if r.get("date") == latest_date]
+    by_symbol: dict[str, dict] = {}
+    history_by_symbol: dict[str, list[dict]] = {}
+    for row in all_rows:
+        history_by_symbol.setdefault(row["symbol"], []).append(row)
+    for symbol, rows in history_by_symbol.items():
+        rows_sorted = sorted(rows, key=lambda x: x.get("date") or "")
+        latest = rows_sorted[-1]
+        max_notional = max(r["notionalUsd"] for r in rows_sorted)
+        avg_notional = mean([r["notionalUsd"] for r in rows_sorted]) if rows_sorted else 0
+        by_symbol[symbol] = {
+            "symbol": symbol,
+            "latestDate": latest["date"],
+            "fails": latest["fails"],
+            "price": latest["price"],
+            "notionalUsd": latest["notionalUsd"],
+            "maxNotionalUsd": round(max_notional, 2),
+            "avgNotionalUsd": round(avg_notional, 2),
+            "notionalVsAvg": round(latest["notionalUsd"] / avg_notional, 2) if avg_notional else None,
+        }
+    latest_items = [by_symbol[r["symbol"]] for r in latest_rows if r["symbol"] in by_symbol]
+    latest_total = sum(r["notionalUsd"] for r in latest_rows)
+    historical_totals = {}
+    for r in all_rows:
+        historical_totals[r["date"]] = historical_totals.get(r["date"], 0) + r["notionalUsd"]
+    avg_total = mean(historical_totals.values()) if historical_totals else 0
+    high_count = sum(1 for item in latest_items if item["notionalUsd"] >= 10_000_000 or (item.get("notionalVsAvg") or 0) >= 3)
+    if latest_total >= 250_000_000 or high_count >= 5:
+        status = "distribution"
+    elif latest_total <= 50_000_000 and high_count == 0:
+        status = "accumulation"
+    else:
+        status = "neutral"
+    top = sorted(latest_items, key=lambda x: x["notionalUsd"], reverse=True)[:12]
+    return {
+        "name": "SEC FTD 结算压力快照",
+        "source": SEC_FTD_PAGE_URL,
+        "sourceType": "official_sec_ftd_zip",
+        "updatedAt": latest_date,
+        "value": f"样本FTD ${latest_total/1_000_000:.1f}M · 活跃 {len(latest_rows)}只 · 异常 {high_count}只",
+        "status": status,
+        "latestDate": latest_date,
+        "latestNotionalUsd": round(latest_total, 2),
+        "averageNotionalUsd": round(avg_total, 2),
+        "activeTickerCount": len(latest_rows),
+        "abnormalTickerCount": high_count,
+        "files": [p.get("url") for p in parsed],
+        "topTickers": top,
+        "threshold": "样本最新 FTD 名义金额≥$250M 或异常股票≥5只：结算压力升温/派发压力线索；≤$50M 且无异常股票：结算压力低/承接改善；其他中性。异常股票指单票FTD名义金额≥$10M或高于近期均值3倍。",
+        "limitations": "FTD 是 NSCC CNS 系统的交割失败余额，不是每日新增失败数；可能来自多种长/短交易原因，不等于裸卖空或机构派发证据。SEC 通常半月披露，存在延迟；价格字段为前一日收盘价且SEC不保证与其他源完全一致。",
+    }
+
+
 def collect_macro_indicators(fetch_errors: list[dict]) -> dict:
     indicators = {}
     for key, parser in [("finra_margin_debt", parse_finra_margin), ("aaii_bull_bear", parse_aaii_sentiment)]:
@@ -932,6 +1055,15 @@ def main() -> int:
     except Exception as e:
         fetch_errors.append({"source": "sec_13f_institutional_sample", "error": str(e)})
 
+    try:
+        ftd = collect_sec_ftd_settlement_pressure(fetch_errors)
+        if ftd:
+            macro_indicators["sec_ftd_settlement_pressure"] = ftd
+        else:
+            fetch_errors.append({"source": "sec_ftd_settlement_pressure", "error": "parser returned no data"})
+    except Exception as e:
+        fetch_errors.append({"source": "sec_ftd_settlement_pressure", "error": str(e)})
+
     snapshot = {
         "schemaVersion": 1,
         "generatedAt": generated,
@@ -945,6 +1077,7 @@ def main() -> int:
             "secCompanyTickers": SEC_COMPANY_TICKERS_URL,
             "secSubmissions": "https://data.sec.gov/submissions/CIK##########.json",
             "sec13fDataSets": "https://www.sec.gov/data-research/sec-markets-data/form-13f-data-sets",
+            "secFtdDataSets": SEC_FTD_PAGE_URL,
             "aaiiSentiment": AAII_SENTIMENT_URL,
         },
         "dataStatus": "Cached",

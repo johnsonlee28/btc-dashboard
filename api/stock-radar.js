@@ -858,7 +858,25 @@ export default async function handler(req) {
     limitations: '13F 只显示季度末多头持仓，不含空头、完整衍生品风险和季内交易；CUSIP/ticker 映射采用白名单与名称匹配，适合趋势证据，不是实时机构流。',
   })));
 
-  // 7) CBOE Put/Call Ratio（V2：从官方 Daily Market Statistics HTML / Next payload 自动解析，失败则 Pending）
+  // 7) SEC FTD 结算压力快照（半月披露、交割失败余额，不等于裸卖空或机构派发）
+  metrics.push(cachedMacroIndicatorMetric(breadthSnapshot, 'sec_ftd_settlement_pressure', metric({
+    id: 'sec_ftd_settlement_pressure',
+    name: 'SEC FTD 结算压力快照',
+    purpose: '追踪 AI/Mag7 样本股票在 SEC Fails-to-Deliver 数据中的交割失败余额，作为结算压力线索',
+    value: null,
+    status: 'pending',
+    threshold: '样本最新 FTD 名义金额≥$250M 或异常股票≥5只：结算压力升温/派发压力线索；≤$50M 且无异常股票：结算压力低/承接改善；其他中性',
+    sourceName: 'SEC Fails-to-Deliver Data',
+    sourceUrl: 'https://www.sec.gov/data-research/sec-markets-data/fails-deliver-data',
+    frequency: '半月更新（上半月月底、下半月约次月15日；页面日更检查最新文件）',
+    updatedAt: null,
+    dataStatus: 'Pending',
+    logic: 'FTD 是 NSCC CNS 交割失败余额。若多个核心股票同时出现高额 FTD，说明结算/借券/交割压力升温，是派发风险的辅助线索。',
+    caseStudy: '高波动个股在剧烈上涨/下跌后可能出现 FTD 抬升；只有与价格破位、短量升高、宽度恶化共振时，才提升风险权重。',
+    limitations: 'FTD 不是每日新增失败数，也不是裸卖空或机构派发证据；可能来自长短交易、做市、清算与操作原因。SEC 半月披露且有延迟。',
+  })));
+
+  // 8) CBOE Put/Call Ratio（V2：从官方 Daily Market Statistics HTML / Next payload 自动解析，失败则 Pending）
   {
     const equity = cboePc?.equity;
     const total = cboePc?.total;
@@ -1213,7 +1231,7 @@ export default async function handler(req) {
       '仅作研究参考，不构成投资建议。',
       'Live 指标通过 Yahoo Finance 免费公开行情获取；失败时单项降级为 data_unavailable/Pending，不影响整体返回。',
       'V2 第一阶段已接入小盘 IWM/SPY、等权 RSP/SPY、信用 HYG/SPY、板块轮动；V2 第二刀新增 AI 核心样本与 Mag7 真实宽度；V2 第三刀新增 GitHub Actions 日更静态快照，覆盖全量 S&P500 与 QQQ/Nasdaq-100 持仓宽度。CBOE Put/Call 现在从 CBOE Daily Market Statistics 官网 HTML 自动解析，页面结构变化时单项降级。',
-      'FINRA Margin Debt、FINRA Daily Short Sale Volume、SEC Form 4 内部人交易快照与 SEC 13F 样本机构持仓慢变量已通过 GitHub Actions 快照自动抓官方页面/文件/API；AAII 若官方页面反爬失败则由手工值透明兜底；BofA FMS 仍可通过 /data/manual-stock-indicators.json 手工开启；NYSE A/D Line、New High/New Low 仍保持 Pending，未找到稳定免费自动源前不伪造数值。',
+      'FINRA Margin Debt、FINRA Daily Short Sale Volume、SEC Form 4 内部人交易快照、SEC 13F 样本机构持仓慢变量与 SEC FTD 结算压力快照已通过 GitHub Actions 快照自动抓官方页面/文件/API；AAII 若官方页面反爬失败则由手工值透明兜底；BofA FMS 仍可通过 /data/manual-stock-indicators.json 手工开启；NYSE A/D Line、New High/New Low 仍保持 Pending，未找到稳定免费自动源前不伪造数值。',
       'Distribution Days 自算方法：当日收跌且成交量 > 前一交易日 → 派发日，近 25 交易日统计。',
       ...notes,
     ],

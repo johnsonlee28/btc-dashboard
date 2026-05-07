@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-07T13:04:01Z",
+  "generatedAt": "2026-05-07T13:34:43Z",
   "description": "Daily static market breadth snapshot for stock.zhixingshe.cc. Free public sources; not investment advice.",
   "sources": {
     "sp500Constituents": "https://raw.githubusercontent.com/datasets/s-and-p-500-companies/main/data/constituents.csv",
@@ -11,6 +11,7 @@
     "secCompanyTickers": "https://www.sec.gov/files/company_tickers.json",
     "secSubmissions": "https://data.sec.gov/submissions/CIK##########.json",
     "sec13fDataSets": "https://www.sec.gov/data-research/sec-markets-data/form-13f-data-sets",
+    "secFtdDataSets": "https://www.sec.gov/data-research/sec-markets-data/fails-deliver-data",
     "aaiiSentiment": "https://www.aaii.com/sentimentsurvey"
   },
   "dataStatus": "Cached",
@@ -22,33 +23,33 @@
       "requested": 503,
       "sampleSize": 503,
       "coveragePct": 100.0,
-      "above20Pct": 51.5,
-      "above50Pct": 55.1,
-      "above200Pct": 55.7,
-      "nearHighPct": 26.8,
-      "newHighPct": 10.9,
-      "nearLowPct": 24.1,
-      "newLowPct": 4.6,
-      "advancePct": 63.4,
-      "declinePct": 36.4,
+      "above20Pct": 51.9,
+      "above50Pct": 54.9,
+      "above200Pct": 56.3,
+      "nearHighPct": 25.6,
+      "newHighPct": 4.0,
+      "nearLowPct": 22.1,
+      "newLowPct": 1.8,
+      "advancePct": 50.9,
+      "declinePct": 48.5,
       "counts": {
-        "above20": 259,
-        "above50": 277,
-        "above200": 280,
-        "nearHigh": 135,
-        "newHigh": 55,
-        "nearLow": 121,
-        "newLow": 23,
-        "advanced": 319,
-        "declined": 183
+        "above20": 261,
+        "above50": 276,
+        "above200": 283,
+        "nearHigh": 129,
+        "newHigh": 20,
+        "nearLow": 111,
+        "newLow": 9,
+        "advanced": 256,
+        "declined": 244
       },
-      "updatedAt": "2026-05-06T13:30:00Z",
+      "updatedAt": "2026-05-07T13:30:00Z",
       "leaders": [
         "AMD",
         "AFL",
         "APD",
         "ABNB",
-        "AKAM",
+        "ALB",
         "LNT",
         "ALL",
         "GOOGL",
@@ -63,16 +64,16 @@
         "ABT",
         "ABBV",
         "ACN",
-        "ADBE",
         "AES",
         "ARE",
         "ALGN",
         "ALLE",
         "AMCR",
-        "AEE"
+        "AEE",
+        "AEP"
       ],
       "status": "neutral",
-      "value": "MA50上方 55.1% · MA200上方 55.7% · 新高/新低 55/23 · 上涨/下跌 319/183"
+      "value": "MA50上方 54.9% · MA200上方 56.3% · 新高/新低 20/9 · 上涨/下跌 256/244"
     },
     "nasdaq100": {
       "name": "Nasdaq-100 / QQQ 持仓宽度快照",
@@ -81,27 +82,27 @@
       "requested": 98,
       "sampleSize": 98,
       "coveragePct": 100.0,
-      "above20Pct": 61.2,
-      "above50Pct": 55.1,
-      "above200Pct": 55.1,
-      "nearHighPct": 34.7,
-      "newHighPct": 21.4,
-      "nearLowPct": 17.3,
-      "newLowPct": 3.1,
-      "advancePct": 61.2,
-      "declinePct": 38.8,
+      "above20Pct": 64.3,
+      "above50Pct": 57.1,
+      "above200Pct": 58.2,
+      "nearHighPct": 35.7,
+      "newHighPct": 2.0,
+      "nearLowPct": 15.3,
+      "newLowPct": 0.0,
+      "advancePct": 52.0,
+      "declinePct": 48.0,
       "counts": {
-        "above20": 60,
-        "above50": 54,
-        "above200": 54,
-        "nearHigh": 34,
-        "newHigh": 21,
-        "nearLow": 17,
-        "newLow": 3,
-        "advanced": 60,
-        "declined": 38
+        "above20": 63,
+        "above50": 56,
+        "above200": 57,
+        "nearHigh": 35,
+        "newHigh": 2,
+        "nearLow": 15,
+        "newLow": 0,
+        "advanced": 51,
+        "declined": 47
       },
-      "updatedAt": "2026-05-06T13:30:00Z",
+      "updatedAt": "2026-05-07T13:30:00Z",
       "leaders": [
         "NVDA",
         "AAPL",
@@ -131,7 +132,7 @@
         "SHOP"
       ],
       "status": "neutral",
-      "value": "MA50上方 55.1% · MA200上方 55.1% · 新高/新低 21/3 · 上涨/下跌 60/38"
+      "value": "MA50上方 57.1% · MA200上方 58.2% · 新高/新低 2/0 · 上涨/下跌 51/47"
     }
   },
   "macroIndicators": {
@@ -1927,6 +1928,149 @@
       ],
       "threshold": "样本持仓市值较上季下降≥10%、且减持位置占比≥60%：机构样本持仓收缩/派发压力；上升≥10%、且增持位置占比≥60%：机构样本暴露增加/承接改善；否则中性。",
       "limitations": "13F 是季度披露，最多滞后45天；只覆盖样本机构多头持仓，不含空头、衍生品完整风险、盘中交易或非13F证券。CUSIP/ticker 映射采用白名单与发行人名称匹配，适合慢变量观察，不适合短线交易信号。"
+    },
+    "sec_ftd_settlement_pressure": {
+      "name": "SEC FTD 结算压力快照",
+      "source": "https://www.sec.gov/data-research/sec-markets-data/fails-deliver-data",
+      "sourceType": "official_sec_ftd_zip",
+      "updatedAt": "20260414",
+      "value": "样本FTD $28.2M · 活跃 13只 · 异常 0只",
+      "status": "accumulation",
+      "latestDate": "20260414",
+      "latestNotionalUsd": 28238498.27,
+      "averageNotionalUsd": 64811245.13,
+      "activeTickerCount": 13,
+      "abnormalTickerCount": 0,
+      "files": [
+        "https://www.sec.gov/files/data/fails-deliver-data/cnsfails202604a.zip",
+        "https://www.sec.gov/files/data/fails-deliver-data/cnsfails202603b.zip",
+        "https://www.sec.gov/files/data/fails-deliver-data/cnsfails202603a.zip",
+        "https://www.sec.gov/files/data/fails-deliver-data/cnsfails202602b.zip"
+      ],
+      "topTickers": [
+        {
+          "symbol": "TSLA",
+          "latestDate": "20260414",
+          "fails": 24552,
+          "price": 352.42,
+          "notionalUsd": 8652615.84,
+          "maxNotionalUsd": 178474963.42,
+          "avgNotionalUsd": 14056699.44,
+          "notionalVsAvg": 0.62
+        },
+        {
+          "symbol": "MSFT",
+          "latestDate": "20260414",
+          "fails": 16802,
+          "price": 384.37,
+          "notionalUsd": 6458184.74,
+          "maxNotionalUsd": 149844260.52,
+          "avgNotionalUsd": 12078479.22,
+          "notionalVsAvg": 0.53
+        },
+        {
+          "symbol": "ORCL",
+          "latestDate": "20260414",
+          "fails": 41458,
+          "price": 155.62,
+          "notionalUsd": 6451693.96,
+          "maxNotionalUsd": 13036412.74,
+          "avgNotionalUsd": 2979594.75,
+          "notionalVsAvg": 2.17
+        },
+        {
+          "symbol": "APP",
+          "latestDate": "20260414",
+          "fails": 10933,
+          "price": 417.45,
+          "notionalUsd": 4563980.85,
+          "maxNotionalUsd": 9787559.13,
+          "avgNotionalUsd": 1853415.72,
+          "notionalVsAvg": 2.46
+        },
+        {
+          "symbol": "NVDA",
+          "latestDate": "20260414",
+          "fails": 4766,
+          "price": 189.31,
+          "notionalUsd": 902251.46,
+          "maxNotionalUsd": 20757033.83,
+          "avgNotionalUsd": 2396602.55,
+          "notionalVsAvg": 0.38
+        },
+        {
+          "symbol": "AVGO",
+          "latestDate": "20260414",
+          "fails": 1390,
+          "price": 379.75,
+          "notionalUsd": 527852.5,
+          "maxNotionalUsd": 22255316.55,
+          "avgNotionalUsd": 3008284.93,
+          "notionalVsAvg": 0.18
+        },
+        {
+          "symbol": "AMZN",
+          "latestDate": "20260414",
+          "fails": 1300,
+          "price": 239.89,
+          "notionalUsd": 311857.0,
+          "maxNotionalUsd": 60406457.64,
+          "avgNotionalUsd": 3790305.06,
+          "notionalVsAvg": 0.08
+        },
+        {
+          "symbol": "OKLO",
+          "latestDate": "20260414",
+          "fails": 2834,
+          "price": 53.94,
+          "notionalUsd": 152865.96,
+          "maxNotionalUsd": 6265161.42,
+          "avgNotionalUsd": 1165308.72,
+          "notionalVsAvg": 0.13
+        },
+        {
+          "symbol": "META",
+          "latestDate": "20260414",
+          "fails": 201,
+          "price": 634.53,
+          "notionalUsd": 127540.53,
+          "maxNotionalUsd": 84012360.8,
+          "avgNotionalUsd": 8201600.86,
+          "notionalVsAvg": 0.02
+        },
+        {
+          "symbol": "GOOGL",
+          "latestDate": "20260414",
+          "fails": 185,
+          "price": 321.31,
+          "notionalUsd": 59442.35,
+          "maxNotionalUsd": 19898149.12,
+          "avgNotionalUsd": 1824854.43,
+          "notionalVsAvg": 0.03
+        },
+        {
+          "symbol": "PLTR",
+          "latestDate": "20260414",
+          "fails": 220,
+          "price": 132.37,
+          "notionalUsd": 29121.4,
+          "maxNotionalUsd": 72221405.76,
+          "avgNotionalUsd": 9472301.97,
+          "notionalVsAvg": 0.0
+        },
+        {
+          "symbol": "ADBE",
+          "latestDate": "20260414",
+          "fails": 4,
+          "price": 240.11,
+          "notionalUsd": 960.44,
+          "maxNotionalUsd": 14439293.05,
+          "avgNotionalUsd": 1643368.79,
+          "notionalVsAvg": 0.0
+        }
+      ],
+      "threshold": "样本最新 FTD 名义金额≥$250M 或异常股票≥5只：结算压力升温/派发压力线索；≤$50M 且无异常股票：结算压力低/承接改善；其他中性。异常股票指单票FTD名义金额≥$10M或高于近期均值3倍。",
+      "limitations": "FTD 是 NSCC CNS 系统的交割失败余额，不是每日新增失败数；可能来自多种长/短交易原因，不等于裸卖空或机构派发证据。SEC 通常半月披露，存在延迟；价格字段为前一日收盘价且SEC不保证与其他源完全一致。"
     }
   },
   "fetchErrors": [
