@@ -619,21 +619,56 @@ function applyManualIndicatorOverrides(metrics, manualConfig) {
   });
 }
 
+const METRIC_WEIGHTS = {
+  finra_margin_debt: 10,
+  sec_form4_insider_activity: 10,
+  equal_weight_rs_rsp_spy: 8,
+  credit_risk_hyg_spy: 8,
+  cboe_equity_pc: 6,
+  distribution_days: 7,
+  sp500_breadth_snapshot: 7,
+  nasdaq100_breadth_snapshot: 7,
+  ai_core_breadth_ma: 6,
+  finra_short_sale_volume: 6,
+  vix_term_structure: 6,
+  cboe_skew: 5,
+  sector_rotation_rs: 5,
+  smallcap_rs_iwm_spy: 5,
+  mag7_breadth_ma: 5,
+  sec_13f_institutional_sample: 5,
+  sec_ftd_settlement_pressure: 4,
+  aaii_bull_bear: 4,
+  bofa_fms_cash: 4,
+};
+
 function aggregate(metrics) {
-  // 对 Live / Cached / Manual 且有明确 status 的指标做投票；Pending 不参与评分。
+  // 对 Live / Cached / Manual 且有明确 status 的指标做加权评分；Pending / data_unavailable 不参与评分。
+  // 不是所有“低压力”都应该抵消强派发证据。FTD 低、VIX 平静这类只算弱缓和因子；Form 4、Margin、宽度破坏权重更高。
   const considered = metrics.filter(m =>
     ['Live', 'Cached', 'Manual'].includes(m.dataStatus) && ['distribution', 'neutral', 'accumulation'].includes(m.status)
   );
-  const distHits = metrics.filter(m => m.status === 'distribution').length;
-  const accHits = metrics.filter(m => m.status === 'accumulation').length;
+  const distHits = considered.filter(m => m.status === 'distribution').length;
+  const accHits = considered.filter(m => m.status === 'accumulation').length;
 
-  // 简单打分：每个 distribution +12, neutral 0, accumulation -12，基线 50
   let score = 50;
+  const contributions = [];
   for (const m of considered) {
-    if (m.status === 'distribution') score += 12;
-    else if (m.status === 'accumulation') score -= 12;
+    const weight = METRIC_WEIGHTS[m.id] ?? 5;
+    let delta = 0;
+    if (m.status === 'distribution') delta = weight;
+    else if (m.status === 'accumulation') delta = -weight;
+    score += delta;
+    if (delta !== 0) contributions.push({
+      id: m.id,
+      name: m.name,
+      status: m.status,
+      weight,
+      delta,
+      value: m.value,
+      dataStatus: m.dataStatus,
+    });
   }
-  score = Math.max(0, Math.min(100, score));
+  score = Math.max(0, Math.min(100, Math.round(score)));
 
   let overall;
   if (score >= 65) overall = 'distribution';
@@ -651,6 +686,7 @@ function aggregate(metrics) {
     score,
     distributionHits: distHits,
     accumulationHits: accHits,
+    scoreDrivers: contributions.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta)).slice(0, 8),
     dataQuality: { total, live, cached, manual, pending },
   };
 }
@@ -903,7 +939,8 @@ export default async function handler(req) {
 
   // 5) SKEW Index（Live via Yahoo ^SKEW）
   {
-    const skew = skewBars.length ? skewBars[skewBars.length - 1].close : null;
+    const rawSkew = skewBars.length ? skewBars[skewBars.length - 1].close : null;
+    const skew = Number.isFinite(rawSkew) && rawSkew > 50 ? rawSkew : null;
     let status = 'neutral';
     if (skew == null) status = 'pending';
     else if (skew >= 150) status = 'distribution';
@@ -914,13 +951,13 @@ export default async function handler(req) {
       purpose: '尾部风险指数，衡量 OTM put 相对 ATM 的溢价',
       value: skew != null ? Number(skew.toFixed(2)) : null,
       status,
-      threshold: '> 150 机构买尾部保险（派发/对冲信号）；< 125 相对放松（风险偏好改善）',
+      threshold: '> 150 尾部保险溢价偏高（派发/对冲信号）；< 125 相对放松（风险偏好改善）；<=50 视为异常数据，不参与评分',
       sourceName: 'CBOE SKEW (via Yahoo ^SKEW)',
       sourceUrl: 'https://finance.yahoo.com/quote/%5ESKEW/',
       frequency: '日更（交易日收盘后）',
       updatedAt: skewMeta.regularMarketTime || nowISO(),
       dataStatus: skew != null ? 'Live' : 'data_unavailable',
-      logic: 'SKEW 越高 → 机构越愿意为黑天鹅付保费，通常与派发/分散出货同步；SKEW 偏低 → 市场不担心尾部风险。',
+      logic: 'SKEW 越高 → 市场为黑天鹅付出的尾部保险越贵，通常与派发/对冲需求同步；SKEW 偏低 → 尾部风险溢价较低。Yahoo 返回 0 这类异常值不参与评分。',
       caseStudy: '2018/01, 2021/11 SKEW 持续 > 150 之后出现显著回调。',
       limitations: 'SKEW 对方向性预测能力弱，仅反映尾部溢价；仅作派发/承接环境拼图之一。',
     }));
@@ -1223,6 +1260,7 @@ export default async function handler(req) {
     score: agg.score,
     distributionHits: agg.distributionHits,
     accumulationHits: agg.accumulationHits,
+    scoreDrivers: agg.scoreDrivers,
     dataQuality: agg.dataQuality,
     metrics: finalMetrics,
     stockPool,
