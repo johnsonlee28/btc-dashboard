@@ -166,14 +166,14 @@ function computeDownUpVolumeRatio(bars, lookback = 50) {
 function statusFromScore(score) {
   if (score >= 70) return 'distribution';
   if (score >= 50) return 'watch';
-  if (score < 30) return 'accumulation';
+  if (score < 30) return 'healthy';
   return 'neutral';
 }
 
 function statusLabel(status) {
-  if (status === 'distribution') return '明显派发';
-  if (status === 'watch') return '派发嫌疑';
-  if (status === 'accumulation') return '健康/吸筹';
+  if (status === 'distribution') return '明显量价派发';
+  if (status === 'watch') return '量价派发嫌疑';
+  if (status === 'healthy') return '低派发风险';
   return '中性观察';
 }
 
@@ -239,33 +239,33 @@ function analyzeStockBars(symbol, bars, meta = {}) {
         id: 'distribution_days_25d',
         name: '近25日放量下跌日',
         value: dd ? `${dd.count}/25` : '无数据',
-        status: dd?.count >= 6 ? 'distribution' : dd?.count >= 4 ? 'watch' : dd?.count <= 1 ? 'accumulation' : 'neutral',
-        logic: '单日收跌且成交量高于前一日，记为放量下跌日；连续聚集说明机构可能在分发。',
-        threshold: '≥6 强派发；4-5 派发嫌疑；0-1 健康',
+        status: dd?.count >= 6 ? 'distribution' : dd?.count >= 4 ? 'watch' : dd?.count <= 1 ? 'healthy' : 'neutral',
+        logic: '单日收跌且成交量高于前一日，记为放量下跌日；连续聚集说明市场可能出现大资金分发，但不能单独证明机构派发。',
+        threshold: '≥6 强派发；4-5 派发嫌疑；0-1 低派发风险',
       },
       {
         id: 'down_up_volume_ratio_50d',
         name: '50日下跌量能/上涨量能',
         value: du ? Number(du.ratio.toFixed(2)) : '无数据',
-        status: du?.ratio >= 1.3 ? 'distribution' : du?.ratio >= 1.0 ? 'watch' : du?.ratio < 0.8 ? 'accumulation' : 'neutral',
-        logic: '下跌日总成交量明显大于上涨日，说明卖盘主导；反之说明承接更强。',
-        threshold: '≥1.30 派发；1.00-1.30 偏弱；<0.80 健康/吸筹',
+        status: du?.ratio >= 1.3 ? 'distribution' : du?.ratio >= 1.0 ? 'watch' : du?.ratio < 0.8 ? 'healthy' : 'neutral',
+        logic: '下跌日总成交量明显大于上涨日，说明卖盘主导；反之说明承接更强。它是量价证据，不是机构持仓证据。',
+        threshold: '≥1.30 派发；1.00-1.30 偏弱；<0.80 低派发风险',
       },
       {
         id: 'ma_structure',
         name: 'MA20 / MA50 结构',
         value: maStructure,
-        status: maScore >= 16 ? 'distribution' : maScore >= 10 ? 'watch' : maScore <= 3 ? 'accumulation' : 'neutral',
-        logic: '价格跌破短中期均线、MA20 下行或跌破 MA50，通常意味着机构承接变弱。',
+        status: maScore >= 16 ? 'distribution' : maScore >= 10 ? 'watch' : maScore <= 3 ? 'healthy' : 'neutral',
+        logic: '价格跌破短中期均线、MA20 下行或跌破 MA50，通常意味着承接变弱；均线健康只能说明量价趋势尚可，不能定义机构建仓。',
         threshold: '价格 < MA50 且 MA20 < MA50 为趋势破位',
       },
       {
         id: 'drawdown_from_52w_high',
         name: '距52周高点回撤',
         value: drawdownFrom52wHigh != null ? `${(drawdownFrom52wHigh * 100).toFixed(1)}%` : '无数据',
-        status: drawdownFrom52wHigh >= 0.15 ? 'distribution' : drawdownFrom52wHigh >= 0.08 ? 'watch' : drawdownFrom52wHigh < 0.03 ? 'accumulation' : 'neutral',
-        logic: '强势龙头通常贴近新高；从高位回撤扩大且伴随放量下跌，更像派发完成后的结果。',
-        threshold: '≥15% 深度回撤；8-15% 警示；<3% 强势',
+        status: drawdownFrom52wHigh >= 0.15 ? 'distribution' : drawdownFrom52wHigh >= 0.08 ? 'watch' : drawdownFrom52wHigh < 0.03 ? 'healthy' : 'neutral',
+        logic: '强势龙头通常贴近新高；从高位回撤扩大且伴随放量下跌，更像派发完成后的结果。贴近新高只代表强势，不代表机构建仓。',
+        threshold: '≥15% 深度回撤；8-15% 警示；<3% 强势/低派发风险',
       },
     ],
     raw: {
@@ -278,7 +278,8 @@ function analyzeStockBars(symbol, bars, meta = {}) {
     },
     notes: [
       '这是免费行情可做的量价派发判断，不含 Form 4、13F、暗池、期权大单。',
-      '个股结论只能回答“量价上像不像在派发”，不能单独证明机构真实出货。',
+      '低分只代表“量价派发风险低/趋势承接尚可”，不能定义为机构建仓。',
+      '若要判断机构建仓或机构派发，必须继续接入 13F、Form 4、OpenInsider cluster buy/sell、期权/暗池等证据。',
     ],
   };
 }
