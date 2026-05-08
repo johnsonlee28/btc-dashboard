@@ -26,7 +26,7 @@
     <aside class="panel">
       <h2>兑换会员</h2>
       <div class="price">早鸟 <small>联系开通</small></div>
-      <p class="muted">拿到兑换码后，在这里输入。当前浏览器会自动保存会员状态。</p>
+      <p class="muted">拿到兑换码后，在这里输入。当前浏览器会自动保存会员状态；同一会员码同一时间只允许一个 IP 使用。</p>
       <input id="code" class="input" placeholder="输入会员兑换码">
       <button class="btn primary" onclick="redeem()">解锁会员版</button>
       <div id="msg" class="msg"></div>
@@ -35,7 +35,8 @@
   </section>
 </div>
 <script>
-async function redeem(){const code=document.getElementById('code').value.trim();const msg=document.getElementById('msg');if(!code){msg.textContent='先输入兑换码。';return}msg.textContent='正在校验...';try{const res=await fetch('/api/redeem',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code})});const data=await res.json();if(!res.ok)throw new Error(data.message||data.error||'兑换失败');localStorage.setItem('member_token',data.token);msg.textContent=data.message||'会员已解锁';setTimeout(()=>location.href='/stock',700)}catch(e){msg.textContent=e.message||String(e)}}
+function deviceId(){let id=localStorage.getItem('member_device_id');if(!id){id=(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random().toString(16).slice(2));localStorage.setItem('member_device_id',id)}return id}
+async function redeem(){const code=document.getElementById('code').value.trim();const msg=document.getElementById('msg');if(!code){msg.textContent='先输入兑换码。';return}msg.textContent='正在校验...';try{const res=await fetch('/api/redeem',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,deviceId:deviceId()})});const data=await res.json();if(!res.ok)throw new Error(data.message||data.error||'兑换失败');localStorage.setItem('member_token',data.token);msg.textContent=data.message||'会员已解锁';setTimeout(()=>location.href='/stock',700)}catch(e){msg.textContent=e.message||String(e)}}
 </script>
 </body>
 </html>

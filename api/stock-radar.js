@@ -13,12 +13,14 @@
  * - 仅作研究参考，不构成投资建议。
  */
 
+import { verifyMemberRequest } from './_membership.js';
+
 export const config = { runtime: 'edge' };
 
 const JSON_HEADERS = {
   'Content-Type': 'application/json; charset=utf-8',
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+  'Access-Control-Allow-Headers': 'Authorization, Content-Type, X-Device-Id',
   // 股票数据本身更新频率低，给个稍长缓存
   'Cache-Control': 's-maxage=300, stale-while-revalidate=900',
 };
@@ -51,31 +53,13 @@ function nowISO() {
   return new Date().toISOString();
 }
 
-function memberTokens() {
-  return (process.env.MEMBER_LICENSE_CODES || process.env.MEMBER_TOKENS || '')
-    .split(',')
-    .map(s => s.trim())
-    .filter(Boolean);
-}
-
-function getBearerToken(req) {
-  const auth = req.headers.get('authorization') || '';
-  if (!auth.startsWith('Bearer ')) return '';
-  return auth.slice(7).trim();
-}
-
-function isMemberRequest(req) {
-  const token = getBearerToken(req);
-  if (!token) return false;
-  return memberTokens().includes(token);
-}
-
-function memberRequiredResponse() {
+function memberGateResponse(result) {
   return new Response(JSON.stringify({
-    error: 'member_required',
-    message: '个股派发/承接线索为会员功能。大盘证据链继续免费开放。',
-    upgradeUrl: '/pricing',
-  }), { status: 402, headers: MEMBER_JSON_HEADERS });
+    error: result.error || 'member_required',
+    message: result.message || '个股派发/承接线索为会员功能。大盘证据链继续免费开放。',
+    upgradeUrl: result.upgradeUrl || '/pricing',
+    retryAfter: result.retryAfter,
+  }), { status: result.status || 402, headers: MEMBER_JSON_HEADERS });
 }
 
 
@@ -741,8 +725,9 @@ export default async function handler(req) {
     if (!/^[A-Z0-9.-]{1,12}$/.test(symbolParam)) {
       return new Response(JSON.stringify({ error: 'Invalid symbol' }), { status: 400, headers: MEMBER_JSON_HEADERS });
     }
-    if (!isMemberRequest(req)) {
-      return memberRequiredResponse();
+    const memberCheck = await verifyMemberRequest(req);
+    if (!memberCheck.ok) {
+      return memberGateResponse(memberCheck);
     }
     const r = await safeFetchJson(symbolParam, YF_CHART(symbolParam, '1y', '1d'), 6500);
     if (!r.ok) {
