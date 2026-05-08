@@ -328,39 +328,34 @@ def fetch_fed_direction():
 # 4. 资金费率 - Coinglass / Binance API
 # ============================================================
 def fetch_funding_rate():
-    """同时抓取 Binance 和 OKX 的 BTC 永续合约资金费率（%/8h）"""
-    log("抓取资金费率 (Binance + OKX 公开 API)...")
+    log("抓取资金费率 (Coinglass)...")
 
-    bn_fr = None
-    okx_fr = None
+    html = http_get("https://www.coinglass.com/FundingRate")
+    if html:
+        result = ask_deepseek(
+            """这是 Coinglass 资金费率页面。请找出 BTC 在主流交易所（Binance/Bybit/OKX）的当前资金费率（%/8h）。
+            正常范围 -0.1% 到 +0.1%，正数代表多头付空头。
+            返回JSON：{"funding_rate": Binance的数值, "avg": 平均值} 或 {"error": "找不到"}""",
+            html
+        )
+        if result and isinstance(result.get('funding_rate'), (int, float)):
+            fr = result['funding_rate']
+            log(f"  ✅ 资金费率: {fr}%/8h")
+            return fr
 
-    # Binance 公开API
-    try:
-        data = http_get("https://fapi.binance.com/fapi/v1/premiumIndex?symbol=BTCUSDT")
-        if data:
+    # 备用: Binance 公开API
+    binance_url = "https://fapi.binance.com/fapi/v1/premiumIndex?symbol=BTCUSDT"
+    data = http_get(binance_url)
+    if data:
+        try:
             d = json.loads(data)
-            bn_fr = round(float(d.get('lastFundingRate', 0)) * 100, 4)
-            log(f"  ✅ Binance 资金费率: {bn_fr}%/8h")
-    except Exception as e:
-        log(f"  ⚠️ Binance 资金费率失败: {e}")
+            fr = float(d.get('lastFundingRate', 0)) * 100
+            log(f"  ✅ 资金费率(Binance API): {fr:.4f}%/8h")
+            return round(fr, 4)
+        except Exception as e:
+            log(f"  Binance API parse error: {e}")
 
-    # OKX 公开API（无需Key）
-    try:
-        data = http_get("https://www.okx.com/api/v5/public/funding-rate?instId=BTC-USDT-SWAP")
-        if data:
-            d = json.loads(data)
-            items = d.get('data', [])
-            if items:
-                okx_fr = round(float(items[0].get('fundingRate', 0)) * 100, 4)
-                log(f"  ✅ OKX 资金费率: {okx_fr}%/8h")
-    except Exception as e:
-        log(f"  ⚠️ OKX 资金费率失败: {e}")
-
-    # 计算均值
-    vals = [v for v in [bn_fr, okx_fr] if v is not None]
-    avg = round(sum(vals) / len(vals), 4) if vals else None
-
-    return {"bn": bn_fr, "okx": okx_fr, "avg": avg}
+    return None
 
 # ============================================================
 # 5. 保证金借贷费率 + 未平仓合约 - Binance 公开 API（无需Key）
@@ -475,7 +470,7 @@ def main():
         "etf": None,
         "onchain": {"mvrv_zscore": None, "nupl": None},
         "fed": None,
-        "funding_rate": {"bn": None, "okx": None, "avg": None},
+        "funding_rate": None,
         "margin_lending": None,
         "stablecoin": None,
         "tips": None
@@ -534,10 +529,7 @@ def main():
     log(f"  MVRV Z-Score:    {data['onchain']['mvrv_zscore']}")
     log(f"  NUPL:            {data['onchain']['nupl']}")
     log(f"  美联储方向:      {data['fed']['fed_direction'] if data['fed'] else 'N/A'}")
-    fr_data = data.get('funding_rate') or {}
-    log(f"  资金费率(BN):    {fr_data.get('bn')}%/8h")
-    log(f"  资金费率(OKX):   {fr_data.get('okx')}%/8h")
-    log(f"  资金费率(均值):  {fr_data.get('avg')}%/8h")
+    log(f"  资金费率:        {data['funding_rate']}%/8h")
     ml = data.get('margin_lending') or {}
     log(f"  BTC借贷年化利率: {ml.get('btc_annual_rate')}%")
     log(f"  BTC未平仓合约:   {ml.get('open_interest')} BTC")
