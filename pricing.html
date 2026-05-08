@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>美股派发/承接雷达会员版 | 知行社</title>
+<meta name="description" content="美股派发/承接雷达会员版：普通版看大盘状态，会员版查看个股量价派发/承接线索。仅作研究参考，不构成投资建议。">
+<style>
+:root{color-scheme:dark;--bg:#07090d;--panel:#111827;--line:#253241;--text:#eef2f6;--muted:#a0adba;--accent:#67e8f9;--yellow:#fbbf24;--green:#34d399;--red:#ff5f56;--sans:"Avenir Next","PingFang SC","Microsoft YaHei",system-ui,sans-serif;--serif:Georgia,"Songti SC","SimSun",serif}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% 0,rgba(103,232,249,.12),transparent 26%),radial-gradient(circle at 10% 20%,rgba(251,191,36,.10),transparent 24%),var(--bg);color:var(--text);font-family:var(--sans);line-height:1.65}.wrap{max-width:980px;margin:0 auto;padding:26px 16px 60px}.nav{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:36px}.brand{font-weight:900}.link,.btn{display:inline-flex;align-items:center;justify-content:center;min-height:40px;border:1px solid rgba(148,163,184,.22);border-radius:999px;padding:8px 13px;color:var(--text);background:rgba(17,24,39,.62);text-decoration:none;cursor:pointer}.hero{display:grid;grid-template-columns:minmax(0,1.1fr) 360px;gap:18px;align-items:start}.panel{border:1px solid rgba(148,163,184,.16);border-radius:24px;background:linear-gradient(180deg,rgba(17,24,39,.88),rgba(7,9,13,.92));box-shadow:0 24px 70px rgba(0,0,0,.32);padding:24px}h1{font-family:var(--serif);font-size:42px;line-height:1.08;margin:0 0 14px;letter-spacing:-.04em}h2{font-size:18px;margin:0 0 12px}.muted{color:var(--muted)}.eyebrow{color:var(--accent);font-size:12px;letter-spacing:.16em;text-transform:uppercase;margin-bottom:10px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}.card{border:1px solid rgba(148,163,184,.14);border-radius:18px;padding:16px;background:rgba(7,9,13,.30)}.card strong{display:block;margin-bottom:8px}.card ul{margin:0;padding-left:18px;color:var(--muted)}.price{font-size:38px;font-weight:950;letter-spacing:-.05em}.price small{font-size:14px;color:var(--muted);font-weight:500}.input{width:100%;min-height:46px;border:1px solid rgba(148,163,184,.22);border-radius:14px;background:rgba(7,9,13,.48);color:var(--text);padding:11px 13px;font-size:15px;outline:none}.primary{width:100%;border-color:rgba(103,232,249,.48);background:rgba(103,232,249,.12);color:var(--text);font-weight:800;margin-top:10px}.msg{min-height:22px;color:var(--muted);font-size:13px;margin-top:10px}.note{font-size:12px;color:var(--muted);margin-top:14px}.warn{border-color:rgba(251,191,36,.26);background:rgba(251,191,36,.08)}@media(max-width:760px){.hero,.grid{grid-template-columns:1fr}h1{font-size:32px}.nav{align-items:flex-start;flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="nav"><div class="brand">▥ 美股派发/承接雷达</div><a class="link" href="/stock">返回雷达</a></div>
+  <section class="hero">
+    <div class="panel">
+      <div class="eyebrow">Free market / Member stock analysis</div>
+      <h1>大盘免费，个股会员</h1>
+      <p class="muted">这个站不做荐股，不预测明天涨跌。普通版看市场体温，会员版查个股量价派发 / 承接线索，把“感觉不太对”拆成可复盘的证据。</p>
+      <div class="grid">
+        <div class="card"><strong>普通版</strong><ul><li>大盘派发 / 承接总分</li><li>最大驱动项</li><li>SEC / FINRA / 宽度证据链</li><li>方法论与局限说明</li></ul></div>
+        <div class="card"><strong>会员版</strong><ul><li>输入 NVDA / TSLA / PLTR 等代码</li><li>查看 25 日派发日</li><li>查看 50 日下跌量 / 上涨量比</li><li>查看 MA20 / MA50 与 52 周回撤</li></ul></div>
+      </div>
+      <div class="card warn" style="margin-top:12px"><strong>措辞边界</strong><div class="muted">个股结果只写“量价派发嫌疑、低派发风险、承接线索占优”。不把价格和成交量直接解释成确定性机构行为。</div></div>
+    </div>
+    <aside class="panel">
+      <h2>兑换会员</h2>
+      <div class="price">早鸟 <small>联系开通</small></div>
+      <p class="muted">拿到兑换码后，在这里输入。当前浏览器会自动保存会员状态。</p>
+      <input id="code" class="input" placeholder="输入会员兑换码">
+      <button class="btn primary" onclick="redeem()">解锁会员版</button>
+      <div id="msg" class="msg"></div>
+      <p class="note">如需开通，直接联系成诺。页面仅作研究参考，不构成投资建议。</p>
+    </aside>
+  </section>
+</div>
+<script>
+async function redeem(){const code=document.getElementById('code').value.trim();const msg=document.getElementById('msg');if(!code){msg.textContent='先输入兑换码。';return}msg.textContent='正在校验...';try{const res=await fetch('/api/redeem',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code})});const data=await res.json();if(!res.ok)throw new Error(data.message||data.error||'兑换失败');localStorage.setItem('member_token',data.token);msg.textContent=data.message||'会员已解锁';setTimeout(()=>location.href='/stock',700)}catch(e){msg.textContent=e.message||String(e)}}
+</script>
+</body>
+</html>

@@ -18,8 +18,14 @@ export const config = { runtime: 'edge' };
 const JSON_HEADERS = {
   'Content-Type': 'application/json; charset=utf-8',
   'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Authorization, Content-Type',
   // 股票数据本身更新频率低，给个稍长缓存
   'Cache-Control': 's-maxage=300, stale-while-revalidate=900',
+};
+
+const MEMBER_JSON_HEADERS = {
+  ...JSON_HEADERS,
+  'Cache-Control': 'no-store',
 };
 
 // Yahoo Finance chart endpoints (免费、无鉴权、偶尔 429)
@@ -44,6 +50,34 @@ function num(v, fallback = null) {
 function nowISO() {
   return new Date().toISOString();
 }
+
+function memberTokens() {
+  return (process.env.MEMBER_LICENSE_CODES || process.env.MEMBER_TOKENS || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+}
+
+function getBearerToken(req) {
+  const auth = req.headers.get('authorization') || '';
+  if (!auth.startsWith('Bearer ')) return '';
+  return auth.slice(7).trim();
+}
+
+function isMemberRequest(req) {
+  const token = getBearerToken(req);
+  if (!token) return false;
+  return memberTokens().includes(token);
+}
+
+function memberRequiredResponse() {
+  return new Response(JSON.stringify({
+    error: 'member_required',
+    message: '个股派发/承接线索为会员功能。大盘证据链继续免费开放。',
+    upgradeUrl: '/pricing',
+  }), { status: 402, headers: MEMBER_JSON_HEADERS });
+}
+
 
 async function safeFetchJson(key, url, timeout = 5500) {
   try {
@@ -705,19 +739,22 @@ export default async function handler(req) {
 
   if (symbolParam) {
     if (!/^[A-Z0-9.-]{1,12}$/.test(symbolParam)) {
-      return new Response(JSON.stringify({ error: 'Invalid symbol' }), { status: 400, headers: JSON_HEADERS });
+      return new Response(JSON.stringify({ error: 'Invalid symbol' }), { status: 400, headers: MEMBER_JSON_HEADERS });
+    }
+    if (!isMemberRequest(req)) {
+      return memberRequiredResponse();
     }
     const r = await safeFetchJson(symbolParam, YF_CHART(symbolParam, '1y', '1d'), 6500);
     if (!r.ok) {
-      return new Response(JSON.stringify({ error: 'symbol_fetch_failed', symbol: symbolParam, detail: r.error }), { status: 502, headers: JSON_HEADERS });
+      return new Response(JSON.stringify({ error: 'symbol_fetch_failed', symbol: symbolParam, detail: r.error }), { status: 502, headers: MEMBER_JSON_HEADERS });
     }
     const bars = extractCloses(r.data);
     const meta = latestMeta(r.data);
     const analysis = analyzeStockBars(symbolParam, bars, meta);
     if (!analysis) {
-      return new Response(JSON.stringify({ error: 'insufficient_data', symbol: symbolParam }), { status: 422, headers: JSON_HEADERS });
+      return new Response(JSON.stringify({ error: 'insufficient_data', symbol: symbolParam }), { status: 422, headers: MEMBER_JSON_HEADERS });
     }
-    return new Response(JSON.stringify(analysis, null, 2), { status: 200, headers: JSON_HEADERS });
+    return new Response(JSON.stringify(analysis, null, 2), { status: 200, headers: MEMBER_JSON_HEADERS });
   }
 
   // 大盘指标需要的 Yahoo 数据。V2 第一阶段坚持免费 + 自动化：指数、ETF、板块 ETF 全走 Yahoo chart。

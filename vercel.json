@@ -10,13 +10,15 @@
   "rewrites": [
     { "source": "/eth", "destination": "/eth.html" },
     { "source": "/distribution-radar", "destination": "/distribution-radar.html" },
-    { "source": "/stock", "destination": "/stock.html" }
+    { "source": "/stock", "destination": "/stock.html" },
+    { "source": "/pricing", "destination": "/pricing.html" }
   ],
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "*" }
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Headers", "value": "Authorization, Content-Type" }
       ]
     }
   ],
