@@ -1,6 +1,8 @@
 const DEFAULT_TTL_SECONDS = 1800;
 const MAX_SESSION_LIFETIME_SECONDS = 24 * 60 * 60;
+const DEFAULT_TRIAL_DAYS = 30;
 const SESSION_PREFIX = 'stock-member-session:';
+const TRIAL_PREFIX = 'stock-member-trial:';
 const GENERIC_CODE_UNAVAILABLE = '兑换码无效、已停用，或正在其他 IP 使用。';
 
 function textEncoder() {
@@ -21,8 +23,21 @@ function ttlSeconds() {
   return Number.isFinite(n) && n >= 60 ? Math.floor(n) : DEFAULT_TTL_SECONDS;
 }
 
+function trialDurationSeconds() {
+  const days = Number(process.env.MEMBER_TRIAL_DAYS || DEFAULT_TRIAL_DAYS);
+  const safeDays = Number.isFinite(days) && days >= 1 && days <= 365 ? Math.floor(days) : DEFAULT_TRIAL_DAYS;
+  return safeDays * 24 * 60 * 60;
+}
+
 export function memberCodes() {
   return (process.env.MEMBER_LICENSE_CODES || process.env.MEMBER_TOKENS || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+}
+
+export function trialCodes() {
+  return (process.env.MEMBER_TRIAL_CODES || '')
     .split(',')
     .map(s => s.trim())
     .filter(Boolean);
@@ -88,14 +103,63 @@ async function kvSetEx(key, seconds, value) {
   await redisCommand(['SET', key, JSON.stringify(value), 'EX', String(seconds)]);
 }
 
+async function kvSetNx(key, value) {
+  const result = await redisCommand(['SET', key, JSON.stringify(value), 'NX']);
+  return result === 'OK';
+}
+
 function sessionKey(codeHash) {
   return `${SESSION_PREFIX}${codeHash}`;
 }
 
+function trialKey(codeHash) {
+  return `${TRIAL_PREFIX}${codeHash}`;
+}
 
-async function validCodeHash(codeHash) {
-  const hashes = await Promise.all(memberCodes().map(code => sha256Hex(code)));
-  return hashes.includes(codeHash);
+async function codeHashes(codes) {
+  return Promise.all(codes.map(code => sha256Hex(code)));
+}
+
+async function classifyCodeByHash(codeHash) {
+  const [regularHashes, trialHashes] = await Promise.all([
+    codeHashes(memberCodes()),
+    codeHashes(trialCodes()),
+  ]);
+  const isRegular = regularHashes.includes(codeHash);
+  const isTrial = trialHashes.includes(codeHash);
+  if (isRegular && isTrial) return 'conflict';
+  if (isRegular) return 'regular';
+  if (isTrial) return 'trial';
+  return null;
+}
+
+async function ensureTrialRecord(codeHash, now, ipHash) {
+  const recordKey = trialKey(codeHash);
+  const existing = await kvGet(recordKey);
+  if (existing?.expiresAt) {
+    if (existing.expiresAt <= now) return { ok: false, expired: true };
+    return { ok: true, expiresAt: existing.expiresAt, activatedAt: existing.activatedAt };
+  }
+
+  const duration = trialDurationSeconds();
+  const record = {
+    kind: 'trial',
+    activatedAt: now,
+    expiresAt: now + duration,
+    firstIpHash: ipHash,
+  };
+  const created = await kvSetNx(recordKey, record);
+  if (created) return { ok: true, expiresAt: record.expiresAt, activatedAt: record.activatedAt };
+
+  const current = await kvGet(recordKey);
+  if (!current?.expiresAt || current.expiresAt <= now) return { ok: false, expired: true };
+  return { ok: true, expiresAt: current.expiresAt, activatedAt: current.activatedAt };
+}
+
+async function verifyTrialRecord(codeHash, now) {
+  const record = await kvGet(trialKey(codeHash));
+  if (!record?.expiresAt || record.expiresAt <= now) return { ok: false };
+  return { ok: true, expiresAt: record.expiresAt, activatedAt: record.activatedAt };
 }
 
 function parseMemberToken(token) {
@@ -121,10 +185,21 @@ export async function createMemberSession(req, code, deviceId) {
   const safeDeviceId = String(deviceId || '').trim().slice(0, 80) || crypto.randomUUID();
   const key = sessionKey(codeHash);
   const existing = await kvGet(key);
-  const validCode = await validCodeHash(codeHash);
+  const codeKind = await classifyCodeByHash(codeHash);
 
-  if (!validCode) {
+  if (!codeKind || codeKind === 'conflict') {
     return { ok: false, status: 403, error: 'code_unavailable', message: GENERIC_CODE_UNAVAILABLE };
+  }
+
+  let trialExpiresAt = null;
+  let trialActivatedAt = null;
+  if (codeKind === 'trial') {
+    const trial = await ensureTrialRecord(codeHash, now, ipHash);
+    if (!trial.ok) {
+      return { ok: false, status: 403, error: 'code_unavailable', message: GENERIC_CODE_UNAVAILABLE };
+    }
+    trialExpiresAt = trial.expiresAt;
+    trialActivatedAt = trial.activatedAt;
   }
 
   if (existing?.sid && existing?.expiresAt > now) {
@@ -140,6 +215,7 @@ export async function createMemberSession(req, code, deviceId) {
   }
 
   const sid = crypto.randomUUID();
+  const sessionAbsoluteExpiresAt = Math.min(now + MAX_SESSION_LIFETIME_SECONDS, trialExpiresAt || now + MAX_SESSION_LIFETIME_SECONDS);
   const session = {
     sid,
     codeHash,
@@ -148,8 +224,11 @@ export async function createMemberSession(req, code, deviceId) {
     deviceId: safeDeviceId,
     createdAt: now,
     lastSeen: now,
-    expiresAt: now + ttl,
-    absoluteExpiresAt: now + MAX_SESSION_LIFETIME_SECONDS,
+    expiresAt: Math.min(now + ttl, sessionAbsoluteExpiresAt),
+    absoluteExpiresAt: sessionAbsoluteExpiresAt,
+    kind: codeKind,
+    trialActivatedAt: trialActivatedAt || undefined,
+    trialExpiresAt: trialExpiresAt || undefined,
   };
   await kvSetEx(key, ttl, session);
   return {
@@ -158,6 +237,9 @@ export async function createMemberSession(req, code, deviceId) {
     expiresIn: ttl,
     expiresAt: session.expiresAt,
     sessionMode: 'single_active_ip',
+    plan: codeKind === 'trial' ? 'trial' : 'member',
+    trialActivatedAt: trialActivatedAt || undefined,
+    trialExpiresAt: trialExpiresAt || undefined,
   };
 }
 
@@ -171,13 +253,20 @@ export async function verifyMemberRequest(req) {
     return { ok: false, status: 402, error: 'member_required', message: '个股派发/承接线索为会员功能。大盘证据链继续免费开放。', upgradeUrl: '/pricing' };
   }
 
-  const validCode = await validCodeHash(parsed.codeHash);
-  if (!validCode) {
+  const now = Math.floor(Date.now() / 1000);
+  const codeKind = await classifyCodeByHash(parsed.codeHash);
+  if (!codeKind || codeKind === 'conflict') {
     return { ok: false, status: 403, error: 'session_expired', message: '会员会话已过期，请重新兑换。', upgradeUrl: '/pricing' };
   }
 
+  if (codeKind === 'trial') {
+    const trial = await verifyTrialRecord(parsed.codeHash, now);
+    if (!trial.ok) {
+      return { ok: false, status: 403, error: 'session_expired', message: '试用已到期，请重新兑换正式会员。', upgradeUrl: '/pricing' };
+    }
+  }
+
   const session = await kvGet(sessionKey(parsed.codeHash));
-  const now = Math.floor(Date.now() / 1000);
   if (!session || session.sid !== parsed.sid || session.expiresAt <= now || session.absoluteExpiresAt <= now) {
     return { ok: false, status: 403, error: 'session_expired', message: '会员会话已过期，请重新兑换。', upgradeUrl: '/pricing' };
   }

@@ -41,13 +41,18 @@ export default async function handler(req) {
     }), { status: session.status || 403, headers: JSON_HEADERS });
   }
 
+  const isTrial = session.plan === 'trial';
   return new Response(JSON.stringify({
     ok: true,
     token: session.token,
     expiresIn: session.expiresIn,
     expiresAt: session.expiresAt,
     sessionMode: session.sessionMode,
-    plan: 'member',
-    message: '会员已解锁。当前会员码同一时间仅允许一个 IP 使用，30 分钟无操作后可重新接管。',
+    plan: session.plan || 'member',
+    trialActivatedAt: session.trialActivatedAt,
+    trialExpiresAt: session.trialExpiresAt,
+    message: isTrial
+      ? '试用会员已解锁。有效期从首次兑换开始计算 30 天，同一时间仅允许一个 IP 使用。'
+      : '会员已解锁。当前会员码同一时间仅允许一个 IP 使用，30 分钟无操作后可重新接管。',
   }), { status: 200, headers: JSON_HEADERS });
 }
