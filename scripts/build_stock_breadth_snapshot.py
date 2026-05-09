@@ -1015,7 +1015,7 @@ def collect_sec_ftd_settlement_pressure(fetch_errors: list[dict]) -> dict | None
         "files": [p.get("url") for p in parsed],
         "topTickers": top,
         "threshold": "样本最新 FTD 名义金额≥$250M 或异常股票≥5只：结算压力升温/派发压力线索；≤$50M 且无异常股票：结算压力低/承接改善；其他中性。异常股票指单票FTD名义金额≥$10M或高于近期均值3倍。",
-        "limitations": "FTD 是 NSCC CNS 系统的交割失败余额，不是每日新增失败数；可能来自多种长/短交易原因，不等于裸卖空或机构派发证据。SEC 通常半月披露，存在延迟；价格字段为前一日收盘价且SEC不保证与其他源完全一致。",
+        "limitations": "FTD 是 NSCC CNS 系统的交割失败余额，不是每日新增失败数；可能来自多种长/短交易原因，不等于裸卖空或机构交易行为证据。SEC 通常半月披露，存在延迟；价格字段为前一日收盘价且SEC不保证与其他源完全一致。",
     }
 
 
@@ -1072,7 +1072,7 @@ def collect_nyse_breadth_indicators(fetch_errors: list[dict]) -> dict:
             "advanceDeclineRatio": round(ratio, 3),
             "quotes": {k: quotes.get(k) for k in ["advancers", "decliners", "adRatio"] if quotes.get(k)},
             "threshold": "A/D ≤0.8 或下跌家数≥上涨家数1.25倍：宽度恶化/派发压力；A/D ≥1.5：宽度扩散/承接改善；中间中性。",
-            "limitations": "Barchart 页面抓取非官方 JSON，可能改版或限流；该项是当日 NYSE 上涨/下跌家数与比率，不是 StockCharts $NYAD 累计 A/D Line。宽度恶化只能说明市场结构走弱，不能单独证明机构派发。",
+            "limitations": "Barchart 页面抓取非官方 JSON，可能改版或限流；该项是当日 NYSE 上涨/下跌家数与比率，不是 StockCharts $NYAD 累计 A/D Line。宽度恶化只能说明市场结构走弱，不能单独证明机构交易行为。",
         }
 
     highs = quotes.get("newHighs52w", {}).get("lastPrice")
