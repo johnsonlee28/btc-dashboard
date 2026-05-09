@@ -1,6 +1,6 @@
 /**
  * Vercel Edge Function: /api/stock-radar
- * 美股派发/承接雷达 V2
+ * 成诺美股风险雷达 V2
  *
  * 原则：
  * - 可解释性 > 漂亮。每个指标必须带 sourceName / sourceUrl / frequency / updatedAt / dataStatus
@@ -56,7 +56,7 @@ function nowISO() {
 function memberGateResponse(result) {
   return new Response(JSON.stringify({
     error: result.error || 'member_required',
-    message: result.message || '个股派发/承接线索为会员功能。大盘证据链继续免费开放。',
+    message: result.message || '个股风险解读为会员功能。市场体温与公开证据链继续免费开放。',
     upgradeUrl: result.upgradeUrl || '/pricing',
     retryAfter: result.retryAfter,
   }), { status: result.status || 402, headers: MEMBER_JSON_HEADERS });
@@ -68,7 +68,7 @@ async function safeFetchJson(key, url, timeout = 5500) {
     const res = await fetch(url, {
       headers: {
         'Accept': 'application/json',
-        'User-Agent': 'stock-distribution-radar/1.0 (+https://stock.zhixingshe.cc)',
+        'User-Agent': 'stock-risk-thermometer/1.0 (+https://stock.zhixingshe.cc)',
       },
       signal: AbortSignal.timeout(timeout),
     });
@@ -84,7 +84,7 @@ async function safeFetchText(key, url, timeout = 5500) {
     const res = await fetch(url, {
       headers: {
         'Accept': 'text/csv,text/plain,*/*',
-        'User-Agent': 'stock-distribution-radar/2.0 (+https://stock.zhixingshe.cc)',
+        'User-Agent': 'stock-risk-thermometer/2.0 (+https://stock.zhixingshe.cc)',
       },
       signal: AbortSignal.timeout(timeout),
     });
@@ -463,9 +463,9 @@ function statusFromScore(score) {
 }
 
 function statusLabel(status) {
-  if (status === 'distribution') return '明显量价派发';
-  if (status === 'watch') return '量价派发嫌疑';
-  if (status === 'healthy') return '低派发风险';
+  if (status === 'distribution') return '量价风险升温';
+  if (status === 'watch') return '量价偏热观察';
+  if (status === 'healthy') return '量价压力偏低';
   return '中性观察';
 }
 
@@ -532,8 +532,8 @@ function analyzeStockBars(symbol, bars, meta = {}) {
         name: '近25日放量下跌日',
         value: dd ? `${dd.count}/25` : '无数据',
         status: dd?.count >= 6 ? 'distribution' : dd?.count >= 4 ? 'watch' : dd?.count <= 1 ? 'healthy' : 'neutral',
-        logic: '单日收跌且成交量高于前一日，记为放量下跌日；连续聚集说明市场可能出现大资金分发，但不能单独证明机构派发。',
-        threshold: '≥6 强派发；4-5 派发嫌疑；0-1 低派发风险',
+        logic: '单日收跌且成交量高于前一日，记为放量下跌日；连续聚集说明卖压线索升温，但不能单独证明机构交易行为。',
+        threshold: '≥6 风险升温；4-5 偏热观察；0-1 压力偏低',
       },
       {
         id: 'down_up_volume_ratio_50d',
@@ -541,7 +541,7 @@ function analyzeStockBars(symbol, bars, meta = {}) {
         value: du ? Number(du.ratio.toFixed(2)) : '无数据',
         status: du?.ratio >= 1.3 ? 'distribution' : du?.ratio >= 1.0 ? 'watch' : du?.ratio < 0.8 ? 'healthy' : 'neutral',
         logic: '下跌日总成交量明显大于上涨日，说明卖盘主导；反之说明承接更强。它是量价证据，不是机构持仓证据。',
-        threshold: '≥1.30 派发；1.00-1.30 偏弱；<0.80 低派发风险',
+        threshold: '≥1.30 风险升温；1.00-1.30 偏弱；<0.80 压力偏低',
       },
       {
         id: 'ma_structure',
@@ -556,8 +556,8 @@ function analyzeStockBars(symbol, bars, meta = {}) {
         name: '距52周高点回撤',
         value: drawdownFrom52wHigh != null ? `${(drawdownFrom52wHigh * 100).toFixed(1)}%` : '无数据',
         status: drawdownFrom52wHigh >= 0.15 ? 'distribution' : drawdownFrom52wHigh >= 0.08 ? 'watch' : drawdownFrom52wHigh < 0.03 ? 'healthy' : 'neutral',
-        logic: '强势龙头通常贴近新高；从高位回撤扩大且伴随放量下跌，更像派发完成后的结果。贴近新高只代表强势，不代表机构增持。',
-        threshold: '≥15% 深度回撤；8-15% 警示；<3% 强势/低派发风险',
+        logic: '强势龙头通常贴近新高；从高位回撤扩大且伴随放量下跌，更像风险压力释放后的结果。贴近新高只代表强势，不代表机构增持。',
+        threshold: '≥15% 深度回撤；8-15% 警示；<3% 强势/压力偏低',
       },
     ],
     raw: {
@@ -569,9 +569,9 @@ function analyzeStockBars(symbol, bars, meta = {}) {
       drawdownFrom52wHigh,
     },
     notes: [
-      '这是免费行情可做的量价派发判断，不含 Form 4、13F、暗池、期权大单。',
-      '低分只代表“量价派发风险低/趋势承接尚可”，不能定义为机构增持。',
-      '若要判断机构增持或机构派发，必须继续接入 13F、Form 4、OpenInsider cluster buy/sell、期权/暗池等证据。',
+      '这是免费行情可做的量价风险解读，不含 Form 4、13F、暗池、期权大单。',
+      '低分只代表“量价压力偏低/趋势承接尚可”，不能定义为机构增持。',
+      '若要判断机构持仓变化或内部人交易行为，必须继续接入 13F、Form 4、OpenInsider cluster buy/sell、期权/暗池等证据。',
     ],
   };
 }
@@ -897,43 +897,43 @@ export default async function handler(req) {
     dataStatus: 'Pending',
     logic: 'Form 4 是董事、高管、10%持有人等内部人的强制交易披露。多家公司、多位内部人集中公开市场卖出，是事件层卖出证据；集中公开市场买入，则是承接信号。',
     caseStudy: '科技龙头高管计划性卖出很常见，因此必须看是否跨公司、跨人员、金额足够大，并结合宽度、量价和公告背景。',
-    limitations: 'Form 4 不是13F机构持仓，也不是暗池/期权流；10b5-1计划卖出、税务/期权行权相关交易会造成噪声，不能单独判断机构派发。',
+    limitations: 'Form 4 不是13F机构持仓，也不是暗池/期权流；10b5-1计划卖出、税务/期权行权相关交易会造成噪声，不能单独判断机构交易行为。',
   })));
 
   // 6) SEC 13F 样本机构持仓慢变量（季度披露、滞后，不作为短线派发警报）
   metrics.push(cachedMacroIndicatorMetric(breadthSnapshot, 'sec_13f_institutional_sample', metric({
     id: 'sec_13f_institutional_sample',
     name: 'SEC 13F 样本机构持仓慢变量',
-    purpose: '追踪样本机构上一季对 AI/Mag7 核心股票的多头持仓变化，作为机构慢变量证据',
+    purpose: '追踪样本机构上一季对 AI/Mag7 核心股票的多头持仓变化，作为季度持仓慢变量证据',
     value: null,
     status: 'pending',
-    threshold: '样本持仓市值较上季下降≥10%、且减持位置占比≥60% 偏持仓收缩/派发压力；上升≥10%、且增持位置占比≥60% 偏暴露增加/承接改善',
+    threshold: '样本持仓市值较上季下降≥10%、且减持位置占比≥60% 偏持仓收缩/风险压力；上升≥10%、且增持位置占比≥60% 偏暴露增加/承接改善',
     sourceName: 'SEC EDGAR 13F-HR information table',
     sourceUrl: 'https://www.sec.gov/data-research/sec-markets-data/form-13f-data-sets',
     frequency: '季更（13F 通常在季末后45天内披露；快照日更检查最新文件）',
     updatedAt: null,
     dataStatus: 'Pending',
     logic: '13F 披露机构投资经理季度末多头持仓。样本机构对 AI/Mag7 共同增持，说明机构暴露扩张；共同减持，说明慢变量持仓收缩。',
-    caseStudy: '13F 常用于观察巴菲特、ARK、Citadel、Coatue 等机构上一季度持仓方向，但它天然滞后，不适合判断当日/当周派发。',
+    caseStudy: '13F 常用于观察巴菲特、ARK、Citadel、Coatue 等机构上一季度持仓方向，但它天然滞后，不适合判断当日/当周风险。',
     limitations: '13F 只显示季度末多头持仓，不含空头、完整衍生品风险和季内交易；CUSIP/ticker 映射采用白名单与名称匹配，适合趋势证据，不是实时机构流。',
   })));
 
-  // 7) SEC FTD 结算压力快照（半月披露、交割失败余额，不等于裸卖空或机构派发）
+  // 7) SEC FTD 结算压力快照（半月披露、交割失败余额，不等于裸卖空或机构交易行为）
   metrics.push(cachedMacroIndicatorMetric(breadthSnapshot, 'sec_ftd_settlement_pressure', metric({
     id: 'sec_ftd_settlement_pressure',
     name: 'SEC FTD 结算压力快照',
     purpose: '追踪 AI/Mag7 样本股票在 SEC Fails-to-Deliver 数据中的交割失败余额，作为结算压力线索',
     value: null,
     status: 'pending',
-    threshold: '样本最新 FTD 名义金额≥$250M 或异常股票≥5只：结算压力升温/派发压力线索；≤$50M 且无异常股票：结算压力低/承接改善；其他中性',
+    threshold: '样本最新 FTD 名义金额≥$250M 或异常股票≥5只：结算压力升温/风险压力线索；≤$50M 且无异常股票：结算压力低/承接改善；其他中性',
     sourceName: 'SEC Fails-to-Deliver Data',
     sourceUrl: 'https://www.sec.gov/data-research/sec-markets-data/fails-deliver-data',
     frequency: '半月更新（上半月月底、下半月约次月15日；页面日更检查最新文件）',
     updatedAt: null,
     dataStatus: 'Pending',
-    logic: 'FTD 是 NSCC CNS 交割失败余额。若多个核心股票同时出现高额 FTD，说明结算/借券/交割压力升温，是派发风险的辅助线索。',
+    logic: 'FTD 是 NSCC CNS 交割失败余额。若多个核心股票同时出现高额 FTD，说明结算/借券/交割压力升温，是风险压力的辅助线索。',
     caseStudy: '高波动个股在剧烈上涨/下跌后可能出现 FTD 抬升；只有与价格破位、短量升高、宽度恶化共振时，才提升风险权重。',
-    limitations: 'FTD 不是每日新增失败数，也不是裸卖空或机构派发证据；可能来自长短交易、做市、清算与操作原因。SEC 半月披露且有延迟。',
+    limitations: 'FTD 不是每日新增失败数，也不是裸卖空或机构交易行为证据；可能来自长短交易、做市、清算与操作原因。SEC 半月披露且有延迟。',
   })));
 
   // 8) CBOE Put/Call Ratio（V2：从官方 Daily Market Statistics HTML / Next payload 自动解析，失败则 Pending）
@@ -954,7 +954,7 @@ export default async function handler(req) {
       frequency: '日更（CBOE 收盘后发布；自动解析官网 HTML 中的 Next payload）',
       updatedAt: cboePc?.asOf || null,
       dataStatus: equity != null ? 'Live' : 'Pending',
-      logic: 'Equity Put/Call 越低，说明个股 Call 投机越拥挤，常见于情绪过热阶段；越高说明保护性需求上升，常见于风险释放阶段。它是期权情绪证据，不等于机构真实派发。',
+      logic: 'Equity Put/Call 越低，说明个股 Call 投机越拥挤，常见于情绪过热阶段；越高说明保护性需求上升，常见于风险释放阶段。它是期权情绪证据，不等于机构交易行为。',
       caseStudy: '2021 年末 Equity P/C 低位徘徊，成长股投机拥挤；2022 年多个阶段 Equity P/C 升高后出现恐慌释放。',
       limitations: '依赖 CBOE 官网 HTML 中的 Next/RSC 数据片段，页面结构若改版会自动降级为 Pending；旧 CSV 在服务器/Edge 环境仍可能 403，不作为主来源。',
       extras: cboePc || null,
@@ -1053,7 +1053,7 @@ export default async function handler(req) {
     dataStatus: 'Pending',
     logic: '指数新高但 52 周新高家数少、新低家数抬头，代表上涨集中在少数权重股；新高扩张且新低萎缩，代表宽度健康/承接扩散。',
     caseStudy: '2000/03、2007/07 指数新高阶段，创新高家数持续收缩是典型宽度背离。',
-    limitations: 'Barchart 页面抓取非官方 JSON，可能改版或限流；只反映 52周新高/新低家数快照，不等于机构派发。需与 A/D、RSP/SPY、Form 4/13F 等共振判断。',
+    limitations: 'Barchart 页面抓取非官方 JSON，可能改版或限流；只反映 52周新高/新低家数快照，不等于机构交易行为。需与 A/D、RSP/SPY、Form 4/13F 等共振判断。',
   })));
 
   // 9) V2 第三刀：日更静态快照，全量 S&P500 / Nasdaq-100 宽度（API 优先读缓存 JSON，不在 Edge 实时拉 600 只）。
@@ -1089,7 +1089,7 @@ export default async function handler(req) {
       dataStatus: iwmRs ? 'Live' : 'data_unavailable',
       logic: '派发期常见现象不是指数立刻下跌，而是小盘股、次级股票先跌，指数由少数大权重继续托住。IWM/SPY 下行说明风险偏好正在从底层股票撤退。',
       caseStudy: '2021 年下半年，很多成长/小盘股先走熊，指数仍由大票维持，随后宽度恶化扩散。',
-      limitations: 'IWM 是 ETF 代理，不等于全市场 A/D Line；只代表小盘相对强弱，不能单独证明机构派发。',
+      limitations: 'IWM 是 ETF 代理，不等于全市场 A/D Line；只代表小盘相对强弱，不能单独证明机构交易行为。',
       extras: iwmRs || null,
     }));
   }
@@ -1131,7 +1131,7 @@ export default async function handler(req) {
       dataStatus: hygRs ? 'Live' : 'data_unavailable',
       logic: '高收益债对流动性和信用风险更敏感。HYG 相对 SPY 持续走弱，说明风险资产内部可能开始撤退。',
       caseStudy: '信用利差走阔、高收益债走弱，常与权益市场调整或风险偏好下降同步出现。',
-      limitations: 'HYG 受利率与信用双重影响，不是纯机构派发指标；需和宽度、VIX、派发日一起看。',
+      limitations: 'HYG 受利率与信用双重影响，不是纯机构交易行为指标；需和宽度、VIX、放量下跌日一起看。',
       extras: hygRs || null,
     }));
   }
@@ -1180,16 +1180,16 @@ export default async function handler(req) {
     metrics.push(metric({
       id: 'distribution_days',
       name: 'Distribution Days (SPY/QQQ)',
-      purpose: 'IBD 经典方法：放量下跌日统计，衡量机构分发力度',
+      purpose: 'IBD/O’Neil 经典方法：放量下跌日统计，观察量价压力是否聚集',
       value,
       status,
-      threshold: '近 25 交易日 ≥ 5 派发日 → 偏派发；≤ 2 → 派发压力低/承接尚可',
+      threshold: '近 25 交易日 ≥ 5 放量下跌日 → 风险升温；≤ 2 → 压力偏低/承接尚可',
       sourceName: 'Yahoo Finance SPY/QQQ 自算',
       sourceUrl: 'https://finance.yahoo.com/quote/SPY/history',
       frequency: '日更（美股收盘后）',
       updatedAt,
       dataStatus,
-      logic: '当日收跌且成交量 > 前一交易日 → 记为 distribution day。机构大规模分发通常形成连续派发日聚集。',
+      logic: '当日收跌且成交量 > 前一交易日 → 记为放量下跌日。连续聚集说明量价压力升温，但不是机构交易行为证明。',
       caseStudy: '2022/01 SPY 近 25 日出现 6 个派发日，随后开启熊市。',
       limitations: 'ETF 成交量受当日做市与再平衡影响，易有噪声；阈值为经验值非硬约束。',
       extras: { spy: ddSpy, qqq: ddQqq },
@@ -1205,7 +1205,7 @@ export default async function handler(req) {
       purpose: '观察 AI 主题内部是否只有少数龙头撑住，还是大部分核心票仍在趋势线上方',
       value: breadthValue(aiBreadth),
       status: breadthStatus(aiBreadth),
-      threshold: '样本覆盖 ≥70% 才参与判断；MA50上方 <45% 或 MA200上方 <50% 偏派发；二者 ≥70% 且近52周高 ≥35% 承接扩散',
+      threshold: '样本覆盖 ≥70% 才参与判断；MA50上方 <45% 或 MA200上方 <50% 偏风险；二者 ≥70% 且近52周高 ≥35% 承接扩散',
       sourceName: 'Yahoo Finance 24只AI核心样本自算',
       sourceUrl: 'https://finance.yahoo.com/lookup',
       frequency: '日更（美股交易日；Edge 实时抓取，失败则降级）',
@@ -1294,7 +1294,7 @@ export default async function handler(req) {
       'Live 指标通过 Yahoo Finance 免费公开行情获取；失败时单项降级为 data_unavailable/Pending，不影响整体返回。',
       'V2 第一阶段已接入小盘 IWM/SPY、等权 RSP/SPY、信用 HYG/SPY、板块轮动；V2 第二刀新增 AI 核心样本与 Mag7 真实宽度；V2 第三刀新增 GitHub Actions 日更静态快照，覆盖全量 S&P500 与 QQQ/Nasdaq-100 持仓宽度。CBOE Put/Call 现在从 CBOE Daily Market Statistics 官网 HTML 自动解析，页面结构变化时单项降级。',
       'FINRA Margin Debt、FINRA Daily Short Sale Volume、SEC Form 4 内部人交易快照、SEC 13F 样本机构持仓慢变量与 SEC FTD 结算压力快照已通过 GitHub Actions 快照自动抓官方页面/文件/API；AAII 若官方页面反爬失败则由手工值透明兜底；BofA FMS 仍可通过 /data/manual-stock-indicators.json 手工开启；NYSE A/D Line、New High/New Low 仍保持 Pending，未找到稳定免费自动源前不伪造数值。',
-      'Distribution Days 自算方法：当日收跌且成交量 > 前一交易日 → 派发日，近 25 交易日统计。',
+      '放量下跌日自算方法：当日收跌且成交量 > 前一交易日，近 25 交易日统计；它是量价压力线索，不是机构行为证明。',
       ...notes,
     ],
   };
