@@ -1,6 +1,6 @@
 /**
  * Vercel Edge Function: /api/stock-radar
- * 成诺美股风险雷达 V2
+ * 流程猎人 - 美股风险雷达 V2
  *
  * 原则：
  * - 可解释性 > 漂亮。每个指标必须带 sourceName / sourceUrl / frequency / updatedAt / dataStatus
@@ -469,6 +469,160 @@ function statusLabel(status) {
   return '中性观察';
 }
 
+
+function moneyShort(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return '$0';
+  const abs = Math.abs(n);
+  if (abs >= 1e9) return `$${(n / 1e9).toFixed(1)}B`;
+  if (abs >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
+  if (abs >= 1e3) return `$${(n / 1e3).toFixed(1)}K`;
+  return `$${n.toFixed(0)}`;
+}
+
+function pendingStockEvidenceMetric(id, name, purpose, sourceName, sourceUrl, frequency, logic, limitations) {
+  return metric({
+    id,
+    name,
+    purpose,
+    value: null,
+    status: 'pending',
+    threshold: '当前快照未覆盖该股票或源数据不足，显示 Pending，不参与量价温度判断',
+    sourceName,
+    sourceUrl,
+    frequency,
+    updatedAt: null,
+    dataStatus: 'Pending',
+    logic,
+    limitations,
+  });
+}
+
+function buildStockEvidenceMetrics(symbol, snapshot) {
+  const ticker = String(symbol || '').toUpperCase();
+  const macro = snapshot?.macroIndicators || {};
+  const generatedAt = snapshot?.generatedAt || null;
+  const out = [];
+
+  const form4 = macro.sec_form4_insider_activity;
+  if (form4) {
+    const sale = (form4.topSaleTickers || []).find(x => String(x.ticker || '').toUpperCase() === ticker);
+    const buy = (form4.topBuyTickers || []).find(x => String(x.ticker || '').toUpperCase() === ticker);
+    const sellValue = Number(sale?.valueUsd || 0);
+    const buyValue = Number(buy?.valueUsd || 0);
+    const covered = (form4.coveredTickers || form4.tickerUniverse || []).map(x => String(x).toUpperCase()).includes(ticker);
+    const txs = [...(form4.topSales || []), ...(form4.topPurchases || [])]
+      .filter(x => String(x.ticker || '').toUpperCase() === ticker)
+      .slice(0, 6);
+    let status = 'neutral';
+    if (sellValue >= 10_000_000 && sellValue > Math.max(1, buyValue) * 3) status = 'distribution';
+    else if (buyValue >= 1_000_000 && buyValue > Math.max(1, sellValue) * 2) status = 'accumulation';
+    out.push(metric({
+      id: 'stock_sec_form4_insider_activity',
+      name: 'Form 4 内部人交易',
+      purpose: '观察董事、高管、10% 持有人公开市场买入/卖出披露，补足量价之外的内部人证据层',
+      value: covered ? `90日卖出 ${moneyShort(sellValue)} · 买入 ${moneyShort(buyValue)}` : null,
+      status: covered ? status : 'pending',
+      threshold: '90日公开市场卖出显著高于买入 → 内部人卖出线索；买入显著高于卖出 → 内部人买入线索',
+      sourceName: 'SEC EDGAR Form 4 快照',
+      sourceUrl: form4.source || 'https://www.sec.gov/edgar/search/',
+      frequency: '日更快照；Form 4 通常交易后 2 个工作日内披露',
+      updatedAt: form4.updatedAt || generatedAt,
+      dataStatus: covered ? 'Cached' : 'Pending',
+      logic: '只统计非衍生品公开市场 P/S 交易代码。Form 4 是内部人交易披露，不是 13F 机构持仓，也不能单独推导机构行为。',
+      caseStudy: txs.length ? txs.map(x => `${x.transactionDate || x.filingDate} ${x.ownerName || 'insider'} ${x.direction === 'purchase' ? '买入' : '卖出'} ${moneyShort(x.valueUsd)}`).join('；') : '该股票在当前样本快照中未进入 Top Form 4 交易列表。',
+      limitations: form4.limitations || 'Form 4 可能包含 10b5-1 计划、税务、期权行权等噪声；只覆盖当前股票池和最近快照。',
+      extras: { sellValueUsd: sellValue, buyValueUsd: buyValue, transactions: txs },
+    }));
+  } else {
+    out.push(pendingStockEvidenceMetric('stock_sec_form4_insider_activity', 'Form 4 内部人交易', '观察内部人公开市场买入/卖出披露', 'SEC EDGAR Form 4', 'https://www.sec.gov/edgar/search/', '日更快照', 'Form 4 是内部人交易证据，不是机构持仓证据。', '当前快照未返回 Form 4 数据。'));
+  }
+
+  const thirteenF = macro.sec_13f_institutional_sample;
+  if (thirteenF) {
+    const changes = [];
+    for (const manager of thirteenF.managers || []) {
+      for (const change of manager.changes || []) {
+        if (String(change.ticker || '').toUpperCase() === ticker) changes.push({ ...change, manager: change.manager || manager.name });
+      }
+    }
+    const currentValue = changes.reduce((s, x) => s + Number(x.valueUsd || 0), 0);
+    const previousValue = changes.reduce((s, x) => s + Number(x.previousValueUsd || 0), 0);
+    const inc = changes.filter(x => x.direction === 'increase').length;
+    const dec = changes.filter(x => x.direction === 'decrease').length;
+    const pct = previousValue > 0 ? (currentValue / previousValue - 1) * 100 : (currentValue > 0 ? 100 : null);
+    let status = 'neutral';
+    if (pct != null && pct <= -15 && dec >= inc) status = 'distribution';
+    else if (pct != null && pct >= 15 && inc > dec) status = 'accumulation';
+    out.push(metric({
+      id: 'stock_sec_13f_institutional_sample',
+      name: '13F 样本机构慢变量',
+      purpose: '观察样本机构上一季度末多头持仓变化，作为慢变量证据层',
+      value: changes.length ? `样本持仓 ${moneyShort(currentValue)} · 较上季 ${pct == null ? '新增' : (pct >= 0 ? '+' : '') + pct.toFixed(1) + '%'} · 增/减 ${inc}/${dec}` : null,
+      status: changes.length ? status : 'pending',
+      threshold: '样本机构多头持仓较上季 ±15% 且方向一致时，标记为慢变量增/减持线索',
+      sourceName: 'SEC 13F 样本机构快照',
+      sourceUrl: thirteenF.source || 'https://www.sec.gov/data-research/sec-markets-data/form-13f-data-sets',
+      frequency: '季更；最多 45 天披露延迟',
+      updatedAt: thirteenF.updatedAt || generatedAt,
+      dataStatus: changes.length ? 'Cached' : 'Pending',
+      logic: '13F 只代表样本机构季度末多头持仓，不含空头、完整衍生品和季内交易。它适合看慢变量，不适合判断今天是否有人派发。',
+      caseStudy: changes.slice(0, 6).map(x => `${x.manager} ${x.direction === 'increase' ? '增持' : '减持'} ${x.shareChangePct != null ? x.shareChangePct.toFixed(1) + '%' : ''}`).join('；') || '当前样本机构未返回该股票持仓变化。',
+      limitations: thirteenF.limitations || '样本机构有限；季度滞后；只看多头持仓。',
+      extras: { currentValueUsd: currentValue, previousValueUsd: previousValue, valueChangePct: pct, increases: inc, decreases: dec, changes: changes.slice(0, 12) },
+    }));
+  } else {
+    out.push(pendingStockEvidenceMetric('stock_sec_13f_institutional_sample', '13F 样本机构慢变量', '观察样本机构季度多头持仓变化', 'SEC 13F Data Sets', 'https://www.sec.gov/data-research/sec-markets-data/form-13f-data-sets', '季更', '13F 是季度滞后多头持仓慢变量。', '当前快照未返回 13F 数据。'));
+  }
+
+  const finra = macro.finra_short_sale_volume;
+  const abnormal = (finra?.abnormalTickers || []).find(x => String(x.symbol || '').toUpperCase() === ticker);
+  out.push(metric({
+    id: 'stock_finra_short_sale_volume',
+    name: 'FINRA 场外短量线索',
+    purpose: '观察该股票是否进入 FINRA CNMS 场外短量异常列表',
+    value: abnormal ? `短量占比 ${Number(abnormal.ratioPct).toFixed(1)}% · 成交量 ${Number(abnormal.totalVolume || 0).toLocaleString('en-US')}` : null,
+    status: abnormal ? 'distribution' : 'pending',
+    threshold: '当前版本仅展示异常列表命中；未命中不代表短量正常，只代表快照未提供单票完整序列',
+    sourceName: 'FINRA Daily Short Sale Volume Files（CNMS）',
+    sourceUrl: finra?.source || 'https://www.finra.org/finra-data/browse-catalog/short-sale-volume-data/daily-short-sale-volume-files',
+    frequency: '日更；FINRA 通常在 T 日 18:00 ET 前发布',
+    updatedAt: finra?.updatedAt || generatedAt,
+    dataStatus: abnormal ? 'Cached' : 'Pending',
+    logic: 'FINRA short volume / total volume 是场外短量口径，不等于 short interest，也不能直接等同特定资金方向。',
+    caseStudy: abnormal ? `${ticker} 进入当前快照异常短量列表。` : '当前快照未提供该股票单票短量序列；后续可扩展 20 日 per-ticker 历史。',
+    limitations: finra?.limitations || '做市商对冲和交易报告口径会带来噪声；未命中异常列表不是正面信号。',
+    extras: abnormal || null,
+  }));
+
+  const ftd = macro.sec_ftd_settlement_pressure;
+  const ftdRow = (ftd?.topTickers || []).find(x => String(x.symbol || '').toUpperCase() === ticker);
+  let ftdStatus = 'pending';
+  if (ftdRow) {
+    const ratio = Number(ftdRow.notionalVsAvg);
+    ftdStatus = Number.isFinite(ratio) && ratio >= 2 ? 'distribution' : Number.isFinite(ratio) && ratio <= 0.7 ? 'accumulation' : 'neutral';
+  }
+  out.push(metric({
+    id: 'stock_sec_ftd_settlement_pressure',
+    name: 'SEC FTD 结算压力',
+    purpose: '观察该股票最新 SEC 交割失败余额是否异常，作为结算压力线索',
+    value: ftdRow ? `最新 ${moneyShort(ftdRow.notionalUsd)} · 相对均值 ${Number(ftdRow.notionalVsAvg || 0).toFixed(2)}x` : null,
+    status: ftdStatus,
+    threshold: '最新 FTD 名义金额 ≥ 2x 历史均值偏压力；≤ 0.7x 偏缓和',
+    sourceName: 'SEC Fails-to-Deliver Data',
+    sourceUrl: ftd?.source || 'https://www.sec.gov/data-research/sec-markets-data/fails-deliver-data',
+    frequency: '半月披露且有延迟',
+    updatedAt: ftd?.updatedAt || generatedAt,
+    dataStatus: ftdRow ? 'Cached' : 'Pending',
+    logic: 'FTD 是交割失败余额，可能来自长卖、短卖、做市、清算或运营问题；它是结算压力线索，不是裸卖空或特定机构交易实锤。',
+    caseStudy: ftdRow ? `${ticker} 最新日期 ${ftdRow.latestDate}，fails ${Number(ftdRow.fails || 0).toLocaleString('en-US')} 股。` : '当前快照未把该股票列入 FTD Top 列表。',
+    limitations: ftd?.limitations || 'SEC FTD 半月披露且滞后；只能与量价、短量、Form 4、13F 交叉看。',
+    extras: ftdRow || null,
+  }));
+
+  return out;
+}
+
 function analyzeStockBars(symbol, bars, meta = {}) {
   if (!Array.isArray(bars) || bars.length < 60) return null;
   const last = bars[bars.length - 1];
@@ -729,7 +883,11 @@ export default async function handler(req) {
     if (!memberCheck.ok) {
       return memberGateResponse(memberCheck);
     }
-    const r = await safeFetchJson(symbolParam, YF_CHART(symbolParam, '1y', '1d'), 6500);
+    const breadthSnapshotUrl = new URL('/data/snapshots/market-breadth-latest.json', url.origin).toString();
+    const [r, breadthSnapshotResult] = await Promise.all([
+      safeFetchJson(symbolParam, YF_CHART(symbolParam, '1y', '1d'), 6500),
+      safeFetchJson('market_breadth_snapshot', breadthSnapshotUrl, 2500),
+    ]);
     if (!r.ok) {
       return new Response(JSON.stringify({ error: 'symbol_fetch_failed', symbol: symbolParam, detail: r.error }), { status: 502, headers: MEMBER_JSON_HEADERS });
     }
@@ -739,6 +897,18 @@ export default async function handler(req) {
     if (!analysis) {
       return new Response(JSON.stringify({ error: 'insufficient_data', symbol: symbolParam }), { status: 422, headers: MEMBER_JSON_HEADERS });
     }
+    const breadthSnapshot = breadthSnapshotResult.ok ? breadthSnapshotResult.data : null;
+    const evidenceMetrics = buildStockEvidenceMetrics(symbolParam, breadthSnapshot);
+    analysis.tapeMetrics = analysis.metrics;
+    analysis.evidenceMetrics = evidenceMetrics;
+    analysis.metrics = [...analysis.metrics, ...evidenceMetrics];
+    analysis.evidenceDataStatus = breadthSnapshotResult.ok ? 'Cached' : 'data_unavailable';
+    analysis.notes = [
+      '个股页已分成 Tape 量价层 + Evidence 披露/微结构层；风险温度仍主要来自量价，不把量价直接说成机构行为。',
+      'Form 4 是内部人公开市场交易披露；13F 是季度滞后的样本机构多头持仓慢变量；FINRA 短量和 SEC FTD 都有口径噪声。',
+      ...(breadthSnapshotResult.ok ? [] : [`披露证据快照读取失败：${breadthSnapshotResult.error}`]),
+      ...analysis.notes,
+    ];
     return new Response(JSON.stringify(analysis, null, 2), { status: 200, headers: MEMBER_JSON_HEADERS });
   }
 
@@ -1232,7 +1402,7 @@ export default async function handler(req) {
       frequency: '日更（美股交易日）',
       updatedAt: mag7Breadth?.updatedAt || null,
       dataStatus: mag7Breadth && mag7Breadth.coveragePct >= 70 ? 'Live' : 'data_unavailable',
-      logic: '如果 SPY/QQQ 仍强，但 Mag7 内部开始多数跌破均线，说明权重支撑也在松动；若 Mag7 多数健康，只能说明龙头承接尚可，不代表机构正在增持。',
+      logic: '如果 SPY/QQQ 仍强，但 Mag7 内部开始多数跌破均线，说明权重支撑也在松动；若 Mag7 多数健康，只能说明龙头承接尚可，不代表披露层面的增持。',
       caseStudy: '权重股集中行情里，Mag7 内部分化通常先于指数波动扩大。',
       limitations: 'Mag7 是极窄样本，容易被单票财报影响；必须结合 RSP/SPY、IWM/SPY 与 AI 样本宽度一起看。',
       extras: breadthExtras(mag7Breadth),
