@@ -3,39 +3,67 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>成诺美股风险雷达会员版 | 知行社</title>
-<meta name="description" content="成诺美股风险雷达会员版：普通版看市场体温，会员版查看个股风险线索解读、来源、逻辑与局限性。仅作研究参考，不构成投资建议。">
+<title>流程猎人 - 美股风险雷达会员版 | FlowHunt｜流程猎人</title>
+<meta name="description" content="流程猎人 - 美股风险雷达会员版：买卖 AI 热门股前，用公开证据链做 30 秒风险检查表，查看风险温度、关键证据、来源、局限和下一步该查什么。">
 <style>
-:root{color-scheme:dark;--bg:#07090d;--panel:#111827;--line:#253241;--text:#eef2f6;--muted:#a0adba;--accent:#67e8f9;--yellow:#fbbf24;--green:#34d399;--red:#ff5f56;--sans:"Avenir Next","PingFang SC","Microsoft YaHei",system-ui,sans-serif;--serif:Georgia,"Songti SC","SimSun",serif}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% 0,rgba(103,232,249,.12),transparent 26%),radial-gradient(circle at 10% 20%,rgba(251,191,36,.10),transparent 24%),var(--bg);color:var(--text);font-family:var(--sans);line-height:1.65}.wrap{max-width:980px;margin:0 auto;padding:26px 16px 60px}.nav{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:36px}.brand{font-weight:900}.link,.btn{display:inline-flex;align-items:center;justify-content:center;min-height:40px;border:1px solid rgba(148,163,184,.22);border-radius:999px;padding:8px 13px;color:var(--text);background:rgba(17,24,39,.62);text-decoration:none;cursor:pointer}.hero{display:grid;grid-template-columns:minmax(0,1.1fr) 360px;gap:18px;align-items:start}.panel{border:1px solid rgba(148,163,184,.16);border-radius:24px;background:linear-gradient(180deg,rgba(17,24,39,.88),rgba(7,9,13,.92));box-shadow:0 24px 70px rgba(0,0,0,.32);padding:24px}h1{font-family:var(--serif);font-size:42px;line-height:1.08;margin:0 0 14px;letter-spacing:-.04em}h2{font-size:18px;margin:0 0 12px}.muted{color:var(--muted)}.eyebrow{color:var(--accent);font-size:12px;letter-spacing:.16em;text-transform:uppercase;margin-bottom:10px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}.card{border:1px solid rgba(148,163,184,.14);border-radius:18px;padding:16px;background:rgba(7,9,13,.30)}.card strong{display:block;margin-bottom:8px}.card ul{margin:0;padding-left:18px;color:var(--muted)}.price{font-size:38px;font-weight:950;letter-spacing:-.05em}.price small{font-size:14px;color:var(--muted);font-weight:500}.input{width:100%;min-height:46px;border:1px solid rgba(148,163,184,.22);border-radius:14px;background:rgba(7,9,13,.48);color:var(--text);padding:11px 13px;font-size:15px;outline:none}.primary{width:100%;border-color:rgba(103,232,249,.48);background:rgba(103,232,249,.12);color:var(--text);font-weight:800;margin-top:10px}.msg{min-height:22px;color:var(--muted);font-size:13px;margin-top:10px}.note{font-size:12px;color:var(--muted);margin-top:14px}.warn{border-color:rgba(251,191,36,.26);background:rgba(251,191,36,.08)}@media(max-width:760px){.hero,.grid{grid-template-columns:1fr}h1{font-size:32px}.nav{align-items:flex-start;flex-direction:column}}
+:root{color-scheme:dark;--bg:#07090d;--panel:#111827;--line:#253241;--text:#eef2f6;--muted:#a0adba;--weak:#667688;--accent:#67e8f9;--yellow:#fbbf24;--green:#34d399;--red:#ff5f56;--sans:"Avenir Next","PingFang SC","Microsoft YaHei",system-ui,sans-serif;--serif:Georgia,"Songti SC","SimSun",serif}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 80% 0,rgba(103,232,249,.12),transparent 26%),radial-gradient(circle at 10% 20%,rgba(251,191,36,.10),transparent 24%),var(--bg);color:var(--text);font-family:var(--sans);line-height:1.65}a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}.wrap{max-width:1080px;margin:0 auto;padding:26px 16px 60px}.nav{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:34px}.brand{font-weight:900}.link,.btn{display:inline-flex;align-items:center;justify-content:center;min-height:40px;border:1px solid rgba(148,163,184,.22);border-radius:999px;padding:8px 13px;color:var(--text);background:rgba(17,24,39,.62);text-decoration:none;cursor:pointer}.hero{display:grid;grid-template-columns:minmax(0,1.1fr) 360px;gap:18px;align-items:start}.panel{border:1px solid rgba(148,163,184,.16);border-radius:24px;background:linear-gradient(180deg,rgba(17,24,39,.88),rgba(7,9,13,.92));box-shadow:0 24px 70px rgba(0,0,0,.32);padding:24px}h1{font-family:var(--serif);font-size:44px;line-height:1.08;margin:0 0 14px;letter-spacing:-.04em}h2{font-size:18px;margin:0 0 12px}.muted{color:var(--muted)}.eyebrow{color:var(--accent);font-size:12px;letter-spacing:.16em;text-transform:uppercase;margin-bottom:10px}.hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.primary{border-color:rgba(103,232,249,.48);background:rgba(103,232,249,.12);color:var(--text);font-weight:800}.section-title{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin:28px 0 12px;border-bottom:1px solid rgba(148,163,184,.14);padding-bottom:10px}.section-title h2{margin:0}.section-title span{color:var(--weak);font-size:12px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.grid.two{grid-template-columns:1fr 1fr}.card{border:1px solid rgba(148,163,184,.14);border-radius:18px;padding:16px;background:rgba(7,9,13,.30)}.card strong{display:block;margin-bottom:8px}.card ul{margin:0;padding-left:18px;color:var(--muted)}.price{font-size:38px;font-weight:950;letter-spacing:-.05em}.price small{font-size:14px;color:var(--muted);font-weight:500}.input{width:100%;min-height:46px;border:1px solid rgba(148,163,184,.22);border-radius:14px;background:rgba(7,9,13,.48);color:var(--text);padding:11px 13px;font-size:15px;outline:none}.redeem-btn{width:100%;margin-top:10px}.msg{min-height:22px;color:var(--muted);font-size:13px;margin-top:10px}.note{font-size:12px;color:var(--muted);margin-top:14px}.warn{border-color:rgba(251,191,36,.26);background:rgba(251,191,36,.08)}.check{display:grid;gap:8px}.check div{border:1px solid rgba(148,163,184,.14);border-radius:14px;padding:10px 12px;background:rgba(7,9,13,.24);color:var(--muted)}.check b{color:var(--text)}@media(max-width:820px){.hero,.grid,.grid.two{grid-template-columns:1fr}h1{font-size:34px}.nav{align-items:flex-start;flex-direction:column}.panel{padding:18px}}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="nav"><div class="brand">▥ 成诺美股风险雷达</div><a class="link" href="/stock">返回雷达</a></div>
+  <div class="nav"><div class="brand">▥ 流程猎人 · AI 热门股风险雷达</div><a class="link" href="/stock">返回雷达</a></div>
   <section class="hero">
     <div class="panel">
-      <div class="eyebrow">Free market / Member stock analysis</div>
-      <h1>大盘免费，个股会员</h1>
-      <p class="muted">这个站不做荐股，不预测明天涨跌。普通版看市场体温，会员版获得个股线索的解释权：来源、逻辑、局限和下一步该查什么，把“感觉不太对”拆成可复盘的证据。</p>
-      <div class="grid">
-        <div class="card"><strong>普通版</strong><ul><li>市场体温状态</li><li>最大驱动项</li><li>Tape / Absorption / Evidence 证据链</li><li>方法论与局限说明</li></ul></div>
-        <div class="card"><strong>会员版</strong><ul><li>输入 NVDA / TSLA / PLTR 等代码</li><li>查看个股量价风险线索</li><li>看懂来源、逻辑、阈值与局限</li><li>节省公开数据检索和比对时间</li></ul></div>
-      </div>
-      <div class="card warn" style="margin-top:12px"><strong>措辞边界</strong><div class="muted">个股结果只写“风险升温、压力偏低、吸收改善、中性观察”。不把价格、宽度、短量直接解释成确定性机构交易行为。</div></div>
+      <div class="eyebrow">Member checklist</div>
+      <h1>买卖前 30 秒，先看风险证据链</h1>
+      <p class="muted">会员版不是给你神秘数据，而是帮你把公开信息整理成可复盘的检查表：风险温度、关键证据、来源、更新时间、局限和下一步该查什么。</p>
+      <div class="hero-actions"><a class="btn primary" href="#redeem">解锁个股检查表</a><a class="btn" href="/stock#example">查看公开示例</a><a class="btn" href="/stock#screener">先输入股票看看支持范围</a></div>
+      <div class="card warn" style="margin-top:16px"><strong>适合的真实场景</strong><div class="muted">准备加自选、下单前犹豫、盘中突然波动、收盘后复盘。先看风险热在哪里，再决定是否继续研究。</div></div>
     </div>
-    <aside class="panel">
-      <h2>兑换会员</h2>
-      <div class="price">早鸟 <small>联系开通</small></div>
-      <p class="muted">拿到兑换码后，在这里输入。当前浏览器会自动保存会员状态；同一会员码同一时间只允许一个 IP 使用。</p>
+    <aside class="panel" id="redeem">
+      <h2>开通会员版</h2>
+      <div class="price">早鸟 <small>内测 · 联系开通</small></div>
+      <p class="muted">输入兑换码后，即可在当前浏览器查看个股风险检查表。兑换码会绑定当前浏览器环境；如需更换设备，可邮件联系处理。</p>
       <input id="code" class="input" placeholder="输入会员兑换码">
-      <button class="btn primary" onclick="redeem()">解锁解读权</button>
+      <button class="btn primary redeem-btn" onclick="redeem()">解锁个股检查表</button>
       <div id="msg" class="msg"></div>
-      <p class="note">如需开通，直接联系成诺。页面仅作研究参考，不构成投资建议。</p>
+      <p class="note">需要开通？邮件联系：<a href="mailto:johnsonlee28@gmail.com">johnsonlee28@gmail.com</a><br>页面仅作研究参考，不构成投资建议。</p>
     </aside>
+  </section>
+
+  <section>
+    <div class="section-title"><h2>适合这三类人</h2><span>具体用户，不服务抽象市场</span></div>
+    <div class="grid">
+      <div class="card"><strong>你持有 AI 热门股</strong><p class="muted">每天价格波动很大，但你不想只靠群聊、新闻标题和盘中情绪判断。</p></div>
+      <div class="card"><strong>你准备研究高关注股票</strong><p class="muted">想先知道它最近是风险升温、压力暂缓，还是只是正常波动。</p></div>
+      <div class="card"><strong>你需要固定复盘动作</strong><p class="muted">每天看同一套公开证据，减少临时起意，留下可复盘记录。</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-title"><h2>普通版 vs 会员版</h2><span>大盘免费，个股检查表会员开放</span></div>
+    <div class="grid two">
+      <div class="card"><strong>普通版：看市场今天热不热</strong><ul><li>今日市场风险温度</li><li>最重要的 3 条驱动证据</li><li>Tape / Absorption / Evidence 总览</li><li>每条指标的来源、更新时间、局限</li><li>适合每天开盘前快速扫一眼</li></ul></div>
+      <div class="card"><strong>会员版：看你关心的股票热在哪里</strong><ul><li>输入 NVDA、TSLA、PLTR、AMD、OKLO 等代码</li><li>生成单只股票的风险温度</li><li>最多 6 个证据位，突出 3–5 条关键证据</li><li>标明来源、更新时间、判断口径和局限</li><li>告诉你下一步该查什么，而不是让你猜</li><li>适合下单前、加自选前、复盘持仓前使用</li></ul></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-title"><h2>会员真正买到的是时间和结构</h2><span>不是神秘数据，是可复盘的检查表</span></div>
+    <div class="panel check">
+      <div><b>少切换：</b>少在 Yahoo、SEC、FINRA、CBOE 之间来回查。</div>
+      <div><b>少被带节奏：</b>少被单条新闻、群聊情绪和盘中波动牵着走。</div>
+      <div><b>更容易复盘：</b>每次看同一套检查项，知道当时判断基于哪些证据。</div>
+      <div><b>先看风险集中点：</b>看到风险热在哪里，再决定是否继续研究。</div>
+    </div>
+  </section>
+  <section>
+    <div class="section-title"><h2>先看一眼支持范围</h2><span>不确定查哪只股票时，先回雷达输入代码</span></div>
+    <div class="card"><strong>推荐动作：</strong><p class="muted">先在雷达页输入 NVDA、TSLA、PLTR、AMD、SMCI、OKLO 等关注标的，确认是否需要生成个股检查表。</p><a class="btn primary" href="/stock#screener">打开个股检查区</a></div>
   </section>
 </div>
 <script>
-function deviceId(){let id=localStorage.getItem('member_device_id');if(!id){id=(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random().toString(16).slice(2));localStorage.setItem('member_device_id',id)}return id}
+function deviceId(){let id=localStorage.getItem('member_device_id');if(!id){id=(window.crypto&&crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random().toString(16).slice(2));localStorage.setItem('member_device_id',id)}return id}
 async function redeem(){const code=document.getElementById('code').value.trim();const msg=document.getElementById('msg');if(!code){msg.textContent='先输入兑换码。';return}msg.textContent='正在校验...';try{const res=await fetch('/api/redeem',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,deviceId:deviceId()})});const data=await res.json();if(!res.ok)throw new Error(data.message||data.error||'兑换失败');localStorage.setItem('member_token',data.token);msg.textContent=data.message||'会员已解锁';setTimeout(()=>location.href='/stock',700)}catch(e){msg.textContent=e.message||String(e)}}
 </script>
 </body>

@@ -139,7 +139,7 @@ export default async function handler(req) {
           `**条件：** ${dir} 目标价`,
           alert.label ? `**备注：** ${alert.label}` : '',
           '',
-          `[点击查看仪表盘](https://btc.zhixingshe.cc)`,
+          `[点击查看仪表盘](https://btc.flowhunt.net)`,
         ].filter(Boolean).join('\n\n');
 
         try {

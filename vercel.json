@@ -1,24 +1,69 @@
 {
   "redirects": [
     {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "btc.zhixingshe.cc"
+        }
+      ],
+      "destination": "https://btc.flowhunt.net/$1",
+      "permanent": true
+    },
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "stock.zhixingshe.cc"
+        }
+      ],
+      "destination": "https://stock.flowhunt.net/$1",
+      "permanent": true
+    },
+    {
       "source": "/",
-      "has": [{ "type": "host", "value": "stock.zhixingshe.cc" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "stock.flowhunt.net"
+        }
+      ],
       "destination": "/stock",
       "permanent": false
     }
   ],
   "rewrites": [
-    { "source": "/eth", "destination": "/eth.html" },
-    { "source": "/distribution-radar", "destination": "/distribution-radar.html" },
-    { "source": "/stock", "destination": "/stock.html" },
-    { "source": "/pricing", "destination": "/pricing.html" }
+    {
+      "source": "/eth",
+      "destination": "/eth.html"
+    },
+    {
+      "source": "/distribution-radar",
+      "destination": "/distribution-radar.html"
+    },
+    {
+      "source": "/stock",
+      "destination": "/stock.html"
+    },
+    {
+      "source": "/pricing",
+      "destination": "/pricing.html"
+    }
   ],
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "*" },
-        { "key": "Access-Control-Allow-Headers", "value": "Authorization, Content-Type, X-Device-Id" }
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Authorization, Content-Type, X-Device-Id"
+        }
       ]
     }
   ],

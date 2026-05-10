@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://btc.zhixingshe.cc/sitemap.xml
+Sitemap: https://btc.flowhunt.net/sitemap.xml

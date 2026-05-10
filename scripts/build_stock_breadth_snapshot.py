@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build static breadth snapshot for stock.zhixingshe.cc.
+"""Build static breadth snapshot for stock.flowhunt.net.
 
 Free-source design:
 - S&P 500 constituents: datasets/s-and-p-500-companies raw CSV (GitHub)
@@ -91,7 +91,7 @@ SEC_13F_TARGETS = {
     "VST": {"cusips": ["92840M102"], "patterns": ["VISTRA CORP"]},
     "OKLO": {"cusips": ["02156V109"], "patterns": ["OKLO INC"]},
 }
-UA = "stock-breadth-snapshot/1.0 (+https://stock.zhixingshe.cc; contact: admin@zhixingshe.cc)"
+UA = "stock-breadth-snapshot/1.0 (+https://stock.flowhunt.net; contact: admin@flowhunt.net)"
 BROWSER_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
 
 
@@ -1169,7 +1169,7 @@ def main() -> int:
     snapshot = {
         "schemaVersion": 1,
         "generatedAt": generated,
-        "description": "Daily static market breadth snapshot for stock.zhixingshe.cc. Free public sources; not investment advice.",
+        "description": "Daily static market breadth snapshot for stock.flowhunt.net. Free public sources; not investment advice.",
         "sources": {
             "sp500Constituents": SP500_URL,
             "qqqHoldings": QQQ_HOLDINGS_URL,

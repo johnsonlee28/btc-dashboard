@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "description": "手工开启 stock.zhixingshe.cc 的 Manual/Pending 指标。只填写来自公开来源的真实值；不要为了显示而估算。enabled=true 后会覆盖同 id 指标；CBOE Put/Call 已优先走自动抓取，手工项仅作自动源失效时的备用记录。",
+  "description": "手工开启 stock.flowhunt.net 的 Manual/Pending 指标。只填写来自公开来源的真实值；不要为了显示而估算。enabled=true 后会覆盖同 id 指标；CBOE Put/Call 已优先走自动抓取，手工项仅作自动源失效时的备用记录。",
   "updatedAt": "2026-05-07T10:18:53Z",
   "indicators": {
     "bofa_fms_cash": {

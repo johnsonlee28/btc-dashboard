@@ -68,7 +68,7 @@ async function safeFetchJson(key, url, timeout = 5500) {
     const res = await fetch(url, {
       headers: {
         'Accept': 'application/json',
-        'User-Agent': 'stock-risk-thermometer/1.0 (+https://stock.zhixingshe.cc)',
+        'User-Agent': 'stock-risk-thermometer/1.0 (+https://stock.flowhunt.net)',
       },
       signal: AbortSignal.timeout(timeout),
     });
@@ -84,7 +84,7 @@ async function safeFetchText(key, url, timeout = 5500) {
     const res = await fetch(url, {
       headers: {
         'Accept': 'text/csv,text/plain,*/*',
-        'User-Agent': 'stock-risk-thermometer/2.0 (+https://stock.zhixingshe.cc)',
+        'User-Agent': 'stock-risk-thermometer/2.0 (+https://stock.flowhunt.net)',
       },
       signal: AbortSignal.timeout(timeout),
     });
@@ -614,7 +614,7 @@ function buildStockEvidenceMetrics(symbol, snapshot) {
     frequency: '半月披露且有延迟',
     updatedAt: ftd?.updatedAt || generatedAt,
     dataStatus: ftdRow ? 'Cached' : 'Pending',
-    logic: 'FTD 是交割失败余额，可能来自长卖、短卖、做市、清算或运营问题；它是结算压力线索，不是裸卖空或特定机构交易实锤。',
+    logic: 'FTD 是交割失败余额，可能来自长卖、短卖、做市、清算或运营问题；它是结算压力线索，不是裸卖空或特定机构交易证明。',
     caseStudy: ftdRow ? `${ticker} 最新日期 ${ftdRow.latestDate}，fails ${Number(ftdRow.fails || 0).toLocaleString('en-US')} 股。` : '当前快照未把该股票列入 FTD Top 列表。',
     limitations: ftd?.limitations || 'SEC FTD 半月披露且滞后；只能与量价、短量、Form 4、13F 交叉看。',
     extras: ftdRow || null,
