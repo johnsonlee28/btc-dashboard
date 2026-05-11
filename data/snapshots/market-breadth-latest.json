@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-08T23:28:10Z",
+  "generatedAt": "2026-05-11T23:28:40Z",
   "description": "Daily static market breadth snapshot for stock.flowhunt.net. Free public sources; not investment advice.",
   "sources": {
     "sp500Constituents": "https://raw.githubusercontent.com/datasets/s-and-p-500-companies/main/data/constituents.csv",
@@ -25,39 +25,39 @@
       "sampleSize": 503,
       "coveragePct": 100.0,
       "above20Pct": 42.1,
-      "above50Pct": 51.1,
-      "above200Pct": 52.7,
-      "nearHighPct": 22.7,
-      "newHighPct": 5.2,
-      "nearLowPct": 26.8,
-      "newLowPct": 5.6,
-      "advancePct": 41.4,
-      "declinePct": 58.6,
+      "above50Pct": 49.3,
+      "above200Pct": 53.7,
+      "nearHighPct": 25.6,
+      "newHighPct": 7.8,
+      "nearLowPct": 29.8,
+      "newLowPct": 9.5,
+      "advancePct": 42.7,
+      "declinePct": 57.3,
       "counts": {
         "above20": 212,
-        "above50": 257,
-        "above200": 265,
-        "nearHigh": 114,
-        "newHigh": 26,
-        "nearLow": 135,
-        "newLow": 28,
-        "advanced": 208,
-        "declined": 295
+        "above50": 248,
+        "above200": 270,
+        "nearHigh": 129,
+        "newHigh": 39,
+        "nearLow": 150,
+        "newLow": 48,
+        "advanced": 215,
+        "declined": 288
       },
-      "updatedAt": "2026-05-08T13:30:00Z",
+      "updatedAt": "2026-05-11T13:30:00Z",
       "leaders": [
         "AMD",
         "AFL",
         "APD",
         "ABNB",
         "AKAM",
+        "ALB",
+        "LNT",
         "ALL",
         "GOOGL",
         "GOOG",
         "AMZN",
-        "AME",
-        "ADI",
-        "AAPL"
+        "AME"
       ],
       "laggards": [
         "MMM",
@@ -65,64 +65,63 @@
         "ABT",
         "ABBV",
         "ACN",
-        "AES",
+        "ADBE",
         "A",
         "ARE",
         "ALGN",
         "ALLE",
-        "LNT",
-        "AMCR"
+        "AMCR",
+        "AEE"
       ],
       "status": "neutral",
-      "value": "MA50上方 51.1% · MA200上方 52.7% · 新高/新低 26/28 · 上涨/下跌 208/295"
+      "value": "MA50上方 49.3% · MA200上方 53.7% · 新高/新低 39/48 · 上涨/下跌 215/288"
     },
     "nasdaq100": {
       "name": "Nasdaq-100 / QQQ 持仓宽度快照",
       "source": "https://dng-api.invesco.com/cache/v1/accounts/en_US/shareclasses/QQQ/holdings/fund?idType=ticker&interval=monthly&productType=ETF",
-      "sourceUpdatedAt": "2026-05-07",
+      "sourceUpdatedAt": "2026-05-09",
       "requested": 98,
       "sampleSize": 98,
       "coveragePct": 100.0,
-      "above20Pct": 56.1,
-      "above50Pct": 55.1,
+      "above20Pct": 50.0,
+      "above50Pct": 53.1,
       "above200Pct": 57.1,
-      "nearHighPct": 35.7,
-      "newHighPct": 14.3,
-      "nearLowPct": 16.3,
-      "newLowPct": 2.0,
-      "advancePct": 52.0,
-      "declinePct": 48.0,
+      "nearHighPct": 37.8,
+      "newHighPct": 15.3,
+      "nearLowPct": 26.5,
+      "newLowPct": 5.1,
+      "advancePct": 39.8,
+      "declinePct": 60.2,
       "counts": {
-        "above20": 55,
-        "above50": 54,
+        "above20": 49,
+        "above50": 52,
         "above200": 56,
-        "nearHigh": 35,
-        "newHigh": 14,
-        "nearLow": 16,
-        "newLow": 2,
-        "advanced": 51,
-        "declined": 47
+        "nearHigh": 37,
+        "newHigh": 15,
+        "nearLow": 26,
+        "newLow": 5,
+        "advanced": 39,
+        "declined": 59
       },
-      "updatedAt": "2026-05-08T13:30:00Z",
+      "updatedAt": "2026-05-11T13:30:00Z",
       "leaders": [
         "NVDA",
         "AAPL",
         "AMZN",
         "GOOGL",
-        "GOOG",
         "MU",
-        "AVGO",
+        "GOOG",
         "AMD",
+        "AVGO",
         "WMT",
         "INTC",
-        "COST",
-        "CSCO"
+        "CSCO",
+        "LRCX"
       ],
       "laggards": [
         "META",
         "NFLX",
         "PLTR",
-        "LIN",
         "TMUS",
         "PEP",
         "AMGN",
@@ -130,10 +129,11 @@
         "ISRG",
         "HON",
         "SHOP",
-        "BKNG"
+        "BKNG",
+        "CEG"
       ],
       "status": "neutral",
-      "value": "MA50上方 55.1% · MA200上方 57.1% · 新高/新低 14/2 · 上涨/下跌 51/47"
+      "value": "MA50上方 53.1% · MA200上方 57.1% · 新高/新低 15/5 · 上涨/下跌 39/59"
     }
   },
   "macroIndicators": {
@@ -239,12 +239,12 @@
       "source": "https://www.aaii.com/sentimentsurvey",
       "sourceType": "official_html_js",
       "updatedAt": "2026-05-06",
-      "value": "Bull 38.5% · Bear 37.2% · Spread +1.4",
+      "value": "Bull 39.5% · Bear 36.9% · Spread +2.6",
       "status": "neutral",
-      "bullishPct": 38.5,
-      "neutralPct": 24.3,
-      "bearishPct": 37.2,
-      "spreadPct": 1.4,
+      "bullishPct": 39.5,
+      "neutralPct": 23.5,
+      "bearishPct": 36.9,
+      "spreadPct": 2.6,
       "threshold": "Bull-Bear Spread > +10 或 Bullish ≥50%：散户乐观偏热/派发风险；Spread < -10 或 Bearish ≥50%：悲观拥挤/恐慌释放；其他中性。",
       "limitations": "AAII 页面受 Cloudflare 保护，需浏览器 UA/Referer；页面内变量为最新读数，dataChart5 仅约 52 周历史。"
     },
@@ -252,41 +252,41 @@
       "name": "NYSE A/D 日宽度",
       "source": "https://www.barchart.com/stocks/quotes/%24ADVN",
       "sourceType": "barchart_scraped_quote",
-      "updatedAt": "2026-05-08T23:28:24Z",
-      "value": "上涨 942 · 下跌 904 · A/D 1.04",
-      "status": "neutral",
-      "advancers": 942,
-      "decliners": 904,
-      "advanceDeclineRatio": 1.04,
+      "updatedAt": "2026-05-11T23:28:56Z",
+      "value": "上涨 689 · 下跌 1171 · A/D 0.58",
+      "status": "distribution",
+      "advancers": 689,
+      "decliners": 1171,
+      "advanceDeclineRatio": 0.58,
       "quotes": {
         "advancers": {
           "symbol": "$ADVN",
           "name": "NYSE Advancing Stocks",
-          "lastPrice": 942.0,
-          "priceChange": 286.0,
-          "percentChange": 43.6,
-          "tradeTime": "18:17 ET",
-          "sessionDateDisplayLong": "Fri, May 8th, 2026",
+          "lastPrice": 689.0,
+          "priceChange": -253.0,
+          "percentChange": -26.86,
+          "tradeTime": "18:14 ET",
+          "sessionDateDisplayLong": "Mon, May 11th, 2026",
           "source": "https://www.barchart.com/stocks/quotes/%24ADVN"
         },
         "decliners": {
           "symbol": "$DECN",
           "name": "NYSE Declining Stocks",
-          "lastPrice": 904.0,
-          "priceChange": -289.0,
-          "percentChange": -24.22,
-          "tradeTime": "18:17 ET",
-          "sessionDateDisplayLong": "Fri, May 8th, 2026",
+          "lastPrice": 1171.0,
+          "priceChange": 267.0,
+          "percentChange": 29.54,
+          "tradeTime": "18:14 ET",
+          "sessionDateDisplayLong": "Mon, May 11th, 2026",
           "source": "https://www.barchart.com/stocks/quotes/%24DECN"
         },
         "adRatio": {
           "symbol": "$ADRN",
           "name": "NYSE Advance Decline Ratio",
-          "lastPrice": 1.04,
-          "priceChange": 0.5,
-          "percentChange": 92.59,
-          "tradeTime": "18:17 ET",
-          "sessionDateDisplayLong": "Fri, May 8th, 2026",
+          "lastPrice": 0.58,
+          "priceChange": -0.46,
+          "percentChange": -44.23,
+          "tradeTime": "18:14 ET",
+          "sessionDateDisplayLong": "Mon, May 11th, 2026",
           "source": "https://www.barchart.com/stocks/quotes/%24ADRN"
         }
       },
@@ -297,31 +297,31 @@
       "name": "NYSE 52周新高 / 新低",
       "source": "https://www.barchart.com/stocks/quotes/%24MAHN",
       "sourceType": "barchart_scraped_quote",
-      "updatedAt": "2026-05-08T23:28:24Z",
-      "value": "新高 74 · 新低 53 · H/L 1.40",
+      "updatedAt": "2026-05-11T23:28:56Z",
+      "value": "新高 90 · 新低 74 · H/L 1.22",
       "status": "neutral",
-      "newHighs52w": 74,
-      "newLows52w": 53,
-      "highLowRatio": 1.396,
+      "newHighs52w": 90,
+      "newLows52w": 74,
+      "highLowRatio": 1.216,
       "quotes": {
         "newHighs52w": {
           "symbol": "$MAHN",
           "name": "52-Week Highs NYSE Exch",
-          "lastPrice": 74.0,
-          "priceChange": -16.0,
-          "percentChange": -17.78,
-          "tradeTime": "16:41 ET",
-          "sessionDateDisplayLong": "Fri, May 8th, 2026",
+          "lastPrice": 90.0,
+          "priceChange": 16.0,
+          "percentChange": 21.62,
+          "tradeTime": "17:11 ET",
+          "sessionDateDisplayLong": "Mon, May 11th, 2026",
           "source": "https://www.barchart.com/stocks/quotes/%24MAHN"
         },
         "newLows52w": {
           "symbol": "$MALN",
           "name": "52-Week Lows NYSE Exch",
-          "lastPrice": 53.0,
-          "priceChange": 25.0,
-          "percentChange": 89.29,
+          "lastPrice": 74.0,
+          "priceChange": 21.0,
+          "percentChange": 39.62,
           "tradeTime": "17:11 ET",
-          "sessionDateDisplayLong": "Fri, May 8th, 2026",
+          "sessionDateDisplayLong": "Mon, May 11th, 2026",
           "source": "https://www.barchart.com/stocks/quotes/%24MALN"
         }
       },
@@ -330,37 +330,41 @@
     },
     "finra_short_sale_volume": {
       "name": "FINRA 场外短量占比自动快照",
-      "source": "https://cdn.finra.org/equity/regsho/daily/CNMSshvol20260507.txt",
+      "source": "https://cdn.finra.org/equity/regsho/daily/CNMSshvol20260508.txt",
       "sourceType": "official_txt",
-      "updatedAt": "2026-05-07",
-      "value": "市场 47.0% · 20日均 48.4% · S&P500 46.5% · QQQ 43.1%",
+      "updatedAt": "2026-05-08",
+      "value": "市场 47.1% · 20日均 48.3% · S&P500 45.0% · QQQ 40.4%",
       "status": "neutral",
-      "marketRatioPct": 47.0,
-      "marketAverage20dPct": 48.4,
-      "sp500RatioPct": 46.5,
-      "qqqRatioPct": 43.1,
+      "marketRatioPct": 47.1,
+      "marketAverage20dPct": 48.3,
+      "sp500RatioPct": 45.0,
+      "qqqRatioPct": 40.4,
       "latest": {
-        "date": "2026-05-07",
+        "date": "2026-05-08",
         "market": {
-          "tickerCount": 11436,
-          "shortVolume": 3914560705.67,
-          "totalVolume": 8320574185.37,
-          "ratioPct": 47.0
+          "tickerCount": 11392,
+          "shortVolume": 3757000125.4,
+          "totalVolume": 7968923708.96,
+          "ratioPct": 47.1
         },
         "sp500": {
           "tickerCount": 501,
-          "shortVolume": 642786725.71,
-          "totalVolume": 1382517569.71,
-          "ratioPct": 46.5
+          "shortVolume": 567131414.28,
+          "totalVolume": 1261213902.23,
+          "ratioPct": 45.0
         },
         "qqq": {
           "tickerCount": 98,
-          "shortVolume": 235546335.71,
-          "totalVolume": 546242082.98,
-          "ratioPct": 43.1
+          "shortVolume": 221057330.14,
+          "totalVolume": 546703471.37,
+          "ratioPct": 40.4
         }
       },
       "history": [
+        {
+          "date": "2026-05-08",
+          "marketRatioPct": 47.1
+        },
         {
           "date": "2026-05-07",
           "marketRatioPct": 47.0
@@ -436,72 +440,68 @@
         {
           "date": "2026-04-13",
           "marketRatioPct": 47.7
-        },
-        {
-          "date": "2026-04-10",
-          "marketRatioPct": 48.8
         }
       ],
       "abnormalTickers": [
         {
-          "symbol": "CSPF",
+          "symbol": "BBRE",
           "ratioPct": 99.8,
-          "totalVolume": 3057845.0
+          "totalVolume": 1065737.0
         },
         {
-          "symbol": "FLCG",
-          "ratioPct": 99.5,
-          "totalVolume": 1164352.0
+          "symbol": "IVLU",
+          "ratioPct": 97.2,
+          "totalVolume": 3655224.0
         },
         {
-          "symbol": "MIN",
-          "ratioPct": 97.9,
-          "totalVolume": 1480683.0
+          "symbol": "IBDZ",
+          "ratioPct": 96.3,
+          "totalVolume": 1012779.0
         },
         {
-          "symbol": "TMSL",
-          "ratioPct": 95.5,
-          "totalVolume": 1726213.0
+          "symbol": "RVTY",
+          "ratioPct": 95.3,
+          "totalVolume": 1281098.0
         },
         {
-          "symbol": "RDY",
-          "ratioPct": 90.7,
-          "totalVolume": 1050586.0
+          "symbol": "JNK",
+          "ratioPct": 93.6,
+          "totalVolume": 4599961.0
         },
         {
-          "symbol": "JBBB",
-          "ratioPct": 88.1,
-          "totalVolume": 1056655.0
+          "symbol": "CAKE",
+          "ratioPct": 92.6,
+          "totalVolume": 1215439.0
         },
         {
-          "symbol": "QSR",
-          "ratioPct": 86.7,
-          "totalVolume": 2217699.0
-        },
-        {
-          "symbol": "FLS",
-          "ratioPct": 86.3,
-          "totalVolume": 1052597.0
+          "symbol": "IQLT",
+          "ratioPct": 89.2,
+          "totalVolume": 2107341.0
         },
         {
           "symbol": "SPIB",
-          "ratioPct": 86.2,
-          "totalVolume": 3479127.0
+          "ratioPct": 88.9,
+          "totalVolume": 3536828.0
         },
         {
-          "symbol": "QQQM",
-          "ratioPct": 85.0,
-          "totalVolume": 2647102.0
+          "symbol": "CQQQ",
+          "ratioPct": 88.6,
+          "totalVolume": 1121756.0
         },
         {
-          "symbol": "CNP",
-          "ratioPct": 83.9,
-          "totalVolume": 1719866.0
+          "symbol": "VCLT",
+          "ratioPct": 87.8,
+          "totalVolume": 1558838.0
         },
         {
-          "symbol": "VGLT",
-          "ratioPct": 83.6,
-          "totalVolume": 1335264.0
+          "symbol": "KBE",
+          "ratioPct": 87.4,
+          "totalVolume": 1581376.0
+        },
+        {
+          "symbol": "CTVA",
+          "ratioPct": 86.8,
+          "totalVolume": 1740785.0
         }
       ],
       "missingRecentFiles": [],
@@ -512,8 +512,8 @@
       "name": "SEC Form 4 内部人交易快照",
       "source": "https://www.sec.gov/edgar/search/",
       "sourceType": "official_sec_form4",
-      "updatedAt": "2026-05-08",
-      "value": "90日卖出 $809.3M · 买入 $3.0M · 卖出股票 17只 · 买入股票 1只",
+      "updatedAt": "2026-05-11",
+      "value": "90日卖出 $808.2M · 买入 $0.0M · 卖出股票 17只 · 买入股票 0只",
       "status": "distribution",
       "lookbackDays": 90,
       "tickerUniverse": [
@@ -569,10 +569,10 @@
         "OKLO"
       ],
       "missingTickers": [],
-      "sellValueUsd": 809270327.04,
-      "buyValueUsd": 3000057.97,
+      "sellValueUsd": 808168313.35,
+      "buyValueUsd": 0,
       "saleTickerCount": 17,
-      "buyTickerCount": 1,
+      "buyTickerCount": 0,
       "topSaleTickers": [
         {
           "ticker": "PLTR",
@@ -580,7 +580,7 @@
         },
         {
           "ticker": "APP",
-          "valueUsd": 131649934.19
+          "valueUsd": 131545150.55
         },
         {
           "ticker": "NVDA",
@@ -615,12 +615,7 @@
           "valueUsd": 7561859.8
         }
       ],
-      "topBuyTickers": [
-        {
-          "ticker": "NOW",
-          "valueUsd": 3000057.97
-        }
-      ],
+      "topBuyTickers": [],
       "topSales": [
         {
           "ticker": "PLTR",
@@ -815,41 +810,8 @@
           "sourceUrl": "https://www.sec.gov/Archives/edgar/data/796343/000079634326000105/0000796343-26-000105.txt"
         }
       ],
-      "topPurchases": [
-        {
-          "ticker": "NOW",
-          "transactionDate": "2026-02-27",
-          "filingDate": "2026-03-02",
-          "accessionNumber": "0001334944-26-000020",
-          "ownerName": "McDermott William R",
-          "ownerTitle": "Chairman & CEO",
-          "isDirector": true,
-          "isOfficer": true,
-          "code": "P",
-          "direction": "purchase",
-          "shares": 28677.0,
-          "price": 104.597,
-          "valueUsd": 2999528.17,
-          "sourceUrl": "https://www.sec.gov/Archives/edgar/data/1373715/000133494426000020/0001334944-26-000020.txt"
-        },
-        {
-          "ticker": "NOW",
-          "transactionDate": "2026-02-27",
-          "filingDate": "2026-03-02",
-          "accessionNumber": "0001334944-26-000020",
-          "ownerName": "McDermott William R",
-          "ownerTitle": "Chairman & CEO",
-          "isDirector": true,
-          "isOfficer": true,
-          "code": "P",
-          "direction": "purchase",
-          "shares": 5.0,
-          "price": 105.96,
-          "valueUsd": 529.8,
-          "sourceUrl": "https://www.sec.gov/Archives/edgar/data/1373715/000133494426000020/0001334944-26-000020.txt"
-        }
-      ],
-      "transactionCount": 299,
+      "topPurchases": [],
+      "transactionCount": 294,
       "threshold": "90日内部人公开市场卖出≥$50M、净卖出≥$25M、且涉及≥3只样本股：内部人卖出证据偏强；公开市场买入≥$5M、买入额≥卖出额1.5倍、且涉及≥2只样本股：内部人买入/承接证据偏强；其他中性。",
       "limitations": "SEC Form 4 只覆盖公司内部人交易，不等于机构13F持仓或暗池/期权流；大型科技公司高管10b5-1计划性卖出很常见，必须结合价格、宽度、成交量和公告背景判断。"
     },
