@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-11T23:28:40Z",
+  "generatedAt": "2026-05-12T23:35:02Z",
   "description": "Daily static market breadth snapshot for stock.flowhunt.net. Free public sources; not investment advice.",
   "sources": {
     "sp500Constituents": "https://raw.githubusercontent.com/datasets/s-and-p-500-companies/main/data/constituents.csv",
@@ -24,32 +24,31 @@
       "requested": 503,
       "sampleSize": 503,
       "coveragePct": 100.0,
-      "above20Pct": 42.1,
-      "above50Pct": 49.3,
+      "above20Pct": 44.3,
+      "above50Pct": 49.9,
       "above200Pct": 53.7,
-      "nearHighPct": 25.6,
-      "newHighPct": 7.8,
-      "nearLowPct": 29.8,
-      "newLowPct": 9.5,
-      "advancePct": 42.7,
-      "declinePct": 57.3,
+      "nearHighPct": 24.7,
+      "newHighPct": 3.4,
+      "nearLowPct": 28.4,
+      "newLowPct": 5.8,
+      "advancePct": 51.5,
+      "declinePct": 48.3,
       "counts": {
-        "above20": 212,
-        "above50": 248,
+        "above20": 223,
+        "above50": 251,
         "above200": 270,
-        "nearHigh": 129,
-        "newHigh": 39,
-        "nearLow": 150,
-        "newLow": 48,
-        "advanced": 215,
-        "declined": 288
+        "nearHigh": 124,
+        "newHigh": 17,
+        "nearLow": 143,
+        "newLow": 29,
+        "advanced": 259,
+        "declined": 243
       },
-      "updatedAt": "2026-05-11T13:30:00Z",
+      "updatedAt": "2026-05-12T13:30:00Z",
       "leaders": [
         "AMD",
         "AFL",
         "APD",
-        "ABNB",
         "AKAM",
         "ALB",
         "LNT",
@@ -57,7 +56,8 @@
         "GOOGL",
         "GOOG",
         "AMZN",
-        "AME"
+        "AME",
+        "ADI"
       ],
       "laggards": [
         "MMM",
@@ -74,47 +74,47 @@
         "AEE"
       ],
       "status": "neutral",
-      "value": "MA50上方 49.3% · MA200上方 53.7% · 新高/新低 39/48 · 上涨/下跌 215/288"
+      "value": "MA50上方 49.9% · MA200上方 53.7% · 新高/新低 17/29 · 上涨/下跌 259/243"
     },
     "nasdaq100": {
       "name": "Nasdaq-100 / QQQ 持仓宽度快照",
       "source": "https://dng-api.invesco.com/cache/v1/accounts/en_US/shareclasses/QQQ/holdings/fund?idType=ticker&interval=monthly&productType=ETF",
-      "sourceUpdatedAt": "2026-05-09",
+      "sourceUpdatedAt": "2026-05-11",
       "requested": 98,
       "sampleSize": 98,
       "coveragePct": 100.0,
-      "above20Pct": 50.0,
+      "above20Pct": 54.1,
       "above50Pct": 53.1,
       "above200Pct": 57.1,
-      "nearHighPct": 37.8,
-      "newHighPct": 15.3,
-      "nearLowPct": 26.5,
-      "newLowPct": 5.1,
-      "advancePct": 39.8,
-      "declinePct": 60.2,
+      "nearHighPct": 32.7,
+      "newHighPct": 4.1,
+      "nearLowPct": 25.5,
+      "newLowPct": 3.1,
+      "advancePct": 43.9,
+      "declinePct": 56.1,
       "counts": {
-        "above20": 49,
+        "above20": 53,
         "above50": 52,
         "above200": 56,
-        "nearHigh": 37,
-        "newHigh": 15,
-        "nearLow": 26,
-        "newLow": 5,
-        "advanced": 39,
-        "declined": 59
+        "nearHigh": 32,
+        "newHigh": 4,
+        "nearLow": 25,
+        "newLow": 3,
+        "advanced": 43,
+        "declined": 55
       },
-      "updatedAt": "2026-05-11T13:30:00Z",
+      "updatedAt": "2026-05-12T13:30:00Z",
       "leaders": [
         "NVDA",
         "AAPL",
         "AMZN",
-        "GOOGL",
         "MU",
+        "GOOGL",
         "GOOG",
         "AMD",
         "AVGO",
         "WMT",
-        "INTC",
+        "COST",
         "CSCO",
         "LRCX"
       ],
@@ -130,10 +130,10 @@
         "HON",
         "SHOP",
         "BKNG",
-        "CEG"
+        "INTU"
       ],
       "status": "neutral",
-      "value": "MA50上方 53.1% · MA200上方 57.1% · 新高/新低 15/5 · 上涨/下跌 39/59"
+      "value": "MA50上方 53.1% · MA200上方 57.1% · 新高/新低 4/3 · 上涨/下跌 43/55"
     }
   },
   "macroIndicators": {
@@ -239,12 +239,12 @@
       "source": "https://www.aaii.com/sentimentsurvey",
       "sourceType": "official_html_js",
       "updatedAt": "2026-05-06",
-      "value": "Bull 39.5% · Bear 36.9% · Spread +2.6",
+      "value": "Bull 39.0% · Bear 37.0% · Spread +2.0",
       "status": "neutral",
-      "bullishPct": 39.5,
-      "neutralPct": 23.5,
-      "bearishPct": 36.9,
-      "spreadPct": 2.6,
+      "bullishPct": 39.0,
+      "neutralPct": 23.9,
+      "bearishPct": 37.0,
+      "spreadPct": 2.0,
       "threshold": "Bull-Bear Spread > +10 或 Bullish ≥50%：散户乐观偏热/派发风险；Spread < -10 或 Bearish ≥50%：悲观拥挤/恐慌释放；其他中性。",
       "limitations": "AAII 页面受 Cloudflare 保护，需浏览器 UA/Referer；页面内变量为最新读数，dataChart5 仅约 52 周历史。"
     },
@@ -252,41 +252,41 @@
       "name": "NYSE A/D 日宽度",
       "source": "https://www.barchart.com/stocks/quotes/%24ADVN",
       "sourceType": "barchart_scraped_quote",
-      "updatedAt": "2026-05-11T23:28:56Z",
-      "value": "上涨 689 · 下跌 1171 · A/D 0.58",
+      "updatedAt": "2026-05-12T23:35:15Z",
+      "value": "上涨 761 · 下跌 1076 · A/D 0.70",
       "status": "distribution",
-      "advancers": 689,
-      "decliners": 1171,
-      "advanceDeclineRatio": 0.58,
+      "advancers": 761,
+      "decliners": 1076,
+      "advanceDeclineRatio": 0.7,
       "quotes": {
         "advancers": {
           "symbol": "$ADVN",
           "name": "NYSE Advancing Stocks",
-          "lastPrice": 689.0,
-          "priceChange": -253.0,
-          "percentChange": -26.86,
+          "lastPrice": 761.0,
+          "priceChange": 72.0,
+          "percentChange": 10.45,
           "tradeTime": "18:14 ET",
-          "sessionDateDisplayLong": "Mon, May 11th, 2026",
+          "sessionDateDisplayLong": "Tue, May 12th, 2026",
           "source": "https://www.barchart.com/stocks/quotes/%24ADVN"
         },
         "decliners": {
           "symbol": "$DECN",
           "name": "NYSE Declining Stocks",
-          "lastPrice": 1171.0,
-          "priceChange": 267.0,
-          "percentChange": 29.54,
+          "lastPrice": 1076.0,
+          "priceChange": -95.0,
+          "percentChange": -8.11,
           "tradeTime": "18:14 ET",
-          "sessionDateDisplayLong": "Mon, May 11th, 2026",
+          "sessionDateDisplayLong": "Tue, May 12th, 2026",
           "source": "https://www.barchart.com/stocks/quotes/%24DECN"
         },
         "adRatio": {
           "symbol": "$ADRN",
           "name": "NYSE Advance Decline Ratio",
-          "lastPrice": 0.58,
-          "priceChange": -0.46,
-          "percentChange": -44.23,
+          "lastPrice": 0.7,
+          "priceChange": 0.12,
+          "percentChange": 20.69,
           "tradeTime": "18:14 ET",
-          "sessionDateDisplayLong": "Mon, May 11th, 2026",
+          "sessionDateDisplayLong": "Tue, May 12th, 2026",
           "source": "https://www.barchart.com/stocks/quotes/%24ADRN"
         }
       },
@@ -297,31 +297,31 @@
       "name": "NYSE 52周新高 / 新低",
       "source": "https://www.barchart.com/stocks/quotes/%24MAHN",
       "sourceType": "barchart_scraped_quote",
-      "updatedAt": "2026-05-11T23:28:56Z",
-      "value": "新高 90 · 新低 74 · H/L 1.22",
-      "status": "neutral",
-      "newHighs52w": 90,
-      "newLows52w": 74,
-      "highLowRatio": 1.216,
+      "updatedAt": "2026-05-12T23:35:15Z",
+      "value": "新高 45 · 新低 65 · H/L 0.69",
+      "status": "distribution",
+      "newHighs52w": 45,
+      "newLows52w": 65,
+      "highLowRatio": 0.692,
       "quotes": {
         "newHighs52w": {
           "symbol": "$MAHN",
           "name": "52-Week Highs NYSE Exch",
-          "lastPrice": 90.0,
-          "priceChange": 16.0,
-          "percentChange": 21.62,
-          "tradeTime": "17:11 ET",
-          "sessionDateDisplayLong": "Mon, May 11th, 2026",
+          "lastPrice": 45.0,
+          "priceChange": -44.0,
+          "percentChange": -49.44,
+          "tradeTime": "05/12/26",
+          "sessionDateDisplayLong": "Tue, May 12th, 2026",
           "source": "https://www.barchart.com/stocks/quotes/%24MAHN"
         },
         "newLows52w": {
           "symbol": "$MALN",
           "name": "52-Week Lows NYSE Exch",
-          "lastPrice": 74.0,
-          "priceChange": 21.0,
-          "percentChange": 39.62,
-          "tradeTime": "17:11 ET",
-          "sessionDateDisplayLong": "Mon, May 11th, 2026",
+          "lastPrice": 65.0,
+          "priceChange": -9.0,
+          "percentChange": -12.16,
+          "tradeTime": "05/12/26",
+          "sessionDateDisplayLong": "Tue, May 12th, 2026",
           "source": "https://www.barchart.com/stocks/quotes/%24MALN"
         }
       },
@@ -330,37 +330,41 @@
     },
     "finra_short_sale_volume": {
       "name": "FINRA 场外短量占比自动快照",
-      "source": "https://cdn.finra.org/equity/regsho/daily/CNMSshvol20260508.txt",
+      "source": "https://cdn.finra.org/equity/regsho/daily/CNMSshvol20260511.txt",
       "sourceType": "official_txt",
-      "updatedAt": "2026-05-08",
-      "value": "市场 47.1% · 20日均 48.3% · S&P500 45.0% · QQQ 40.4%",
+      "updatedAt": "2026-05-11",
+      "value": "市场 47.4% · 20日均 48.3% · S&P500 47.2% · QQQ 46.2%",
       "status": "neutral",
-      "marketRatioPct": 47.1,
+      "marketRatioPct": 47.4,
       "marketAverage20dPct": 48.3,
-      "sp500RatioPct": 45.0,
-      "qqqRatioPct": 40.4,
+      "sp500RatioPct": 47.2,
+      "qqqRatioPct": 46.2,
       "latest": {
-        "date": "2026-05-08",
+        "date": "2026-05-11",
         "market": {
-          "tickerCount": 11392,
-          "shortVolume": 3757000125.4,
-          "totalVolume": 7968923708.96,
-          "ratioPct": 47.1
+          "tickerCount": 11478,
+          "shortVolume": 4287441042.16,
+          "totalVolume": 9043215108.15,
+          "ratioPct": 47.4
         },
         "sp500": {
           "tickerCount": 501,
-          "shortVolume": 567131414.28,
-          "totalVolume": 1261213902.23,
-          "ratioPct": 45.0
+          "shortVolume": 641056304.3,
+          "totalVolume": 1357630378.18,
+          "ratioPct": 47.2
         },
         "qqq": {
           "tickerCount": 98,
-          "shortVolume": 221057330.14,
-          "totalVolume": 546703471.37,
-          "ratioPct": 40.4
+          "shortVolume": 260205768.68,
+          "totalVolume": 563554507.14,
+          "ratioPct": 46.2
         }
       },
       "history": [
+        {
+          "date": "2026-05-11",
+          "marketRatioPct": 47.4
+        },
         {
           "date": "2026-05-08",
           "marketRatioPct": 47.1
@@ -436,72 +440,68 @@
         {
           "date": "2026-04-14",
           "marketRatioPct": 48.8
-        },
-        {
-          "date": "2026-04-13",
-          "marketRatioPct": 47.7
         }
       ],
       "abnormalTickers": [
         {
-          "symbol": "BBRE",
-          "ratioPct": 99.8,
-          "totalVolume": 1065737.0
+          "symbol": "SPYX",
+          "ratioPct": 96.2,
+          "totalVolume": 1520863.0
         },
         {
-          "symbol": "IVLU",
-          "ratioPct": 97.2,
-          "totalVolume": 3655224.0
+          "symbol": "JBND",
+          "ratioPct": 93.4,
+          "totalVolume": 4809653.0
         },
         {
-          "symbol": "IBDZ",
-          "ratioPct": 96.3,
-          "totalVolume": 1012779.0
+          "symbol": "GSG",
+          "ratioPct": 93.4,
+          "totalVolume": 2138117.0
         },
         {
-          "symbol": "RVTY",
-          "ratioPct": 95.3,
-          "totalVolume": 1281098.0
+          "symbol": "USIG",
+          "ratioPct": 89.7,
+          "totalVolume": 2449607.0
+        },
+        {
+          "symbol": "FCG",
+          "ratioPct": 87.9,
+          "totalVolume": 1210331.0
+        },
+        {
+          "symbol": "DBC",
+          "ratioPct": 87.8,
+          "totalVolume": 2620542.0
         },
         {
           "symbol": "JNK",
-          "ratioPct": 93.6,
-          "totalVolume": 4599961.0
+          "ratioPct": 87.4,
+          "totalVolume": 1364002.0
         },
         {
-          "symbol": "CAKE",
-          "ratioPct": 92.6,
-          "totalVolume": 1215439.0
+          "symbol": "CNP",
+          "ratioPct": 86.9,
+          "totalVolume": 1712497.0
         },
         {
-          "symbol": "IQLT",
-          "ratioPct": 89.2,
-          "totalVolume": 2107341.0
-        },
-        {
-          "symbol": "SPIB",
-          "ratioPct": 88.9,
-          "totalVolume": 3536828.0
-        },
-        {
-          "symbol": "CQQQ",
-          "ratioPct": 88.6,
-          "totalVolume": 1121756.0
-        },
-        {
-          "symbol": "VCLT",
-          "ratioPct": 87.8,
-          "totalVolume": 1558838.0
+          "symbol": "RDY",
+          "ratioPct": 86.8,
+          "totalVolume": 1366113.0
         },
         {
           "symbol": "KBE",
-          "ratioPct": 87.4,
-          "totalVolume": 1581376.0
+          "ratioPct": 86.3,
+          "totalVolume": 2852830.0
         },
         {
-          "symbol": "CTVA",
-          "ratioPct": 86.8,
-          "totalVolume": 1740785.0
+          "symbol": "CNH",
+          "ratioPct": 86.1,
+          "totalVolume": 6488418.0
+        },
+        {
+          "symbol": "SWKS",
+          "ratioPct": 86.1,
+          "totalVolume": 2138497.0
         }
       ],
       "missingRecentFiles": [],
@@ -512,8 +512,8 @@
       "name": "SEC Form 4 内部人交易快照",
       "source": "https://www.sec.gov/edgar/search/",
       "sourceType": "official_sec_form4",
-      "updatedAt": "2026-05-11",
-      "value": "90日卖出 $808.2M · 买入 $0.0M · 卖出股票 17只 · 买入股票 0只",
+      "updatedAt": "2026-05-12",
+      "value": "90日卖出 $819.4M · 买入 $0.0M · 卖出股票 18只 · 买入股票 0只",
       "status": "distribution",
       "lookbackDays": 90,
       "tickerUniverse": [
@@ -569,9 +569,9 @@
         "OKLO"
       ],
       "missingTickers": [],
-      "sellValueUsd": 808168313.35,
+      "sellValueUsd": 819383884.96,
       "buyValueUsd": 0,
-      "saleTickerCount": 17,
+      "saleTickerCount": 18,
       "buyTickerCount": 0,
       "topSaleTickers": [
         {
@@ -588,11 +588,11 @@
         },
         {
           "ticker": "AAPL",
-          "valueUsd": 95784645.08
+          "valueUsd": 96154105.08
         },
         {
           "ticker": "AMD",
-          "valueUsd": 39729622.33
+          "valueUsd": 50562072.97
         },
         {
           "ticker": "AMZN",
@@ -811,7 +811,7 @@
         }
       ],
       "topPurchases": [],
-      "transactionCount": 294,
+      "transactionCount": 297,
       "threshold": "90日内部人公开市场卖出≥$50M、净卖出≥$25M、且涉及≥3只样本股：内部人卖出证据偏强；公开市场买入≥$5M、买入额≥卖出额1.5倍、且涉及≥2只样本股：内部人买入/承接证据偏强；其他中性。",
       "limitations": "SEC Form 4 只覆盖公司内部人交易，不等于机构13F持仓或暗池/期权流；大型科技公司高管10b5-1计划性卖出很常见，必须结合价格、宽度、成交量和公告背景判断。"
     },
@@ -819,15 +819,15 @@
       "name": "SEC 13F 样本机构持仓慢变量",
       "source": "https://www.sec.gov/data-research/sec-markets-data/form-13f-data-sets",
       "sourceType": "official_sec_13f",
-      "updatedAt": "2026-02-17",
-      "value": "样本机构AI/Mag7持仓 $148.8B · 较上季 +2.6% · 增/减 49/50",
+      "updatedAt": "2026-05-12",
+      "value": "样本机构AI/Mag7持仓 $148.4B · 较上季 +2.5% · 增/减 48/52",
       "status": "neutral",
       "managerCount": 8,
-      "currentValueUsd": 148844604826.0,
-      "previousValueUsd": 145140008147.0,
-      "valueChangePct": 2.6,
-      "increasedPositions": 49,
-      "decreasedPositions": 50,
+      "currentValueUsd": 148418313028.0,
+      "previousValueUsd": 144859399190.0,
+      "valueChangePct": 2.5,
+      "increasedPositions": 48,
+      "decreasedPositions": 52,
       "unchangedPositions": 3,
       "managers": [
         {
@@ -1123,145 +1123,145 @@
         {
           "name": "ARK Investment Management",
           "cik": "0001697748",
-          "currentFilingDate": "2026-02-11",
-          "currentReportDate": "2025-12-31",
-          "previousFilingDate": "2025-11-12",
-          "previousReportDate": "2025-09-30",
-          "targetValueUsd": 3422172621.0,
-          "previousTargetValueUsd": 3702781578.0,
+          "currentFilingDate": "2026-05-12",
+          "currentReportDate": "2026-03-31",
+          "previousFilingDate": "2026-02-11",
+          "previousReportDate": "2025-12-31",
+          "targetValueUsd": 2995880823.0,
+          "previousTargetValueUsd": 3422172621.0,
           "targetTickerCount": 12,
           "changes": [
             {
               "manager": "ARK Investment Management",
               "ticker": "TSLA",
               "direction": "decrease",
-              "shares": 2914492.0,
-              "previousShares": 3589622.0,
-              "shareChange": -675130.0,
-              "shareChangePct": -18.8,
-              "valueUsd": 1310705149.0,
-              "previousValueUsd": 1596376554.0
+              "shares": 2831329.0,
+              "previousShares": 2914492.0,
+              "shareChange": -83163.0,
+              "shareChangePct": -2.9,
+              "valueUsd": 1052546690.0,
+              "previousValueUsd": 1310705149.0
+            },
+            {
+              "manager": "ARK Investment Management",
+              "ticker": "AMD",
+              "direction": "increase",
+              "shares": 2712854.0,
+              "previousShares": 2574779.0,
+              "shareChange": 138075.0,
+              "shareChangePct": 5.4,
+              "valueUsd": 551875889.0,
+              "previousValueUsd": 551414664.0
             },
             {
               "manager": "ARK Investment Management",
               "ticker": "PLTR",
               "direction": "decrease",
-              "shares": 3231901.0,
-              "previousShares": 4035093.0,
-              "shareChange": -803192.0,
-              "shareChangePct": -19.9,
-              "valueUsd": 574470332.0,
-              "previousValueUsd": 736081749.0
-            },
-            {
-              "manager": "ARK Investment Management",
-              "ticker": "AMD",
-              "direction": "decrease",
-              "shares": 2574779.0,
-              "previousShares": 3057911.0,
-              "shareChange": -483132.0,
-              "shareChangePct": -15.8,
-              "valueUsd": 551414664.0,
-              "previousValueUsd": 494739497.0
+              "shares": 3109881.0,
+              "previousShares": 3231901.0,
+              "shareChange": -122020.0,
+              "shareChangePct": -3.8,
+              "valueUsd": 454913400.0,
+              "previousValueUsd": 574470332.0
             },
             {
               "manager": "ARK Investment Management",
               "ticker": "AMZN",
-              "direction": "decrease",
-              "shares": 1212301.0,
-              "previousShares": 1218608.0,
-              "shareChange": -6307.0,
-              "shareChangePct": -0.5,
-              "valueUsd": 279823368.0,
-              "previousValueUsd": 267569802.0
-            },
-            {
-              "manager": "ARK Investment Management",
-              "ticker": "NVDA",
               "direction": "increase",
-              "shares": 1254577.0,
-              "previousShares": 1165661.0,
-              "shareChange": 88916.0,
-              "shareChangePct": 7.6,
-              "valueUsd": 233978549.0,
-              "previousValueUsd": 217489074.0
-            },
-            {
-              "manager": "ARK Investment Management",
-              "ticker": "META",
-              "direction": "increase",
-              "shares": 298549.0,
-              "previousShares": 298412.0,
-              "shareChange": 137.0,
-              "shareChangePct": 0.0,
-              "valueUsd": 197069302.0,
-              "previousValueUsd": 219147937.0
+              "shares": 1355283.0,
+              "previousShares": 1212301.0,
+              "shareChange": 142982.0,
+              "shareChangePct": 11.8,
+              "valueUsd": 282264888.0,
+              "previousValueUsd": 279823368.0
             },
             {
               "manager": "ARK Investment Management",
               "ticker": "GOOGL",
               "direction": "increase",
-              "shares": 545892.0,
-              "previousShares": 338956.0,
-              "shareChange": 206936.0,
-              "shareChangePct": 61.1,
-              "valueUsd": 171300778.0,
-              "previousValueUsd": 82552734.0
+              "shares": 720414.0,
+              "previousShares": 545892.0,
+              "shareChange": 174522.0,
+              "shareChangePct": 32.0,
+              "valueUsd": 206658015.0,
+              "previousValueUsd": 171300778.0
             },
             {
               "manager": "ARK Investment Management",
-              "ticker": "QCOM",
+              "ticker": "NVDA",
+              "direction": "decrease",
+              "shares": 1035426.0,
+              "previousShares": 1254577.0,
+              "shareChange": -219151.0,
+              "shareChangePct": -17.5,
+              "valueUsd": 180578233.0,
+              "previousValueUsd": 233978549.0
+            },
+            {
+              "manager": "ARK Investment Management",
+              "ticker": "AVGO",
               "direction": "increase",
-              "shares": 250168.0,
-              "previousShares": 221426.0,
-              "shareChange": 28742.0,
-              "shareChangePct": 13.0,
-              "valueUsd": 42791236.0,
-              "previousValueUsd": 36836429.0
+              "shares": 407803.0,
+              "previousShares": 0,
+              "shareChange": 407803.0,
+              "shareChangePct": 100.0,
+              "valueUsd": 126219107.0,
+              "previousValueUsd": 0
+            },
+            {
+              "manager": "ARK Investment Management",
+              "ticker": "META",
+              "direction": "decrease",
+              "shares": 153996.0,
+              "previousShares": 298549.0,
+              "shareChange": -144553.0,
+              "shareChangePct": -48.4,
+              "valueUsd": 88105657.0,
+              "previousValueUsd": 197069302.0
             },
             {
               "manager": "ARK Investment Management",
               "ticker": "ISRG",
               "direction": "increase",
-              "shares": 49098.0,
-              "previousShares": 29812.0,
-              "shareChange": 19286.0,
-              "shareChangePct": 64.7,
-              "valueUsd": 27807143.0,
-              "previousValueUsd": 13332821.0
+              "shares": 68991.0,
+              "previousShares": 49098.0,
+              "shareChange": 19893.0,
+              "shareChangePct": 40.5,
+              "valueUsd": 31804161.0,
+              "previousValueUsd": 27807143.0
             },
             {
               "manager": "ARK Investment Management",
               "ticker": "OKLO",
               "direction": "increase",
-              "shares": 223045.0,
-              "previousShares": 156481.0,
-              "shareChange": 66564.0,
-              "shareChangePct": 42.5,
-              "valueUsd": 16005709.0,
-              "previousValueUsd": 17467974.0
+              "shares": 351169.0,
+              "previousShares": 223045.0,
+              "shareChange": 128124.0,
+              "shareChangePct": 57.4,
+              "valueUsd": 17414471.0,
+              "previousValueUsd": 16005709.0
+            },
+            {
+              "manager": "ARK Investment Management",
+              "ticker": "MSFT",
+              "direction": "decrease",
+              "shares": 6399.0,
+              "previousShares": 6847.0,
+              "shareChange": -448.0,
+              "shareChangePct": -6.5,
+              "valueUsd": 2368718.0,
+              "previousValueUsd": 3311346.0
             },
             {
               "manager": "ARK Investment Management",
               "ticker": "CRM",
               "direction": "decrease",
-              "shares": 50942.0,
-              "previousShares": 76013.0,
-              "shareChange": -25071.0,
-              "shareChangePct": -33.0,
-              "valueUsd": 13495045.0,
-              "previousValueUsd": 18015081.0
-            },
-            {
-              "manager": "ARK Investment Management",
-              "ticker": "MSFT",
-              "direction": "increase",
-              "shares": 6847.0,
-              "previousShares": 6124.0,
-              "shareChange": 723.0,
-              "shareChangePct": 11.8,
-              "valueUsd": 3311346.0,
-              "previousValueUsd": 3171926.0
+              "shares": 6062.0,
+              "previousShares": 50942.0,
+              "shareChange": -44880.0,
+              "shareChangePct": -88.1,
+              "valueUsd": 1131594.0,
+              "previousValueUsd": 13495045.0
             }
           ]
         },
