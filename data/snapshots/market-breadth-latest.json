@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-05-13T23:36:13Z",
+  "generatedAt": "2026-05-14T23:27:31Z",
   "description": "Daily static market breadth snapshot for stock.flowhunt.net. Free public sources; not investment advice.",
   "sources": {
     "sp500Constituents": "https://raw.githubusercontent.com/datasets/s-and-p-500-companies/main/data/constituents.csv",
@@ -24,27 +24,27 @@
       "requested": 503,
       "sampleSize": 503,
       "coveragePct": 100.0,
-      "above20Pct": 41.2,
-      "above50Pct": 45.5,
-      "above200Pct": 52.5,
-      "nearHighPct": 24.5,
-      "newHighPct": 6.6,
-      "nearLowPct": 30.4,
-      "newLowPct": 9.3,
-      "advancePct": 34.4,
-      "declinePct": 65.2,
+      "above20Pct": 41.4,
+      "above50Pct": 46.5,
+      "above200Pct": 53.7,
+      "nearHighPct": 25.2,
+      "newHighPct": 6.0,
+      "nearLowPct": 30.0,
+      "newLowPct": 4.6,
+      "advancePct": 59.0,
+      "declinePct": 40.8,
       "counts": {
-        "above20": 207,
-        "above50": 229,
-        "above200": 264,
-        "nearHigh": 123,
-        "newHigh": 33,
-        "nearLow": 153,
-        "newLow": 47,
-        "advanced": 173,
-        "declined": 328
+        "above20": 208,
+        "above50": 234,
+        "above200": 270,
+        "nearHigh": 127,
+        "newHigh": 30,
+        "nearLow": 151,
+        "newLow": 23,
+        "advanced": 297,
+        "declined": 205
       },
-      "updatedAt": "2026-05-13T13:30:00Z",
+      "updatedAt": "2026-05-14T13:30:00Z",
       "leaders": [
         "AMD",
         "AFL",
@@ -63,47 +63,47 @@
         "MMM",
         "AOS",
         "ABT",
-        "ABBV",
         "ACN",
         "ADBE",
         "A",
         "ABNB",
+        "ARE",
         "ALGN",
         "ALLE",
         "AMCR",
         "AEE"
       ],
-      "status": "distribution",
-      "value": "MA50上方 45.5% · MA200上方 52.5% · 新高/新低 33/47 · 上涨/下跌 173/328"
+      "status": "neutral",
+      "value": "MA50上方 46.5% · MA200上方 53.7% · 新高/新低 30/23 · 上涨/下跌 297/205"
     },
     "nasdaq100": {
       "name": "Nasdaq-100 / QQQ 持仓宽度快照",
       "source": "https://dng-api.invesco.com/cache/v1/accounts/en_US/shareclasses/QQQ/holdings/fund?idType=ticker&interval=monthly&productType=ETF",
-      "sourceUpdatedAt": "2026-05-12",
+      "sourceUpdatedAt": "2026-05-13",
       "requested": 98,
       "sampleSize": 98,
       "coveragePct": 100.0,
-      "above20Pct": 49.0,
+      "above20Pct": 48.0,
       "above50Pct": 51.0,
-      "above200Pct": 56.1,
-      "nearHighPct": 31.6,
-      "newHighPct": 14.3,
-      "nearLowPct": 30.6,
-      "newLowPct": 6.1,
-      "advancePct": 41.8,
-      "declinePct": 58.2,
+      "above200Pct": 57.1,
+      "nearHighPct": 30.6,
+      "newHighPct": 9.2,
+      "nearLowPct": 28.6,
+      "newLowPct": 4.1,
+      "advancePct": 55.1,
+      "declinePct": 44.9,
       "counts": {
-        "above20": 48,
+        "above20": 47,
         "above50": 50,
-        "above200": 55,
-        "nearHigh": 31,
-        "newHigh": 14,
-        "nearLow": 30,
-        "newLow": 6,
-        "advanced": 41,
-        "declined": 57
+        "above200": 56,
+        "nearHigh": 30,
+        "newHigh": 9,
+        "nearLow": 28,
+        "newLow": 4,
+        "advanced": 54,
+        "declined": 44
       },
-      "updatedAt": "2026-05-13T13:30:00Z",
+      "updatedAt": "2026-05-14T13:30:00Z",
       "leaders": [
         "NVDA",
         "AAPL",
@@ -133,7 +133,7 @@
         "INTU"
       ],
       "status": "neutral",
-      "value": "MA50上方 51.0% · MA200上方 56.1% · 新高/新低 14/6 · 上涨/下跌 41/57"
+      "value": "MA50上方 51.0% · MA200上方 57.1% · 新高/新低 9/4 · 上涨/下跌 54/44"
     }
   },
   "macroIndicators": {
@@ -238,13 +238,13 @@
       "name": "AAII Bull-Bear Spread 自动快照",
       "source": "https://www.aaii.com/sentimentsurvey",
       "sourceType": "official_html_js",
-      "updatedAt": "2026-05-06",
-      "value": "Bull 39.8% · Bear 36.6% · Spread +3.2",
+      "updatedAt": "2026-05-13",
+      "value": "Bull 40.0% · Bear 36.4% · Spread +3.6",
       "status": "neutral",
-      "bullishPct": 39.8,
-      "neutralPct": 23.5,
-      "bearishPct": 36.6,
-      "spreadPct": 3.2,
+      "bullishPct": 40.0,
+      "neutralPct": 23.6,
+      "bearishPct": 36.4,
+      "spreadPct": 3.6,
       "threshold": "Bull-Bear Spread > +10 或 Bullish ≥50%：散户乐观偏热/派发风险；Spread < -10 或 Bearish ≥50%：悲观拥挤/恐慌释放；其他中性。",
       "limitations": "AAII 页面受 Cloudflare 保护，需浏览器 UA/Referer；页面内变量为最新读数，dataChart5 仅约 52 周历史。"
     },
@@ -252,41 +252,41 @@
       "name": "NYSE A/D 日宽度",
       "source": "https://www.barchart.com/stocks/quotes/%24ADVN",
       "sourceType": "barchart_scraped_quote",
-      "updatedAt": "2026-05-13T23:36:26Z",
-      "value": "上涨 653 · 下跌 1189 · A/D 0.54",
-      "status": "distribution",
-      "advancers": 653,
-      "decliners": 1189,
-      "advanceDeclineRatio": 0.54,
+      "updatedAt": "2026-05-14T23:27:47Z",
+      "value": "上涨 1145 · 下跌 691 · A/D 1.65",
+      "status": "accumulation",
+      "advancers": 1145,
+      "decliners": 691,
+      "advanceDeclineRatio": 1.65,
       "quotes": {
         "advancers": {
           "symbol": "$ADVN",
           "name": "NYSE Advancing Stocks",
-          "lastPrice": 653.0,
-          "priceChange": -108.0,
-          "percentChange": -14.19,
-          "tradeTime": "18:15 ET",
-          "sessionDateDisplayLong": "Wed, May 13th, 2026",
+          "lastPrice": 1145.0,
+          "priceChange": 492.0,
+          "percentChange": 75.34,
+          "tradeTime": "18:09 ET",
+          "sessionDateDisplayLong": "Thu, May 14th, 2026",
           "source": "https://www.barchart.com/stocks/quotes/%24ADVN"
         },
         "decliners": {
           "symbol": "$DECN",
           "name": "NYSE Declining Stocks",
-          "lastPrice": 1189.0,
-          "priceChange": 113.0,
-          "percentChange": 10.5,
-          "tradeTime": "18:15 ET",
-          "sessionDateDisplayLong": "Wed, May 13th, 2026",
+          "lastPrice": 691.0,
+          "priceChange": -498.0,
+          "percentChange": -41.88,
+          "tradeTime": "18:09 ET",
+          "sessionDateDisplayLong": "Thu, May 14th, 2026",
           "source": "https://www.barchart.com/stocks/quotes/%24DECN"
         },
         "adRatio": {
           "symbol": "$ADRN",
           "name": "NYSE Advance Decline Ratio",
-          "lastPrice": 0.54,
-          "priceChange": -0.16,
-          "percentChange": -22.86,
-          "tradeTime": "18:15 ET",
-          "sessionDateDisplayLong": "Wed, May 13th, 2026",
+          "lastPrice": 1.65,
+          "priceChange": 1.11,
+          "percentChange": 205.56,
+          "tradeTime": "18:09 ET",
+          "sessionDateDisplayLong": "Thu, May 14th, 2026",
           "source": "https://www.barchart.com/stocks/quotes/%24ADRN"
         }
       },
@@ -297,31 +297,31 @@
       "name": "NYSE 52周新高 / 新低",
       "source": "https://www.barchart.com/stocks/quotes/%24MAHN",
       "sourceType": "barchart_scraped_quote",
-      "updatedAt": "2026-05-13T23:36:26Z",
-      "value": "新高 72 · 新低 99 · H/L 0.73",
-      "status": "distribution",
-      "newHighs52w": 72,
-      "newLows52w": 99,
-      "highLowRatio": 0.727,
+      "updatedAt": "2026-05-14T23:27:47Z",
+      "value": "新高 86 · 新低 34 · H/L 2.53",
+      "status": "neutral",
+      "newHighs52w": 86,
+      "newLows52w": 34,
+      "highLowRatio": 2.529,
       "quotes": {
         "newHighs52w": {
           "symbol": "$MAHN",
           "name": "52-Week Highs NYSE Exch",
-          "lastPrice": 72.0,
-          "priceChange": 27.0,
-          "percentChange": 60.0,
-          "tradeTime": "17:11 ET",
-          "sessionDateDisplayLong": "Wed, May 13th, 2026",
+          "lastPrice": 86.0,
+          "priceChange": 14.0,
+          "percentChange": 19.44,
+          "tradeTime": "05/14/26",
+          "sessionDateDisplayLong": "Thu, May 14th, 2026",
           "source": "https://www.barchart.com/stocks/quotes/%24MAHN"
         },
         "newLows52w": {
           "symbol": "$MALN",
           "name": "52-Week Lows NYSE Exch",
-          "lastPrice": 99.0,
-          "priceChange": 34.0,
-          "percentChange": 52.31,
-          "tradeTime": "17:11 ET",
-          "sessionDateDisplayLong": "Wed, May 13th, 2026",
+          "lastPrice": 34.0,
+          "priceChange": -65.0,
+          "percentChange": -65.66,
+          "tradeTime": "05/14/26",
+          "sessionDateDisplayLong": "Thu, May 14th, 2026",
           "source": "https://www.barchart.com/stocks/quotes/%24MALN"
         }
       },
@@ -330,37 +330,41 @@
     },
     "finra_short_sale_volume": {
       "name": "FINRA 场外短量占比自动快照",
-      "source": "https://cdn.finra.org/equity/regsho/daily/CNMSshvol20260512.txt",
+      "source": "https://cdn.finra.org/equity/regsho/daily/CNMSshvol20260513.txt",
       "sourceType": "official_txt",
-      "updatedAt": "2026-05-12",
-      "value": "市场 47.5% · 20日均 48.3% · S&P500 45.8% · QQQ 43.9%",
+      "updatedAt": "2026-05-13",
+      "value": "市场 48.4% · 20日均 48.2% · S&P500 47.9% · QQQ 43.7%",
       "status": "neutral",
-      "marketRatioPct": 47.5,
-      "marketAverage20dPct": 48.3,
-      "sp500RatioPct": 45.8,
-      "qqqRatioPct": 43.9,
+      "marketRatioPct": 48.4,
+      "marketAverage20dPct": 48.2,
+      "sp500RatioPct": 47.9,
+      "qqqRatioPct": 43.7,
       "latest": {
-        "date": "2026-05-12",
+        "date": "2026-05-13",
         "market": {
-          "tickerCount": 11459,
-          "shortVolume": 3995188193.25,
-          "totalVolume": 8406095824.7,
-          "ratioPct": 47.5
+          "tickerCount": 11420,
+          "shortVolume": 3988397037.39,
+          "totalVolume": 8236582704.12,
+          "ratioPct": 48.4
         },
         "sp500": {
           "tickerCount": 501,
-          "shortVolume": 570546587.42,
-          "totalVolume": 1245868013.73,
-          "ratioPct": 45.8
+          "shortVolume": 620078075.76,
+          "totalVolume": 1295224001.52,
+          "ratioPct": 47.9
         },
         "qqq": {
           "tickerCount": 98,
-          "shortVolume": 233072493.98,
-          "totalVolume": 530649268.58,
-          "ratioPct": 43.9
+          "shortVolume": 223693336.22,
+          "totalVolume": 511780803.72,
+          "ratioPct": 43.7
         }
       },
       "history": [
+        {
+          "date": "2026-05-13",
+          "marketRatioPct": 48.4
+        },
         {
           "date": "2026-05-12",
           "marketRatioPct": 47.5
@@ -436,72 +440,68 @@
         {
           "date": "2026-04-16",
           "marketRatioPct": 49.6
-        },
-        {
-          "date": "2026-04-15",
-          "marketRatioPct": 49.4
         }
       ],
       "abnormalTickers": [
         {
-          "symbol": "SCHI",
-          "ratioPct": 97.1,
-          "totalVolume": 39385549.0
-        },
-        {
-          "symbol": "SCHG",
-          "ratioPct": 96.0,
-          "totalVolume": 80326241.0
-        },
-        {
-          "symbol": "SCHX",
-          "ratioPct": 93.7,
-          "totalVolume": 27829787.0
-        },
-        {
-          "symbol": "PFXF",
-          "ratioPct": 93.0,
-          "totalVolume": 1634202.0
+          "symbol": "POWR",
+          "ratioPct": 96.7,
+          "totalVolume": 1616698.0
         },
         {
           "symbol": "FLDR",
-          "ratioPct": 92.4,
-          "totalVolume": 1855183.0
+          "ratioPct": 95.9,
+          "totalVolume": 2289091.0
         },
         {
-          "symbol": "SCMB",
-          "ratioPct": 91.8,
-          "totalVolume": 1904150.0
+          "symbol": "IBDY",
+          "ratioPct": 95.5,
+          "totalVolume": 2061961.0
         },
         {
-          "symbol": "BINC",
-          "ratioPct": 90.6,
-          "totalVolume": 4918911.0
+          "symbol": "FLJP",
+          "ratioPct": 95.0,
+          "totalVolume": 1060946.0
         },
         {
-          "symbol": "SCHR",
-          "ratioPct": 89.0,
-          "totalVolume": 4989592.0
+          "symbol": "PICK",
+          "ratioPct": 93.4,
+          "totalVolume": 1243163.0
         },
         {
-          "symbol": "LPL",
-          "ratioPct": 88.7,
-          "totalVolume": 1100995.0
+          "symbol": "ACYN",
+          "ratioPct": 92.2,
+          "totalVolume": 1497797.0
         },
         {
-          "symbol": "RDY",
-          "ratioPct": 88.1,
-          "totalVolume": 1999198.0
+          "symbol": "VONV",
+          "ratioPct": 91.9,
+          "totalVolume": 1050748.0
         },
         {
-          "symbol": "TYL",
-          "ratioPct": 87.4,
-          "totalVolume": 1857664.0
+          "symbol": "FLTR",
+          "ratioPct": 91.2,
+          "totalVolume": 1757957.0
         },
         {
-          "symbol": "QSR",
-          "ratioPct": 87.0,
-          "totalVolume": 1048752.0
+          "symbol": "XLRE",
+          "ratioPct": 90.3,
+          "totalVolume": 2702458.0
+        },
+        {
+          "symbol": "PVAL",
+          "ratioPct": 89.4,
+          "totalVolume": 1209154.0
+        },
+        {
+          "symbol": "PAAA",
+          "ratioPct": 87.5,
+          "totalVolume": 1751026.0
+        },
+        {
+          "symbol": "VONG",
+          "ratioPct": 86.8,
+          "totalVolume": 2362047.0
         }
       ],
       "missingRecentFiles": [],
@@ -819,15 +819,15 @@
       "name": "SEC 13F 样本机构持仓慢变量",
       "source": "https://www.sec.gov/data-research/sec-markets-data/form-13f-data-sets",
       "sourceType": "official_sec_13f",
-      "updatedAt": "2026-05-12",
-      "value": "样本机构AI/Mag7持仓 $148.4B · 较上季 +2.5% · 增/减 48/52",
+      "updatedAt": "2026-05-14",
+      "value": "样本机构AI/Mag7持仓 $148.1B · 较上季 +3.8% · 增/减 49/49",
       "status": "neutral",
       "managerCount": 8,
-      "currentValueUsd": 148418313028.0,
-      "previousValueUsd": 144859399190.0,
-      "valueChangePct": 2.5,
-      "increasedPositions": 48,
-      "decreasedPositions": 52,
+      "currentValueUsd": 148092236833.0,
+      "previousValueUsd": 142670077901.0,
+      "valueChangePct": 3.8,
+      "increasedPositions": 49,
+      "decreasedPositions": 49,
       "unchangedPositions": 3,
       "managers": [
         {
@@ -978,145 +978,145 @@
         {
           "name": "Renaissance Technologies",
           "cik": "0001037389",
-          "currentFilingDate": "2026-02-12",
-          "currentReportDate": "2025-12-31",
-          "previousFilingDate": "2025-11-13",
-          "previousReportDate": "2025-09-30",
-          "targetValueUsd": 4230577394.0,
-          "previousTargetValueUsd": 6419898683.0,
+          "currentFilingDate": "2026-05-14",
+          "currentReportDate": "2026-03-31",
+          "previousFilingDate": "2026-02-12",
+          "previousReportDate": "2025-12-31",
+          "targetValueUsd": 3904501199.0,
+          "previousTargetValueUsd": 4230577394.0,
           "targetTickerCount": 16,
           "changes": [
             {
               "manager": "Renaissance Technologies",
               "ticker": "PLTR",
-              "direction": "increase",
-              "shares": 8796727.0,
-              "previousShares": 8565875.0,
-              "shareChange": 230852.0,
-              "shareChangePct": 2.7,
-              "valueUsd": 1563618224.0,
-              "previousValueUsd": 1562587167.0
-            },
-            {
-              "manager": "Renaissance Technologies",
-              "ticker": "TSLA",
-              "direction": "increase",
-              "shares": 1362122.0,
-              "previousShares": 424490.0,
-              "shareChange": 937632.0,
-              "shareChangePct": 220.9,
-              "valueUsd": 612583061.0,
-              "previousValueUsd": 188779365.0
-            },
-            {
-              "manager": "Renaissance Technologies",
-              "ticker": "MSFT",
               "direction": "decrease",
-              "shares": 688118.0,
-              "previousShares": 1318907.0,
-              "shareChange": -630789.0,
-              "shareChangePct": -47.8,
-              "valueUsd": 332789699.0,
-              "previousValueUsd": 683126166.0
+              "shares": 6985926.0,
+              "previousShares": 8796727.0,
+              "shareChange": -1810801.0,
+              "shareChangePct": -20.6,
+              "valueUsd": 1021901255.0,
+              "previousValueUsd": 1563618224.0
             },
             {
               "manager": "Renaissance Technologies",
-              "ticker": "AMD",
+              "ticker": "AAPL",
               "direction": "increase",
-              "shares": 1264310.0,
-              "previousShares": 523447.0,
-              "shareChange": 740863.0,
-              "shareChangePct": 141.5,
-              "valueUsd": 267912229.0,
-              "previousValueUsd": 83152089.0
+              "shares": 3172387.0,
+              "previousShares": 100849.0,
+              "shareChange": 3071538.0,
+              "shareChangePct": 3045.7,
+              "valueUsd": 782058412.0,
+              "previousValueUsd": 1708382.0
+            },
+            {
+              "manager": "Renaissance Technologies",
+              "ticker": "NVDA",
+              "direction": "increase",
+              "shares": 2526948.0,
+              "previousShares": 871420.0,
+              "shareChange": 1655528.0,
+              "shareChangePct": 190.0,
+              "valueUsd": 440696066.0,
+              "previousValueUsd": 162519830.0
+            },
+            {
+              "manager": "Renaissance Technologies",
+              "ticker": "AVGO",
+              "direction": "increase",
+              "shares": 793797.0,
+              "previousShares": 889.0,
+              "shareChange": 792908.0,
+              "shareChangePct": 89191.0,
+              "valueUsd": 245685342.0,
+              "previousValueUsd": 308095.0
             },
             {
               "manager": "Renaissance Technologies",
               "ticker": "ADBE",
-              "direction": "decrease",
-              "shares": 725003.0,
-              "previousShares": 956669.0,
-              "shareChange": -231666.0,
-              "shareChangePct": -24.2,
-              "valueUsd": 253744101.0,
-              "previousValueUsd": 337464861.0
+              "direction": "increase",
+              "shares": 925270.0,
+              "previousShares": 725003.0,
+              "shareChange": 200267.0,
+              "shareChangePct": 27.6,
+              "valueUsd": 224914836.0,
+              "previousValueUsd": 253744101.0
+            },
+            {
+              "manager": "Renaissance Technologies",
+              "ticker": "GOOGL",
+              "direction": "increase",
+              "shares": 743473.0,
+              "previousShares": 398551.0,
+              "shareChange": 344922.0,
+              "shareChangePct": 86.5,
+              "valueUsd": 213650930.0,
+              "previousValueUsd": 124829136.0
             },
             {
               "manager": "Renaissance Technologies",
               "ticker": "APP",
-              "direction": "decrease",
-              "shares": 318821.0,
-              "previousShares": 1001432.0,
-              "shareChange": -682611.0,
-              "shareChangePct": -68.2,
-              "valueUsd": 214828248.0,
-              "previousValueUsd": 719568949.0
-            },
-            {
-              "manager": "Renaissance Technologies",
-              "ticker": "AMZN",
               "direction": "increase",
-              "shares": 890926.0,
-              "previousShares": 0,
-              "shareChange": 890926.0,
-              "shareChangePct": 100.0,
-              "valueUsd": 205645092.0,
-              "previousValueUsd": 0
-            },
-            {
-              "manager": "Renaissance Technologies",
-              "ticker": "NOW",
-              "direction": "increase",
-              "shares": 1331977.0,
-              "previousShares": 0,
-              "shareChange": 1331977.0,
-              "shareChangePct": 100.0,
-              "valueUsd": 204045529.0,
-              "previousValueUsd": 0
+              "shares": 436540.0,
+              "previousShares": 318821.0,
+              "shareChange": 117719.0,
+              "shareChangePct": 36.9,
+              "valueUsd": 173742920.0,
+              "previousValueUsd": 214828248.0
             },
             {
               "manager": "Renaissance Technologies",
               "ticker": "VST",
               "direction": "increase",
-              "shares": 1042015.0,
-              "previousShares": 581242.0,
-              "shareChange": 460773.0,
-              "shareChangePct": 79.3,
-              "valueUsd": 168108280.0,
-              "previousValueUsd": 113876933.0
+              "shares": 1061935.0,
+              "previousShares": 1042015.0,
+              "shareChange": 19920.0,
+              "shareChangePct": 1.9,
+              "valueUsd": 159640689.0,
+              "previousValueUsd": 168108280.0
             },
             {
               "manager": "Renaissance Technologies",
-              "ticker": "NVDA",
+              "ticker": "META",
+              "direction": "increase",
+              "shares": 253373.0,
+              "previousShares": 0,
+              "shareChange": 253373.0,
+              "shareChangePct": 100.0,
+              "valueUsd": 144961379.0,
+              "previousValueUsd": 0
+            },
+            {
+              "manager": "Renaissance Technologies",
+              "ticker": "NOW",
               "direction": "decrease",
-              "shares": 871420.0,
-              "previousShares": 5628605.0,
-              "shareChange": -4757185.0,
+              "shares": 1206018.0,
+              "previousShares": 1331977.0,
+              "shareChange": -125959.0,
+              "shareChangePct": -9.5,
+              "valueUsd": 126089212.0,
+              "previousValueUsd": 204045529.0
+            },
+            {
+              "manager": "Renaissance Technologies",
+              "ticker": "PDD",
+              "direction": "increase",
+              "shares": 1112700.0,
+              "previousShares": 273900.0,
+              "shareChange": 838800.0,
+              "shareChangePct": 306.2,
+              "valueUsd": 113695686.0,
+              "previousValueUsd": 31057521.0
+            },
+            {
+              "manager": "Renaissance Technologies",
+              "ticker": "TSLA",
+              "direction": "decrease",
+              "shares": 211290.0,
+              "previousShares": 1362122.0,
+              "shareChange": -1150832.0,
               "shareChangePct": -84.5,
-              "valueUsd": 162519830.0,
-              "previousValueUsd": 1050193666.0
-            },
-            {
-              "manager": "Renaissance Technologies",
-              "ticker": "GOOGL",
-              "direction": "decrease",
-              "shares": 398551.0,
-              "previousShares": 4326749.0,
-              "shareChange": -3928198.0,
-              "shareChangePct": -90.8,
-              "valueUsd": 124829136.0,
-              "previousValueUsd": 1052607934.0
-            },
-            {
-              "manager": "Renaissance Technologies",
-              "ticker": "ISRG",
-              "direction": "decrease",
-              "shares": 152830.0,
-              "previousShares": 194530.0,
-              "shareChange": -41700.0,
-              "shareChangePct": -21.4,
-              "valueUsd": 86556799.0,
-              "previousValueUsd": 86999652.0
+              "valueUsd": 78547058.0,
+              "previousValueUsd": 612583061.0
             }
           ]
         },
@@ -1750,6 +1750,17 @@
           "previousValueUsd": 57209429.0
         },
         {
+          "manager": "Renaissance Technologies",
+          "ticker": "AAPL",
+          "direction": "increase",
+          "shares": 3172387.0,
+          "previousShares": 100849.0,
+          "shareChange": 3071538.0,
+          "shareChangePct": 3045.7,
+          "valueUsd": 782058412.0,
+          "previousValueUsd": 1708382.0
+        },
+        {
           "manager": "Citadel Advisors",
           "ticker": "PLTR",
           "direction": "increase",
@@ -1816,6 +1827,17 @@
           "previousValueUsd": 857520945.0
         },
         {
+          "manager": "Renaissance Technologies",
+          "ticker": "NVDA",
+          "direction": "increase",
+          "shares": 2526948.0,
+          "previousShares": 871420.0,
+          "shareChange": 1655528.0,
+          "shareChangePct": 190.0,
+          "valueUsd": 440696066.0,
+          "previousValueUsd": 162519830.0
+        },
+        {
           "manager": "D. E. Shaw",
           "ticker": "NOW",
           "direction": "increase",
@@ -1825,28 +1847,6 @@
           "shareChangePct": 4250.5,
           "valueUsd": 258062802.0,
           "previousValueUsd": 35635081.0
-        },
-        {
-          "manager": "Renaissance Technologies",
-          "ticker": "NOW",
-          "direction": "increase",
-          "shares": 1331977.0,
-          "previousShares": 0,
-          "shareChange": 1331977.0,
-          "shareChangePct": 100.0,
-          "valueUsd": 204045529.0,
-          "previousValueUsd": 0
-        },
-        {
-          "manager": "D. E. Shaw",
-          "ticker": "GOOGL",
-          "direction": "increase",
-          "shares": 5934568.0,
-          "previousShares": 4728252.0,
-          "shareChange": 1206316.0,
-          "shareChangePct": 25.5,
-          "valueUsd": 1859157941.0,
-          "previousValueUsd": 1150133033.0
         }
       ],
       "topDecreases": [
@@ -1871,28 +1871,6 @@
           "shareChangePct": -77.2,
           "valueUsd": 525346320.0,
           "previousValueUsd": 2195700000.0
-        },
-        {
-          "manager": "Renaissance Technologies",
-          "ticker": "NVDA",
-          "direction": "decrease",
-          "shares": 871420.0,
-          "previousShares": 5628605.0,
-          "shareChange": -4757185.0,
-          "shareChangePct": -84.5,
-          "valueUsd": 162519830.0,
-          "previousValueUsd": 1050193666.0
-        },
-        {
-          "manager": "Renaissance Technologies",
-          "ticker": "GOOGL",
-          "direction": "decrease",
-          "shares": 398551.0,
-          "previousShares": 4326749.0,
-          "shareChange": -3928198.0,
-          "shareChangePct": -90.8,
-          "valueUsd": 124829136.0,
-          "previousValueUsd": 1052607934.0
         },
         {
           "manager": "Citadel Advisors",
@@ -1939,6 +1917,17 @@
           "previousValueUsd": 637843788.0
         },
         {
+          "manager": "Renaissance Technologies",
+          "ticker": "PLTR",
+          "direction": "decrease",
+          "shares": 6985926.0,
+          "previousShares": 8796727.0,
+          "shareChange": -1810801.0,
+          "shareChangePct": -20.6,
+          "valueUsd": 1021901255.0,
+          "previousValueUsd": 1563618224.0
+        },
+        {
           "manager": "D. E. Shaw",
           "ticker": "NEE",
           "direction": "decrease",
@@ -1961,6 +1950,17 @@
           "previousValueUsd": 1439817350.0
         },
         {
+          "manager": "Renaissance Technologies",
+          "ticker": "TSLA",
+          "direction": "decrease",
+          "shares": 211290.0,
+          "previousShares": 1362122.0,
+          "shareChange": -1150832.0,
+          "shareChangePct": -84.5,
+          "valueUsd": 78547058.0,
+          "previousValueUsd": 612583061.0
+        },
+        {
           "manager": "Tiger Global Management",
           "ticker": "MSFT",
           "direction": "decrease",
@@ -1972,15 +1972,15 @@
           "previousValueUsd": 3393281056.0
         },
         {
-          "manager": "Tiger Global Management",
-          "ticker": "AMZN",
+          "manager": "Renaissance Technologies",
+          "ticker": "AMD",
           "direction": "decrease",
-          "shares": 10011379.0,
-          "previousShares": 11043441.0,
-          "shareChange": -1032062.0,
-          "shareChangePct": -9.3,
-          "valueUsd": 2310826501.0,
-          "previousValueUsd": 2424808340.0
+          "shares": 216944.0,
+          "previousShares": 1264310.0,
+          "shareChange": -1047366.0,
+          "shareChangePct": -82.8,
+          "valueUsd": 42841643.0,
+          "previousValueUsd": 267912229.0
         }
       ],
       "threshold": "样本持仓市值较上季下降≥10%、且减持位置占比≥60%：机构样本持仓收缩/派发压力；上升≥10%、且增持位置占比≥60%：机构样本暴露增加/承接改善；否则中性。",
